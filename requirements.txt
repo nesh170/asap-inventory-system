@@ -2,7 +2,6 @@ Django==1.10.5
 Markdown==2.6.7
 chardet==2.2.1
 colorama==0.2.5
-command-not-found==0.3
 django-filter==1.0.1
 djangorestframework==3.5.3
 gunicorn==19.6.0
