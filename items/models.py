@@ -8,6 +8,6 @@ class Item(models.Model):
     location = models.CharField(max_length=1000, blank=True, null=True)
 
 class Tag(models.Model):
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='tags')
     tag = models.CharField(max_length=100)
 
