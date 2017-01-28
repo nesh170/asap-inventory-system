@@ -22,6 +22,11 @@ class ViewDetailedRequest(APIView):
         request = self.get_object(pk)
         serializer = RequestSerializer.RequestSerializer(request)
         return Response(serializer.data)
-#class RequestListUser(APIView):
-    #def get(self, request, userID, format=None):
+class RequestListUser(APIView):
+    def get(self, request, format=None):
+       requestsQuerySet = Request.objects.filter(owner=request.user)
+       serializer = RequestSerializer.RequestSerializer(requestsQuerySet, many=True)
+       return Response(serializer.data)
+
        # requestsQuerySet = Request.objects.
+
