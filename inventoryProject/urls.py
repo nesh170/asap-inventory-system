@@ -15,7 +15,13 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.views.generic.base import RedirectView
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^accounts/logout/$', auth_views.logout),
+    url(r'^accounts/login/$', auth_views.login, {'template_name': 'admin/login.html'}),
+    url(r'^accounts/$', RedirectView.as_view(url='/')),
 ]
