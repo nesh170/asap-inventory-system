@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'items.apps.ItemsConfig',
     'rest_framework',
-    'requests.apps.RequestsConfig',
+    'inventory_requests.apps.InventoryRequestsConfig',
 ]
 
 MIDDLEWARE = [
