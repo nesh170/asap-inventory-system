@@ -13,7 +13,7 @@ class Request(models.Model):
     admin_timestamp = models.TimeField(null=True)
     system_comment = models.TextField(null=True)
     admin_comment = models.TextField(null=True)
-    admin = models.ForeignKey('auth.User', related_name='admin', on_delete=models.CASCADE)
+    admin = models.ForeignKey('auth.User', related_name='admin', on_delete=models.CASCADE, null=True)
 
 
 
