@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from requests import views
+from inventory_requests import views
 
 urlpatterns = [
     url(r'^requests/$', views.RequestList.as_view()),

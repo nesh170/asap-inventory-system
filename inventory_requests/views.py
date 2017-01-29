@@ -1,13 +1,14 @@
-from django.shortcuts import render
-
 # Create your views here.
-from requests.models import Request
-from requests.serializers import RequestSerializer
 from django.http import Http404
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from inventory_requests.models import Request
 from rest_framework import filters
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from inventory_requests.serializers import RequestSerializer
+
+
 class RequestList(APIView):
     def get(self, request, format=None):
         requestsQuerySet = Request.objects.all()
