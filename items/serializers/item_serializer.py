@@ -2,14 +2,14 @@ from rest_framework import serializers
 from items.models import Item, Tag
 
 
-class TagSerializer(serializers.ModelSerializer):
+class NestedTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('id', 'item', 'tag')
+        fields = ('id', 'tag')
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, allow_null=True, required=False)
+    tags = NestedTagSerializer(many=True, allow_null=True, required=False)
 
     class Meta:
         model = Item
