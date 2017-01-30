@@ -15,5 +15,10 @@ def approve_request(request_to_modify):
         item.quantity = updated_quantity
         item.save()
 
+def can_cancel_request(request_to_modify):
+    return request_to_modify.status == "outstanding"
 
+def cancel_request(request_to_modify):
+    request_to_modify.status = "cancelled"
+    request_to_modify.save()
 
