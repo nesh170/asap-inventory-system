@@ -7,6 +7,7 @@ from inventory_requests.serializers import RequestSerializer
 
 class RequestList(APIView):
     def get(self, request, format=None):
+        print("getting all requests")
         requestsQuerySet = Request.objects.all()
         serializer = RequestSerializer.RequestSerializer(requestsQuerySet, many=True)
         filter_backends = (filters.SearchFilter,)
