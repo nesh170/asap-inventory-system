@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'items.apps.ItemsConfig',
     'rest_framework',
     'inventory_requests.apps.InventoryRequestsConfig',
+    'inventory_logger.apps.InventoryLoggerConfig',
 ]
 
 MIDDLEWARE = [
