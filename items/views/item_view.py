@@ -4,6 +4,7 @@ from rest_framework import filters
 from inventoryProject.permissions import IsAdminOrReadOnly
 from items.models import Item
 from items.serializers.item_serializer import ItemSerializer
+from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope, TokenHasScope
 
 
 @permission_classes((IsAdminOrReadOnly,))
