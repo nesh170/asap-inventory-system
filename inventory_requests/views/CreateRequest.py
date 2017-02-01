@@ -7,9 +7,6 @@ from inventory_requests.serializers import RequestSerializer
 # this create class has to be fixed
 class CreateRequest(APIView):
     def post(self, request, format=None):
-        #print("about to print user" + str(request.user))
-        #request.owner = str(request.user)
-        #print("request data is " + str(request.data))
         serializer = RequestSerializer.RequestSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(owner=request.user)  # creates a new instance
