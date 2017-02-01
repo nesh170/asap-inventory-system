@@ -19,7 +19,7 @@ class RequestSerializer(serializers.ModelSerializer):
         def create(self, validated_data):
             item_id = validated_data.pop('item_id')
             item = Item.objects.get(pk=item_id)
-            request = Request.objects.create(**validated_data, item=item)
+            request = Request.objects.create(item=item, **validated_data)
             return request
 
         def update(self, instance, validated_data):
