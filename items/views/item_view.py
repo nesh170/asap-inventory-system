@@ -8,7 +8,7 @@ from items.serializers.item_serializer import ItemSerializer
 
 
 class ItemList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     filter_backends = (filters.SearchFilter,)

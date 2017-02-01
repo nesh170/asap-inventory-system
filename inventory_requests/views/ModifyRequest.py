@@ -1,5 +1,7 @@
 # Create your views here.
 from django.http import Http404
+from rest_framework.exceptions import MethodNotAllowed
+
 from inventory_requests.models import Request
 from rest_framework import status
 from rest_framework.response import Response
@@ -15,22 +17,21 @@ def get_object(pk):
     except Request.DoesNotExist:
         raise Http404
 class ApproveRequest(APIView):
-   # FIX THIS CODE - IT IS CURRENTLY REPEATED BUT HAS TO BE REFACTORED SO IT IS NOT
 
    def patch(self, request, pk, format=None):
        print("running atch request")
        request_to_approve = get_object(pk)
        if modify_request_logic.can_approve_deny_cancel_request(request_to_approve):
-           modify_request_logic.approve_request(request_to_approve)
            request_to_approve.status = "approved"
            serializer = StatusSerializer.StatusSerializer(request_to_approve, data=request.data)
            if serializer.is_valid():
-               #print(datetime.now())
-               serializer.save(admin=request.user)
+               modify_request_logic.approve_request(request_to_approve)
+               serializer.save(admin=request.user, admin_timestamp=datetime.now(), admin_comment=request.data.get('admin_comment'))
                return Response(serializer.data)
            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-       return Response(status=status.HTTP_400_BAD_REQUEST) #fix this to return some data in response body
-# Approve request based on a requestID
+       else:
+           raise MethodNotAllowed(self.patch, "Cannot approve request")
+
 class CancelRequest(APIView):
     def patch(self, request, pk, format=None):
         request_to_cancel = get_object(pk)
@@ -42,7 +43,8 @@ class CancelRequest(APIView):
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_400_BAD_REQUEST) # fix this to return some data in response body
+        else:
+            raise MethodNotAllowed(self.patch, "Cannot cancel request")
 
 
 class DenyRequest(APIView):
@@ -56,4 +58,5 @@ class DenyRequest(APIView):
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_400_BAD_REQUEST) # fix this to return some data in response body
+        else:
+            raise MethodNotAllowed(self.patch, "Cannot deny request")
