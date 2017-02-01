@@ -61,7 +61,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = (
+    'asap-production.colab.duke.edu',
+    'asap-test.colab.duke.edu',
+    'kipcoonley.com',
+    'colab-sbx-86.oit.duke.edu:*',
+    '127.0.0.1:*',
+    'localhost:*',
+)
+
 
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
@@ -138,7 +146,6 @@ REST_FRAMEWORK = {
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
     )
 }
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
