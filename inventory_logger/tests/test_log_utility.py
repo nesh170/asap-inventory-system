@@ -16,7 +16,7 @@ def equal_log(test_equal, log_id, user, action, description):
     log_entry = Log.objects.get(pk=log_id)
     test_equal.assertEqual(log_entry.user, user)
     test_equal.assertEqual(log_entry.action, action)
-    test_equal.assertEqual(log_entry.log_text, description)
+    test_equal.assertEqual(log_entry.description, description)
 
 
 class LogUtilityTestCase(TestCase):
