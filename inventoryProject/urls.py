@@ -26,6 +26,7 @@ urlpatterns = [
     url(r'^api/accounts/login/$', auth_views.login, {'template_name': 'admin/login.html'}),
     url(r'^api/accounts/$', RedirectView.as_view(url='/')),
     url(r'^api/item/', include('items.urls')),
+    url(r'^api/user/', include('inventory_user.urls')),
     url(r'^api/log/', include('inventory_logger.urls')),
     url(r'^api/o/', include('oauth2_provider.urls', namespace='oauth2_provider'))
 ]
