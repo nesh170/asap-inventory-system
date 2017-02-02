@@ -12,6 +12,6 @@ class LogList(generics.ListCreateAPIView):
     queryset = Log.objects.all()
     serializer_class = LogSerializer
     filter_backends = (DjangoFilterBackend, )
-    filter_fields = ('user', 'action', 'timestamp')
+    filter_fields = ('user', 'timestamp', 'action__tag')
 
 
