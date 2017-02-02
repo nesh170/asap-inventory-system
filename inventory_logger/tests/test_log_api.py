@@ -9,7 +9,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
-from inventory_logger.models import Log
+from inventory_logger.models import Log, Action
 
 USERNAME = 'test'
 PASSWORD = 'testPassword'
@@ -32,17 +32,19 @@ class CreateDeleteTagTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
+        action = Action.objects.create(color='1', tag='ITEM CREATED')
+        self.action_id = action.id
 
     def test_create_log(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('log-list')
-        data = {'action': 'disperse', 'description': 'disperse a number of micro stars'}
+        data = {'action_id': self.action_id, 'description': 'disperse a number of micro stars'}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         log_json = json.loads(str(response.content, 'utf-8'))
         log = Log.objects.get(pk=log_json.get('id'))
         self.assertEqual(log.user, USERNAME)
-        self.assertEqual(log.action, data.get('action'))
+        self.assertEqual(log.action.tag, 'ITEM CREATED')
         self.assertEqual(log.description, data.get('description'))
 
 

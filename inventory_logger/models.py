@@ -6,7 +6,8 @@ class Action(models.Model):
     tag = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
-        return self.tag
+        action_string = "{tag} : {color}".format
+        return action_string(tag=self.tag, color=self.color)
 
 
 class Log(models.Model):
