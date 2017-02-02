@@ -101,6 +101,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'inventoryProject.wsgi.application'
 
 
+
+
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 try:
