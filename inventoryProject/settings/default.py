@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'inventory_requests.apps.InventoryRequestsConfig',
     'inventory_logger.apps.InventoryLoggerConfig',
+    'inventory_user.apps.InventoryUserConfig',
     'oauth2_provider',
     'corsheaders',
 ]
@@ -61,7 +62,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = (
+    'asap-production.colab.duke.edu',
+    'asap-test.colab.duke.edu',
+    'kipcoonley.com',
+    'colab-sbx-86.oit.duke.edu'
+)
+
+CORS_ORIGIN_REGEX_WHITELIST = (
+    r'^https?://localhost.*$',
+    r'^localhost.*$',
+)
+
 
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
@@ -88,6 +100,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'inventoryProject.wsgi.application'
+
+
 
 
 # Database
@@ -138,7 +152,6 @@ REST_FRAMEWORK = {
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
     )
 }
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/

@@ -9,7 +9,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
-from items.models import Item, Tag
+from inventory_logger.models import Log, Action
 
 USERNAME = 'test'
 PASSWORD = 'testPassword'
@@ -18,8 +18,6 @@ PASSWORD = 'testPassword'
 class CreateDeleteTagTestCase(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
-        basic_item = Item.objects.create(name="tourniquet", quantity=4)
-        self.item_id = basic_item.id
         self.application = Application(
             name="Test Application",
             redirect_uris="http://localhost",
@@ -34,28 +32,21 @@ class CreateDeleteTagTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
+        action = Action.objects.create(color='1', tag='ITEM CREATED')
+        self.action_id = action.id
 
-    def test_create_tag(self):
+    def test_create_log(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        url = reverse('tag-list')
-        data = {'item': self.item_id, 'tag': 'pain'}
+        url = reverse('log-list')
+        data = {'action_id': self.action_id, 'description': 'disperse a number of micro stars'}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        item = Item.objects.get(pk=self.item_id)
-        self.assertEqual(item.tags.first().tag, data.get('tag'))
+        log_json = json.loads(str(response.content, 'utf-8'))
+        log = Log.objects.get(pk=log_json.get('id'))
+        self.assertEqual(log.user, USERNAME)
+        self.assertEqual(log.action.tag, 'ITEM CREATED')
+        self.assertEqual(log.description, data.get('description'))
 
-    def test_delete_tag(self):
-        self.client.force_authenticate(user=self.admin, token=self.tok)
-        tag = Item.objects.get(pk=self.item_id).tags.create(tag='lol')
-        url = reverse(viewname='tag-deletion', kwargs={'pk': str(tag.id)})
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        delete_success = False
-        try:
-            Tag.objects.get(pk=tag.id)
-        except ObjectDoesNotExist:
-            delete_success = True
-        self.assertEqual(delete_success, True)
 
 
 
