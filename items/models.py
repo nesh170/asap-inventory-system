@@ -19,5 +19,5 @@ class Tag(models.Model):
 
     def __str__(self):
         tag_string = "Tag {tag} with item {item}".format
-        return tag_string(tag=self.tag, item=self.item_name)
+        return tag_string(tag=self.tag, item=self.item.name)
 
