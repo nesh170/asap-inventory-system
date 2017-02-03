@@ -65,3 +65,11 @@ class GetCreateUserAPI(APITestCase):
         json_user_list = json.loads(str(response.content, 'utf-8')).get('results')
         for json_user in json_user_list:
             equal_user(self, json_user.get('id'), json_user)
+
+    def test_get_current_user(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('user-current')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_user = json.loads(str(response.content, 'utf-8'))
+        equal_user(self, json_user.get('id'), json_user)
