@@ -69,9 +69,9 @@ CORS_ORIGIN_WHITELIST = (
 )
 
 CORS_ORIGIN_REGEX_WHITELIST = (
-    r'colab-sbx-86.oit.duke.edu.*',
-    r'127.0.0.1.*',
-    r'localhost.*',
+    r'^colab-sbx-86.oit.duke.edu.*$',
+    r'^127.0.0.1.*$',
+    r'^localhost.*$',
 )
 
 
