@@ -25,8 +25,8 @@ class ApproveRequest(APIView):
            request_to_approve.status = "approved"
            serializer = StatusSerializer.StatusSerializer(request_to_approve, data=request.data)
            if serializer.is_valid():
-               modify_request_logic.approve_request(request_to_approve)
                serializer.save(admin=request.user, admin_timestamp=datetime.now(), admin_comment=request.data.get('admin_comment'))
+               modify_request_logic.approve_request(request_to_approve)
                return Response(serializer.data)
            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
        else:

@@ -1,3 +1,5 @@
+
+
 from inventory_requests.models import Request
 from rest_framework import filters
 from rest_framework.response import Response
@@ -7,9 +9,9 @@ from inventory_requests.serializers import RequestSerializer
 
 class RequestList(APIView):
     def get(self, request, format=None):
-        print("getting all requests")
         requestsQuerySet = Request.objects.all()
         serializer = RequestSerializer.RequestSerializer(requestsQuerySet, many=True)
-        filter_backends = (filters.SearchFilter,)
-        search_fields = ('owner', 'status', 'item', 'quantity', 'reason', 'timestamp', 'admin_timestamp', 'admin_comment', 'admin')
+        filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
+        filter_fields = ('owner__username', 'item__name', 'status', 'quantity')
+        search_fields = ('owner__username', 'item__name', 'reason')
         return Response(serializer.data)

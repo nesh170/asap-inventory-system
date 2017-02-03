@@ -21,7 +21,7 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^', include('inventory_requests.urls')),
+    url(r'^api/request/', include('inventory_requests.urls')),
     url(r'^accounts/logout/$', auth_views.logout),
     url(r'^accounts/login/$', auth_views.login, {'template_name': 'admin/login.html'}),
     url(r'^accounts/$', RedirectView.as_view(url='/')),
