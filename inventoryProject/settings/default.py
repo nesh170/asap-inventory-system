@@ -66,11 +66,11 @@ CORS_ORIGIN_WHITELIST = (
     'asap-production.colab.duke.edu',
     'asap-test.colab.duke.edu',
     'kipcoonley.com',
+    'colab-sbx-86.oit.duke.edu'
 )
 
 CORS_ORIGIN_REGEX_WHITELIST = (
-    r'^colab-sbx-86.oit.duke.edu.*$',
-    r'^127.0.0.1.*$',
+    r'^https?://localhost.*$',
     r'^localhost.*$',
 )
 
