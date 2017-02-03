@@ -10,6 +10,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from inventory_logger.models import Action
 from items.models import Item
 
 USERNAME = 'test'
@@ -49,6 +50,9 @@ class GetItemTestCase(APITestCase):
                                                 description="Jameco", location="hudson 116")
         item_with_one_tag.tags.create(tag="test")
         basic_item = Item.objects.create(name="Oscilloscope", quantity=3)
+        Action.objects.create(color='1', tag='ITEM CREATED')
+        Action.objects.create(color='2', tag='ITEM DESTROYED')
+        Action.objects.create(color='3', tag='ITEM MODIFIED')
 
     def test_get_items(self):
         url = reverse('item-list')
@@ -85,6 +89,9 @@ class PostItemTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+        Action.objects.create(color='1', tag='ITEM CREATED')
+        Action.objects.create(color='2', tag='ITEM DESTROYED')
+        Action.objects.create(color='3', tag='ITEM MODIFIED')
 
     def test_post_items_with_tags(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -105,6 +112,7 @@ class PostItemTestCase(APITestCase):
         json_item = json.loads(str(response.content, 'utf-8'))
         equal_item(self, data, json_item.get('id'))
 
+
 class UpdateItemTestCase(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -124,6 +132,9 @@ class UpdateItemTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+        Action.objects.create(color='1', tag='ITEM CREATED')
+        Action.objects.create(color='2', tag='ITEM DESTROYED')
+        Action.objects.create(color='3', tag='ITEM MODIFIED')
 
     def test_update_all(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -168,6 +179,9 @@ class DeleteItemTestCase(APITestCase):
                 expires=datetime.now(timezone.utc) + timedelta(days=30)
             )
             oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
+            Action.objects.create(color='1', tag='ITEM CREATED')
+            Action.objects.create(color='2', tag='ITEM DESTROYED')
+            Action.objects.create(color='3', tag='ITEM MODIFIED')
 
         def test_delete(self):
             self.client.force_authenticate(user=self.admin, token=self.tok)
