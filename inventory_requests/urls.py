@@ -7,7 +7,7 @@ from inventory_requests.views.ModifyRequest import ApproveRequest, CancelRequest
 from inventory_requests.views.DisburseView import DisburseDirectly
 urlpatterns = [
     url(r'^all$', RequestList.as_view(), name='requests-list'),
-    url(r'^detailed$', ViewDetailedRequest.as_view(), name='detailed-request'),
+    url(r'^detailed/(?P<pk>[0-9]+)/$', ViewDetailedRequest.as_view(), name='detailed-request'),
     url(r'^user$', RequestListUser.as_view(), name='user-requests'),
     url(r'^create$', CreateRequest.as_view(), name='create-request'),
     url(r'^approve$', ApproveRequest.as_view(), name='approve-request'),
