@@ -24,8 +24,9 @@ def equal_item(test_client, item_json, item_id):
     test_client.assertEqual(item_json.get('model_number'), item.model_number)
     test_client.assertEqual(item_json.get('description'), item.description)
     test_client.assertEqual(item_json.get('location'), item.location)
-    test_client.assertEqual([tagItem['tag'] for tagItem in item_json.get('tags', [])],
-                            [tag_item.tag for tag_item in item.tags.all()])
+    if item_json.get('tags') is not None:
+        test_client.assertEqual([tagItem['tag'] for tagItem in item_json.get('tags', [])],
+                                [tag_item.tag for tag_item in item.tags.all()])
 
 
 class GetItemTestCase(APITestCase):
@@ -106,6 +107,16 @@ class PostItemTestCase(APITestCase):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('item-list')
         data = {'name': 'Arduino Uno', 'quantity': 3}
+        self.client.login(username=USERNAME, password=PASSWORD)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        json_item = json.loads(str(response.content, 'utf-8'))
+        equal_item(self, data, json_item.get('id'))
+
+    def test_post_items_with_null_tags(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('item-list')
+        data = {'name': 'Hybrid Engine', 'quantity': 3, 'tags': None}
         self.client.login(username=USERNAME, password=PASSWORD)
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
