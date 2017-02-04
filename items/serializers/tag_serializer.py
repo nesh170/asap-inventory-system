@@ -6,3 +6,9 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'item', 'tag')
+
+class TagSingleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ('tag', )
+
