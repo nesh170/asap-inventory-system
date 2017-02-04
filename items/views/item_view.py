@@ -5,16 +5,26 @@ from rest_framework import generics
 from inventoryProject.permissions import IsAdminOrReadOnly
 from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
+from items.logic.filter_item_logic import FilterItemLogic
 from items.models import Item
 from items.serializers.item_serializer import ItemSerializer
 
 
 class ItemList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly]
-    queryset = Item.objects.all()
+    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
     serializer_class = ItemSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name', 'model_number', 'tags__tag')
+
+    def get_queryset(self):
+        filter_item_logic = FilterItemLogic()
+        if self.request.method == 'GET':
+            tag_included = self.request.GET.get('tag_included')
+            tag_excluded = self.request.GET.get('tag_excluded')
+            operation = self.request.GET.get('operator')
+            if tag_included is not None or tag_excluded is not None:
+                return filter_item_logic.filter_logic(tag_included, tag_excluded, operation)
+        return Item.objects.all()
 
 
 class ItemDetail(generics.RetrieveUpdateDestroyAPIView):

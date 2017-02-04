@@ -23,8 +23,9 @@ class ItemSerializer(serializers.ModelSerializer):
         try:
             tags_data = validated_data.pop('tags')
             item = Item.objects.create(**validated_data)
-            for tag in tags_data:
-                Tag.objects.create(item=item, **tag)
+            if tags_data is not None:
+                for tag in tags_data:
+                    Tag.objects.create(item=item, **tag)
         except KeyError:
             item = Item.objects.create(**validated_data)
         username = self.context['request'].user.username
