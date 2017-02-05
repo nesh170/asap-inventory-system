@@ -72,8 +72,7 @@ class GetRequestTestCases(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # converts response to a string and then to a JSON dictionary, and then gets results attribute of it
-        print(json.loads(str(response.content, 'utf-8')))
-        json_request_list = json.loads(str(response.content, 'utf-8'))
+        json_request_list = json.loads(str(response.content, 'utf-8'))['results']
         #verifies the number of requests returned by the GET request is the same as the number of requests in the database
         #self.assertEqual(json.loads(str(response.content, 'utf-8'))['count'], Request.objects.count())
         # for each request returned by GET request, all equal_request on each one to verify the JSON representation
@@ -118,7 +117,7 @@ class PostRequestTestCases(APITestCase):
                                                 description="oscilloscope", location="hudson 116")
         item_with_one_tag.tags.create(tag="test")
         item_id = item_with_one_tag.id
-        url = reverse('create-request')
+        url = reverse('requests-list')
         data = {'item_id': item_id, 'reason': 'testing create post request', 'quantity': 2}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

@@ -21,7 +21,6 @@ def get_object(pk):
 class ApproveRequest(APIView):
 
    def patch(self, request, pk, format=None):
-       print("running atch request")
        request_to_approve = get_object(pk)
        if modify_request_logic.can_approve_deny_cancel_request(request_to_approve):
            request_to_approve.status = "approved"
