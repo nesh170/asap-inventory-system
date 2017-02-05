@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 
 from inventory_requests.serializers import RequestSerializer
 
+
 class RequestListUser(APIView):
     def get(self, request, format=None):
        requestsQuerySet = Request.objects.filter(owner=request.user)

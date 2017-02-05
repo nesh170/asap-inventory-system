@@ -1,4 +1,3 @@
-# Create your views here.
 from django.http import Http404
 from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework.exceptions import MethodNotAllowed

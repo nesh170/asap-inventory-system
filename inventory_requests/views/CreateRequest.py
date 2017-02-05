@@ -5,7 +5,8 @@ from rest_framework.views import APIView
 from inventory_requests.serializers import RequestSerializer
 from inventory_logger.utility.logger import LoggerUtility
 from inventory_logger.action_enum import ActionEnum
-# this create class has to be fixed
+
+
 class CreateRequest(APIView):
     def post(self, request, format=None):
         serializer = RequestSerializer.RequestSerializer(data=request.data)
