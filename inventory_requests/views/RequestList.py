@@ -1,15 +1,18 @@
-from inventory_requests.models import Request
 from rest_framework import filters
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework import generics
+from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
+from inventoryProject.permissions import IsAdminOrReadOnly
+from inventory_requests.models import Request
+from inventory_requests.serializers.RequestSerializer import RequestSerializer
 
-from inventory_requests.serializers import RequestSerializer
 
-class RequestList(APIView):
-    def get(self, request, format=None):
-        print("getting all requests")
-        requestsQuerySet = Request.objects.all()
-        serializer = RequestSerializer.RequestSerializer(requestsQuerySet, many=True)
-        filter_backends = (filters.SearchFilter,)
-        search_fields = ('owner', 'status', 'item', 'quantity', 'reason', 'timestamp', 'admin_timestamp', 'admin_comment', 'admin')
-        return Response(serializer.data)
+class RequestList(generics.ListCreateAPIView):
+    permission_classes = [TokenHasReadWriteScope, IsAdminOrReadOnly]
+    serializer_class = RequestSerializer
+    filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
+    filter_fields = ('owner__username', 'status', 'quantity')
+    search_fields = ('owner__username', 'item__name', 'reason')
+    def get_queryset(self):
+        user = self.request.user
+        return Request.objects.exclude(status="cancelled") if user.is_staff \
+            else Request.objects.filter(owner=user).exclude(status="cancelled")
