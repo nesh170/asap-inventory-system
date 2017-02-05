@@ -32,12 +32,14 @@ def equal_request(test_client, request_json, request_id):
     test_client.assertEqual(request_json.get('item').get('quantity'), request.item.quantity)
     test_client.assertEqual(request_json.get('quantity'), request.quantity)
     test_client.assertEqual(request_json.get('reason'), request.reason)
-    test_client.assertEqual(request_json.get('admin_timestamp'), request.admin_timestamp)
-    print(request.admin)
-    print(request_json.get('admin'))
-    test_client.assertEqual(request_json.get('admin'), request.admin.id)
+    test_client.assertEqual(request_json.get('admin_comment'), request.admin_comment)
+    if request_json.get('admin') is not None:
+        test_client.assertEqual(request_json.get('admin'), request.admin.id)
 
-
+def equal_after_disburse(test_client, disburse_json, item_id, original_item_quantity):
+    item = Item.objects.get(pk=item_id)
+    test_client.assertEqual(disburse_json.get('item_id'), item.id)
+    test_client.assertEqual(original_item_quantity - disburse_json.get('quantity'), item.quantity)
 class GetRequestTestCases(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -77,6 +79,168 @@ class GetRequestTestCases(APITestCase):
         # for each request returned by GET request, all equal_request on each one to verify the JSON representation
         # contains the same information as the information in the database
         [equal_request(self, json_request, json_request.get('id')) for json_request in json_request_list]
+    def test_get_detailed_request(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        for request_id in Request.objects.values_list('id', flat=True):
+            url = reverse('detailed-request', kwargs={'pk': str(request_id)})
+            #make the get request
+            response = self.client.get(url)
+            #compare the JSON response received from the GET request to what is in database
+            equal_request(self, json.loads(str(response.content, 'utf-8')), request_id)
+    def test_get_requests_user(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('user-requests')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_request_list = json.loads(str(response.content, 'utf-8'))
+        [equal_request(self, json_request, json_request.get('id')) for json_request in json_request_list]
+class PostRequestTestCases(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.application = Application(
+            name="Test Application",
+            redirect_uris="http://localhost",
+            user=self.admin,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+        )
+        self.application.save()
+        self.tok = AccessToken.objects.create(
+            user=self.admin, token='1234567890',
+            application=self.application, scope='read write',
+            expires=datetime.now(timezone.utc) + timedelta(days=30)
+        )
+        oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+
+    def test_create_request(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        item_id = item_with_one_tag.id
+        url = reverse('create-request')
+        data = {'item_id': item_id, 'reason': 'testing create post request', 'quantity': 2}
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        data['owner'] = self.admin.id
+        data['status'] = 'outstanding'
+        data['item'] = {'id': item_id, 'name': item_with_one_tag.name, 'quantity':item_with_one_tag.quantity}
+
+        json_request = json.loads(str(response.content, 'utf-8'))
+        # test if data that was in POST request is the same as what was just stored in the database based on request_id
+        #data is request_json, and id comes from the response, which is then used to load request from database
+        equal_request(self, data, json_request.get('id'))
+
+class PatchRequestTestCases(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.application = Application(
+            name="Test Application",
+            redirect_uris="http://localhost",
+            user=self.admin,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+        )
+        self.application.save()
+        self.tok = AccessToken.objects.create(
+            user=self.admin, token='1234567890',
+            application=self.application, scope='read write',
+            expires=datetime.now(timezone.utc) + timedelta(days=30)
+        )
+        oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+    def test_approve_request(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        request_to_approve = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
+                                                   quantity=2, reason="test request")
+        data = {'id': request_to_approve.id, 'admin_comment': 'testing approve request'}
+        url = reverse('approve-request', kwargs={'pk': str(request_to_approve.id)})
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_request = json.loads(str(response.content, 'utf-8'))
+        data['owner'] = self.admin.id
+        data['status'] = 'approved'
+        data['item'] = {'id': item_with_one_tag.id, 'name': item_with_one_tag.name, 'quantity':item_with_one_tag.quantity - request_to_approve.quantity}
+        data['quantity'] = request_to_approve.quantity
+        data['reason'] = request_to_approve.reason
+        equal_request(self, data, json_request.get('id'))
+
+    def test_deny_request(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        request_to_deny = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
+                                                   quantity=2, reason="test request", admin_comment="this is an admin comment",
+                                                 admin=self.admin)
+        data = {'id': request_to_deny.id, 'admin_comment': 'testing deny request'}
+        url = reverse('deny-request', kwargs={'pk': str(request_to_deny.id)})
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_request = json.loads(str(response.content, 'utf-8'))
+        data['owner'] = self.admin.id
+        data['status'] = 'denied'
+        data['item'] = {'id': item_with_one_tag.id, 'name': item_with_one_tag.name,
+                        'quantity': item_with_one_tag.quantity}
+        data['quantity'] = request_to_deny.quantity
+        data['reason'] = request_to_deny.reason
+        data['admin_comment'] = request_to_deny.admin_comment + ' denial reason is : ' + data.get('admin_comment')
+        equal_request(self, data, json_request.get('id'))
+
+    def test_cancel_request(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        request_to_cancel = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
+                                                 quantity=2, reason="test request",
+                                                 admin_comment="this is an admin comment",
+                                                 admin=self.admin)
+        data = {'id': request_to_cancel.id, 'reason': 'testing cancellation of request'}
+        url = reverse('cancel-request', kwargs={'pk': str(request_to_cancel.id)})
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_request = json.loads(str(response.content, 'utf-8'))
+        data['owner'] = self.admin.id
+        data['status'] = 'cancelled'
+        data['item'] = {'id': item_with_one_tag.id, 'name': item_with_one_tag.name,
+                        'quantity': item_with_one_tag.quantity}
+        data['quantity'] = request_to_cancel.quantity
+        data['reason'] = request_to_cancel.reason + ' cancellation reason is : ' + data.get('reason')
+        data['admin_comment'] = "this is an admin comment"
+        equal_request(self, data, json_request.get('id'))
+class DisburseRequestTestCase(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.application = Application(
+            name="Test Application",
+            redirect_uris="http://localhost",
+            user=self.admin,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+        )
+        self.application.save()
+        self.tok = AccessToken.objects.create(
+            user=self.admin, token='1234567890',
+            application=self.application, scope='read write',
+            expires=datetime.now(timezone.utc) + timedelta(days=30)
+        )
+        oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+
+
+    def test_disburse(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                      description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        url = reverse('disburse')
+        data = {'item_id': item_with_one_tag.id, 'quantity': 2, 'receiver': 'ankit', 'disburse_comment': 'testing disburse'}
+        response = self.client.post(url, data, format='json')
+        json_disburse_response = json.loads(str(response.content, 'utf-8'))
+        equal_after_disburse(self, data, json_disburse_response.get('item_id'), item_with_one_tag.quantity)
+
 
 
 

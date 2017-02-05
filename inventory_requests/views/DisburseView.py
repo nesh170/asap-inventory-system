@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from inventory_requests.serializers.DisburseSerializer import DisburseSerializer
 from items.models import Item
 from inventory_logger.utility.logger import LoggerUtility
-
+from inventory_logger.action_enum import ActionEnum
 @api_view(['POST'])
 def DisburseDirectly(request):
 
@@ -14,8 +14,8 @@ def DisburseDirectly(request):
         item = Item.objects.get(pk=serializer.data.get('item_id'))
         try:
             item.quantity = item.quantity - serializer.data.get('quantity')
+            LoggerUtility.log_as_system(ActionEnum.DISBURSED, "Disbursed " + item.quantity + " " + item.name)
             item.save()
-            #LoggerUtility.log(request.user.username, "DISBURSED", "Disbursed " + item.quantity + " " + item.name)
             return Response(serializer.data)
         except:
             raise MethodNotAllowed(DisburseDirectly, "Cannot disburse the given quantity")

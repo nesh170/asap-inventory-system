@@ -10,6 +10,8 @@ from inventory_requests.business_logic import modify_request_logic
 from inventory_requests.serializers import RequestSerializer
 from inventory_requests.serializers import StatusSerializer, CancelSerializer
 from datetime import datetime
+from inventory_logger.utility.logger import LoggerUtility
+from inventory_logger.action_enum import ActionEnum
 
 def get_object(pk):
     try:
@@ -25,8 +27,10 @@ class ApproveRequest(APIView):
            request_to_approve.status = "approved"
            serializer = StatusSerializer.StatusSerializer(request_to_approve, data=request.data)
            if serializer.is_valid():
+               LoggerUtility.log_as_system(ActionEnum.REQUEST_APPROVED, "Request (ID: " + request_to_approve.id + ") Approved")
                serializer.save(admin=request.user, admin_timestamp=datetime.now(), admin_comment=request.data.get('admin_comment'))
                modify_request_logic.approve_request(request_to_approve)
+
                return Response(serializer.data)
            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
        else:
@@ -40,6 +44,7 @@ class CancelRequest(APIView):
             request.data['reason'] = request_to_cancel.reason + " cancellation reason is : " + request.data.get('reason')
             serializer = CancelSerializer.CancelSerializer(request_to_cancel, data=request.data)
             if serializer.is_valid():
+                LoggerUtility.log_as_system(ActionEnum.REQUEST_CANCELLED, "Request (ID: " + request_to_cancel.id + ") Cancelled")
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -55,6 +60,7 @@ class DenyRequest(APIView):
             request.data['admin_comment'] = request_to_deny.admin_comment + " denial reason is : " + request.data.get('admin_comment')
             serializer = StatusSerializer.StatusSerializer(request_to_deny, data=request.data)
             if serializer.is_valid():
+                LoggerUtility.log_as_system(ActionEnum.REQUEST_DENIED, "Request (ID: " + request_to_deny.id + ") Denied")
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
