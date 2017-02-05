@@ -88,10 +88,10 @@ class GetRequestTestCases(APITestCase):
             equal_request(self, json.loads(str(response.content, 'utf-8')), request_id)
     def test_get_requests_user(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        url = reverse('user-requests')
+        url = reverse('requests-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        json_request_list = json.loads(str(response.content, 'utf-8'))
+        json_request_list = json.loads(str(response.content, 'utf-8'))['results']
         [equal_request(self, json_request, json_request.get('id')) for json_request in json_request_list]
 class PostRequestTestCases(APITestCase):
     def setUp(self):
