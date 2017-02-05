@@ -4,6 +4,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
+from inventoryProject.permissions import IsAdminOrReadOnly
 from inventory_user.serializers.user_serializer import UserSerializer
 
 
@@ -14,7 +15,7 @@ class InventoryUserList(generics.ListCreateAPIView):
 
 
 class InventoryCurrentUser(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
