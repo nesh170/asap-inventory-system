@@ -9,6 +9,8 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from inventory_logger.action_enum import ActionEnum
+from inventory_logger.models import Action
 from inventory_requests.models import Request
 from items.models import Item
 # username and password to create superuser for testing
@@ -22,6 +24,16 @@ PASSWORD = 'testPassword'
     that information is then stored/updated in the database. These two things are being compared by this function (the
     new information in the database and the JSON representation that was sent using a POST request).
 '''
+
+def setup_logging():
+    Action.objects.create(color="1", tag=ActionEnum.REQUEST_APPROVED.value)
+    Action.objects.create(color="2", tag=ActionEnum.REQUEST_CANCELLED.value)
+    Action.objects.create(color="3", tag=ActionEnum.REQUEST_DENIED.value)
+    Action.objects.create(color="4", tag=ActionEnum.REQUEST_CREATED.value)
+    Action.objects.create(color="5", tag=ActionEnum.DISBURSED.value)
+
+
+
 #this function tests if the JSON representation of a request (either returned from a get request
 def equal_request(test_client, request_json, request_id):
     request = Request.objects.get(pk=request_id)
@@ -57,6 +69,7 @@ class GetRequestTestCases(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+        setup_logging()
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=0, model_number="48979",
                                                 description="Jameco", location="hudson 116")
         item_with_one_tag.tags.create(tag="test")
@@ -110,6 +123,7 @@ class PostRequestTestCases(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+        setup_logging()
 
     def test_create_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -147,6 +161,8 @@ class PatchRequestTestCases(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+        setup_logging()
+
     def test_approve_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
@@ -227,6 +243,7 @@ class DisburseRequestTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+        setup_logging()
 
 
     def test_disburse(self):
@@ -239,9 +256,3 @@ class DisburseRequestTestCase(APITestCase):
         response = self.client.post(url, data, format='json')
         json_disburse_response = json.loads(str(response.content, 'utf-8'))
         equal_after_disburse(self, data, json_disburse_response.get('item_id'), item_with_one_tag.quantity)
-
-
-
-
-
-

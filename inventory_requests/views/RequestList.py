@@ -10,7 +10,7 @@ class RequestList(generics.ListCreateAPIView):
     permission_classes = [TokenHasReadWriteScope, IsAdminOrReadOnly]
     serializer_class = RequestSerializer
     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
-    filter_fields = ('owner__username', 'item__name', 'status', 'quantity')
+    filter_fields = ('owner__username', 'status', 'quantity')
     search_fields = ('owner__username', 'item__name', 'reason')
     def get_queryset(self):
         user = self.request.user

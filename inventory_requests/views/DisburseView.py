@@ -16,7 +16,7 @@ def DisburseDirectly(request):
         item = Item.objects.get(pk=serializer.data.get('item_id'))
         try:
             item.quantity = item.quantity - serializer.data.get('quantity')
-            LoggerUtility.log_as_system(ActionEnum.DISBURSED, "Disbursed " + item.quantity + " " + item.name)
+            LoggerUtility.log_as_system(ActionEnum.DISBURSED, "Disbursed " + str(item.quantity) + " " + item.name)
             item.save()
             return Response(serializer.data)
         except:
