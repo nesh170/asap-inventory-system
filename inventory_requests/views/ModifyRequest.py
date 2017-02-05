@@ -1,13 +1,14 @@
 # Create your views here.
 from django.http import Http404
+from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from inventory_requests.models import Request
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from inventory_requests.business_logic import modify_request_logic
-from inventory_requests.serializers import RequestSerializer
 from inventory_requests.serializers import StatusSerializer, CancelSerializer
 from datetime import datetime
 from inventory_logger.utility.logger import LoggerUtility
@@ -19,7 +20,7 @@ def get_object(pk):
     except Request.DoesNotExist:
         raise Http404
 class ApproveRequest(APIView):
-
+   permission_classes = [TokenHasReadWriteScope, IsAdminUser]
    def patch(self, request, pk, format=None):
        request_to_approve = get_object(pk)
        if modify_request_logic.can_approve_deny_cancel_request(request_to_approve):
@@ -36,6 +37,7 @@ class ApproveRequest(APIView):
            raise MethodNotAllowed(self.patch, "Cannot approve request")
 
 class CancelRequest(APIView):
+    permission_classes = [TokenHasReadWriteScope, IsAuthenticated]
     def patch(self, request, pk, format=None):
         request_to_cancel = get_object(pk)
         if modify_request_logic.can_approve_deny_cancel_request(request_to_cancel):
@@ -52,6 +54,7 @@ class CancelRequest(APIView):
 
 
 class DenyRequest(APIView):
+    permission_classes = [TokenHasReadWriteScope, IsAdminUser]
     def patch(self, request, pk, format=None):
         request_to_deny = get_object(pk)
         if modify_request_logic.can_approve_deny_cancel_request(request_to_deny):

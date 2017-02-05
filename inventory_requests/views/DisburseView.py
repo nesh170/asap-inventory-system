@@ -1,6 +1,8 @@
+from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from inventory_requests.serializers.DisburseSerializer import DisburseSerializer
 from items.models import Item
@@ -8,7 +10,7 @@ from inventory_logger.utility.logger import LoggerUtility
 from inventory_logger.action_enum import ActionEnum
 @api_view(['POST'])
 def DisburseDirectly(request):
-
+    permission_classes = [TokenHasReadWriteScope, IsAdminUser]
     serializer = DisburseSerializer(data=request.data)
     if serializer.is_valid():
         item = Item.objects.get(pk=serializer.data.get('item_id'))

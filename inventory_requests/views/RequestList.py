@@ -1,13 +1,13 @@
 from rest_framework import filters
 from rest_framework import generics
 from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
-
+from inventoryProject.permissions import IsAdminOrReadOnly
 from inventory_requests.models import Request
 from inventory_requests.serializers.RequestSerializer import RequestSerializer
 
 
 class RequestList(generics.ListCreateAPIView):
-    permission_classes = [TokenHasReadWriteScope]
+    permission_classes = [TokenHasReadWriteScope, IsAdminOrReadOnly]
     serializer_class = RequestSerializer
     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
     filter_fields = ('owner__username', 'item__name', 'status', 'quantity')

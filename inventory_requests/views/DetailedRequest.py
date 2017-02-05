@@ -1,4 +1,7 @@
 from django.http import Http404
+from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
+
+from inventoryProject.permissions import IsAdminOrReadOnly
 from inventory_requests.models import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,6 +9,7 @@ from rest_framework.views import APIView
 from inventory_requests.serializers import RequestSerializer
 
 class ViewDetailedRequest(APIView):
+    permission_classes = [TokenHasReadWriteScope, IsAdminOrReadOnly]
     def get_object(self, pk):
         try:
             return Request.objects.get(pk=pk)
