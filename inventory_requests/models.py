@@ -27,7 +27,6 @@ class Request(models.Model):
 
     @receiver(pre_delete, sender=Item, dispatch_uid='item_got_deleted')
     def item_got_deleted(sender, instance, using, **kwargs):
-        print('test the cases')
         requests = Request.objects.filter(item=instance)
         for request in requests:
             request.admin_comment = instance.name + "has been deleted by admin"
