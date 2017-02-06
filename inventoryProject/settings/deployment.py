@@ -66,6 +66,14 @@ CORS_ORIGIN_WHITELIST = (
     'localhost:3000'
 )
 
+ALLOWED_HOSTS = [
+    'asap-production.colab.duke.edu',
+    'asap-test.colab.duke.edu',
+    'kipcoonley.com',
+    'colab-sbx-86.oit.duke.edu',
+    'localhost:3000'
+]
+
 CORS_ALLOW_METHODS = (
     'DELETE',
     'GET',
