@@ -35,7 +35,7 @@ ALLOWED_HOSTS = [
     '.asap-test.colab.duke.edu',
     '.kipcoonley.com',
     '.colab-sbx-86.oit.duke.edu',
-    '.localhost:3000'
+    '.localhost.*'
 ]
 
 # Application definition
