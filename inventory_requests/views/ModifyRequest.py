@@ -24,10 +24,16 @@ class ApproveRequest(APIView):
        request_to_approve = get_object(pk)
        if modify_request_logic.can_approve_deny_cancel_request(request_to_approve, "approved"):
            request_to_approve.status = "approved"
+           if (request_to_approve.admin_comment is not None):
+               request.data[
+                   'admin_comment'] = request_to_approve.admin_comment + " approval reason is : " + request.data.get(
+                   'admin_comment')
+           else:
+               request.data['admin_comment'] = "approval reason is : " + request.data.get('admin_comment')
            serializer = StatusSerializer.StatusSerializer(request_to_approve, data=request.data)
            if serializer.is_valid():
                LoggerUtility.log_as_system(ActionEnum.REQUEST_APPROVED, "Request (ID: " + str(request_to_approve.id) + ") Approved")
-               serializer.save(admin=request.user, admin_timestamp=datetime.now(), admin_comment=request.data.get('admin_comment'))
+               serializer.save(admin=request.user, admin_timestamp=datetime.now())
                modify_request_logic.approve_request(request_to_approve)
 
                return Response(serializer.data)
@@ -41,6 +47,7 @@ class CancelRequest(APIView):
         request_to_cancel = get_object(pk)
         if modify_request_logic.can_approve_deny_cancel_request(request_to_cancel, "cancelled"):
             request_to_cancel.status = "cancelled"
+            #reason is guaranteed to not be null since it is required in a request
             request.data['reason'] = request_to_cancel.reason + " cancellation reason is : " + request.data.get('reason')
             serializer = CancelSerializer.CancelSerializer(request_to_cancel, data=request.data)
             if serializer.is_valid():
@@ -58,11 +65,15 @@ class DenyRequest(APIView):
         request_to_deny = get_object(pk)
         if modify_request_logic.can_approve_deny_cancel_request(request_to_deny, "denied"):
             request_to_deny.status = "denied"
-            request.data['admin_comment'] = request_to_deny.admin_comment + " denial reason is : " + request.data.get('admin_comment')
+            if (request_to_deny.admin_comment is not None):
+                request.data['admin_comment'] = request_to_deny.admin_comment + " denial reason is : " + request.data.get('admin_comment')
+            else:
+                request.data['admin_comment'] = "denial reason is : " + request.data.get('admin_comment')
             serializer = StatusSerializer.StatusSerializer(request_to_deny, data=request.data)
             if serializer.is_valid():
                 LoggerUtility.log_as_system(ActionEnum.REQUEST_DENIED, "Request (ID: " + str(request_to_deny.id) + ") Denied")
-                serializer.save()
+                #not sure if i need to save admin_comment here since it is already being saved
+                serializer.save(admin=request.user, admin_timestamp=datetime.now())
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:

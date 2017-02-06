@@ -37,7 +37,8 @@ def setup_logging():
 #this function tests if the JSON representation of a request (either returned from a get request
 def equal_request(test_client, request_json, request_id):
     request = Request.objects.get(pk=request_id)
-    test_client.assertEqual(request_json.get('owner'), request.owner.id)
+    test_client.assertEqual(request_json.get('owner'), request.owner.id) if type(request_json.get('owner')) is int \
+        else test_client.assertEqual(request_json.get('owner').get('id'), request.owner.id)
     test_client.assertEqual(request_json.get('status'), request.status)
     test_client.assertEqual(request_json.get('item').get('id'), request.item.id)
     test_client.assertEqual(request_json.get('item').get('name'), request.item.name)
@@ -46,7 +47,8 @@ def equal_request(test_client, request_json, request_id):
     test_client.assertEqual(request_json.get('reason'), request.reason)
     test_client.assertEqual(request_json.get('admin_comment'), request.admin_comment)
     if request_json.get('admin') is not None:
-        test_client.assertEqual(request_json.get('admin'), request.admin.id)
+        test_client.assertEqual(request_json.get('admin'), request.admin.id) if type(request_json.get('admin')) is int \
+            else test_client.assertEqual(request_json.get('admin').get('id'), request.admin.id)
 
 def equal_after_disburse(test_client, disburse_json, item_id, original_item_quantity):
     item = Item.objects.get(pk=item_id)
@@ -180,6 +182,7 @@ class PatchRequestTestCases(APITestCase):
         data['item'] = {'id': item_with_one_tag.id, 'name': item_with_one_tag.name, 'quantity':item_with_one_tag.quantity - request_to_approve.quantity}
         data['quantity'] = request_to_approve.quantity
         data['reason'] = request_to_approve.reason
+        data['admin_comment'] = "approval reason is : " + data.get('admin_comment')
         equal_request(self, data, json_request.get('id'))
 
     def test_deny_request(self):
