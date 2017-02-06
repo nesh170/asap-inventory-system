@@ -66,14 +66,18 @@ CORS_ORIGIN_WHITELIST = (
     'asap-production.colab.duke.edu',
     'asap-test.colab.duke.edu',
     'kipcoonley.com',
-    'colab-sbx-86.oit.duke.edu'
+    'colab-sbx-86.oit.duke.edu',
+    'localhost:3000'
 )
 
-CORS_ORIGIN_REGEX_WHITELIST = (
-    r'^https?://localhost.*$',
-    r'^localhost.*$',
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 )
-
 
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
