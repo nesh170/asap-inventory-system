@@ -5,6 +5,12 @@ from inventory_logger.utility.logger import LoggerUtility
 from items.models import Item, Tag
 
 
+class UniqueItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Item
+        fields = ('name', )
+
+
 class NestedTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
