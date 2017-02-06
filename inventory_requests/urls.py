@@ -11,6 +11,6 @@ urlpatterns = [
     url(r'^cancel/(?P<pk>[0-9]+)/$', CancelRequest.as_view(), name='cancel-request'),
     url(r'^deny/(?P<pk>[0-9]+)/$', DenyRequest.as_view(), name='deny-request'),
     url(r'^disburse/$', DisburseDirectly, name='disburse'),
-    url(r'^$/', RequestList.as_view(), name='requests-list'),
+    url(r'^$', RequestList.as_view(), name='requests-list'),
 
 ]
