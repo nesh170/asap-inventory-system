@@ -1,4 +1,7 @@
 from rest_framework import serializers
+
+from inventory_logger.action_enum import ActionEnum
+from inventory_logger.utility.logger import LoggerUtility
 from inventory_requests.models import Request
 from items.models import Item
 
@@ -22,6 +25,7 @@ class RequestSerializer(serializers.ModelSerializer):
         item = Item.objects.get(pk=item_id)
         user = self.context['request'].user
         request = Request.objects.create(item=item, owner=user, **validated_data)
+        LoggerUtility.log_as_system(ActionEnum.REQUEST_CREATED, "Request (ID: " + str(request.id) + ") Created")
         return request
 
     def update(self, instance, validated_data):
