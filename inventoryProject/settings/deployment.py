@@ -27,7 +27,11 @@ except IOError as e:
     SECRET_KEY = os.environ['SECRET_KEY']
 
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
+
 ALLOWED_HOSTS = ['*']
+
 
 # Application definition
 
@@ -63,7 +67,7 @@ CORS_ORIGIN_WHITELIST = (
     'asap-test.colab.duke.edu',
     'kipcoonley.com',
     'colab-sbx-86.oit.duke.edu',
-    'localhost:3000'
+    'http://localhost:3000'
 )
 
 CORS_ALLOW_METHODS = (
