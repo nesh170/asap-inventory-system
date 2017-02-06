@@ -33,8 +33,8 @@ class Request(models.Model):
             request.admin_timestamp = datetime.datetime.now()
             if request.status == 'outstanding':
                 request.status = 'denied'
-                LoggerUtility.log_as_system(ActionEnum.REQUEST_DENIED, 'Request:' + request.id + ' denied due to item'
-                                            + instance.name + ' deletion')
+                LoggerUtility.log_as_system(ActionEnum.REQUEST_DENIED, 'Request:' + str(request.id) +
+                                            ' denied due to item ' + str(instance.name) + " deletion")
             request.save()
 
 
