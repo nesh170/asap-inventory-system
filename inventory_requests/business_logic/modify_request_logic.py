@@ -6,9 +6,9 @@ def get_item(pk):
         except Item.DoesNotExist:
             raise Http404
 
-def can_approve_deny_cancel_request(request_to_modify):
+def can_approve_deny_cancel_request(request_to_modify, modificationType):
         item = get_item(request_to_modify.item.id)
-        if (item.quantity - request_to_modify.quantity < 0):
+        if (item.quantity - request_to_modify.quantity < 0 and modificationType=='approved'):
             return False
         return request_to_modify.status == "outstanding"
 

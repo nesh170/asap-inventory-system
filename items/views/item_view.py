@@ -9,7 +9,6 @@ from items.logic.filter_item_logic import FilterItemLogic
 from items.models import Item
 from items.serializers.item_serializer import ItemSerializer
 
-
 class ItemList(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
     serializer_class = ItemSerializer

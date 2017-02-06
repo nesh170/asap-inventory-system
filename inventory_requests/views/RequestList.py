@@ -7,7 +7,7 @@ from inventory_requests.serializers.RequestSerializer import RequestSerializer
 
 
 class RequestList(generics.ListCreateAPIView):
-    permission_classes = [TokenHasReadWriteScope, IsAdminOrReadOnly]
+    permission_classes = [TokenHasReadWriteScope]
     serializer_class = RequestSerializer
     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
     filter_fields = ('owner__username', 'status', 'quantity')
