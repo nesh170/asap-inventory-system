@@ -26,8 +26,14 @@ try:
 except IOError as e:
     SECRET_KEY = os.environ['SECRET_KEY']
 
-ALLOWED_HOSTS = []
 
+ALLOWED_HOSTS = [
+    '.asap-production.colab.duke.edu',
+    '.asap-test.colab.duke.edu',
+    '.kipcoonley.com',
+    '.colab-sbx-86.oit.duke.edu',
+    '.localhost:3000'
+]
 
 # Application definition
 
@@ -65,14 +71,6 @@ CORS_ORIGIN_WHITELIST = (
     'colab-sbx-86.oit.duke.edu',
     'localhost:3000'
 )
-
-ALLOWED_HOSTS = [
-    'asap-production.colab.duke.edu',
-    'asap-test.colab.duke.edu',
-    'kipcoonley.com',
-    'colab-sbx-86.oit.duke.edu',
-    'localhost:3000'
-]
 
 CORS_ALLOW_METHODS = (
     'DELETE',
