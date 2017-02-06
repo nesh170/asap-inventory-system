@@ -1,8 +1,10 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
 from inventory_requests.models import Request
+from inventory_user.serializers.user_serializer import UserSerializer
 from items.models import Item
 
 
@@ -11,10 +13,12 @@ class NestedItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ('id', 'name', 'quantity')
 
-
 class RequestSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(many=False, allow_null=False, read_only=True)
     item_id = serializers.IntegerField(required=True)
+    admin = UserSerializer(read_only=True, many=False)
+    owner = UserSerializer(read_only=True, many=False)
+    extra_kwargs = {'item_id': {'write_only': True}}
 
     class Meta:
         model = Request
