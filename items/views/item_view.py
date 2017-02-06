@@ -5,9 +5,11 @@ from rest_framework import generics
 from inventoryProject.permissions import IsAdminOrReadOnly
 from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
+from items.custom_pagination import LargeResultsSetPagination
 from items.logic.filter_item_logic import FilterItemLogic
 from items.models import Item
-from items.serializers.item_serializer import ItemSerializer
+from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializer
+
 
 class ItemList(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
@@ -36,3 +38,13 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
         return_value = self.destroy(request, *args, **kwargs)
         LoggerUtility.log_as_system(ActionEnum.ITEM_DESTROYED, request.user.username + " DESTROYED " + item_name)
         return return_value
+
+
+class UniqueItemList(generics.ListAPIView):
+    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    queryset = Item.objects.all().values('name').distinct()
+    serializer_class = UniqueItemSerializer
+    pagination_class = LargeResultsSetPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name', )
+
