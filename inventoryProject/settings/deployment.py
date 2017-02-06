@@ -27,13 +27,7 @@ except IOError as e:
     SECRET_KEY = os.environ['SECRET_KEY']
 
 
-ALLOWED_HOSTS = [
-    '.asap-production.colab.duke.edu',
-    '.asap-test.colab.duke.edu',
-    '.kipcoonley.com',
-    '.colab-sbx-86.oit.duke.edu',
-    '.localhost:3000'
-]
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 

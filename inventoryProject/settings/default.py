@@ -30,13 +30,7 @@ except IOError as e:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    '.asap-production.colab.duke.edu',
-    '.asap-test.colab.duke.edu',
-    '.kipcoonley.com',
-    '.colab-sbx-86.oit.duke.edu',
-    '.localhost.*'
-]
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
