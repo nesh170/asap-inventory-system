@@ -74,6 +74,14 @@ CORS_ORIGIN_REGEX_WHITELIST = (
     r'^localhost.*$',
 )
 
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+)
 
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
