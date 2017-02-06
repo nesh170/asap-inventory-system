@@ -7,7 +7,6 @@ from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
 from items.models import Item
 
-
 class Request(models.Model):
     owner = models.ForeignKey('auth.User', related_name='owner', on_delete=models.CASCADE, null=True)
     status = models.CharField(max_length=16, choices=[
@@ -36,7 +35,6 @@ class Request(models.Model):
                 LoggerUtility.log_as_system(ActionEnum.REQUEST_DENIED, 'Request:' + str(request.id) +
                                             ' denied due to item ' + str(instance.name) + " deletion")
             request.save()
-
 
 
 

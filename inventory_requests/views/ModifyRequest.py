@@ -22,7 +22,7 @@ class ApproveRequest(APIView):
    permission_classes = [TokenHasReadWriteScope, IsAdminUser]
    def patch(self, request, pk, format=None):
        request_to_approve = get_object(pk)
-       if modify_request_logic.can_approve_deny_cancel_request(request_to_approve):
+       if modify_request_logic.can_approve_deny_cancel_request(request_to_approve, "approved"):
            request_to_approve.status = "approved"
            serializer = StatusSerializer.StatusSerializer(request_to_approve, data=request.data)
            if serializer.is_valid():
@@ -39,7 +39,7 @@ class CancelRequest(APIView):
     permission_classes = [TokenHasReadWriteScope, IsAuthenticated]
     def patch(self, request, pk, format=None):
         request_to_cancel = get_object(pk)
-        if modify_request_logic.can_approve_deny_cancel_request(request_to_cancel):
+        if modify_request_logic.can_approve_deny_cancel_request(request_to_cancel, "cancelled"):
             request_to_cancel.status = "cancelled"
             request.data['reason'] = request_to_cancel.reason + " cancellation reason is : " + request.data.get('reason')
             serializer = CancelSerializer.CancelSerializer(request_to_cancel, data=request.data)
@@ -56,7 +56,7 @@ class DenyRequest(APIView):
     permission_classes = [TokenHasReadWriteScope, IsAdminUser]
     def patch(self, request, pk, format=None):
         request_to_deny = get_object(pk)
-        if modify_request_logic.can_approve_deny_cancel_request(request_to_deny):
+        if modify_request_logic.can_approve_deny_cancel_request(request_to_deny, "denied"):
             request_to_deny.status = "denied"
             request.data['admin_comment'] = request_to_deny.admin_comment + " denial reason is : " + request.data.get('admin_comment')
             serializer = StatusSerializer.StatusSerializer(request_to_deny, data=request.data)
