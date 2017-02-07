@@ -25,11 +25,17 @@ class ApproveRequest(APIView):
        if modify_request_logic.can_approve_deny_cancel_request(request_to_approve, "approved"):
            request_to_approve.status = "approved"
            if (request_to_approve.admin_comment is not None):
-               request.data[
-                   'admin_comment'] = request_to_approve.admin_comment + " approval reason is : " + request.data.get(
-                   'admin_comment')
+               if (request.data.get('admin_comment') is not None):
+                   request.data[
+                       'admin_comment'] = request_to_approve.admin_comment + " approval reason is : " + request.data.get(
+                       'admin_comment')
+               else:
+                   request.data['admin_comment'] = request_to_approve.admin_comment;
            else:
-               request.data['admin_comment'] = "approval reason is : " + request.data.get('admin_comment')
+               if (request.data.get('admin_comment') is not None):
+                   request.data['admin_comment'] = "approval reason is : " + request.data.get('admin_comment')
+               else:
+                   request.data['admin_comment'] = None;
            serializer = StatusSerializer.StatusSerializer(request_to_approve, data=request.data)
            if serializer.is_valid():
                LoggerUtility.log_as_system(ActionEnum.REQUEST_APPROVED, "Request (ID: " + str(request_to_approve.id) + ") Approved")
@@ -48,7 +54,10 @@ class CancelRequest(APIView):
         if modify_request_logic.can_approve_deny_cancel_request(request_to_cancel, "cancelled"):
             request_to_cancel.status = "cancelled"
             #reason is guaranteed to not be null since it is required in a request
-            request.data['reason'] = request_to_cancel.reason + " cancellation reason is : " + request.data.get('reason')
+            if (request.data.get('reason') is not None):
+                request.data['reason'] = request_to_cancel.reason + " cancellation reason is : " + request.data.get('reason')
+            else:
+                request.data['reason'] = request_to_cancel.reason;
             serializer = CancelSerializer.CancelSerializer(request_to_cancel, data=request.data)
             if serializer.is_valid():
                 LoggerUtility.log_as_system(ActionEnum.REQUEST_CANCELLED, "Request (ID: " + str(request_to_cancel.id) + ") Cancelled")
@@ -66,9 +75,15 @@ class DenyRequest(APIView):
         if modify_request_logic.can_approve_deny_cancel_request(request_to_deny, "denied"):
             request_to_deny.status = "denied"
             if (request_to_deny.admin_comment is not None):
-                request.data['admin_comment'] = request_to_deny.admin_comment + " denial reason is : " + request.data.get('admin_comment')
+                if (request.data.get('admin_comment') is not None):
+                    request.data['admin_comment'] = request_to_deny.admin_comment + " denial reason is : " + request.data.get('admin_comment')
+                else:
+                    request.data['admin_comment'] = request_to_deny.admin_comment;
             else:
-                request.data['admin_comment'] = "denial reason is : " + request.data.get('admin_comment')
+                if (request.data.get('admin_comment') is not None):
+                    request.data['admin_comment'] = "denial reason is : " + request.data.get('admin_comment')
+                else:
+                    request.data['admin_comment'] = None;
             serializer = StatusSerializer.StatusSerializer(request_to_deny, data=request.data)
             if serializer.is_valid():
                 LoggerUtility.log_as_system(ActionEnum.REQUEST_DENIED, "Request (ID: " + str(request_to_deny.id) + ") Denied")
