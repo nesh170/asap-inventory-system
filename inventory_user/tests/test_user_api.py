@@ -2,6 +2,7 @@ import json
 from datetime import timezone, datetime, timedelta
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from oauth2_provider.admin import Application
 from oauth2_provider.models import AccessToken
@@ -65,6 +66,29 @@ class GetCreateUserAPI(APITestCase):
         json_user_list = json.loads(str(response.content, 'utf-8')).get('results')
         for json_user in json_user_list:
             equal_user(self, json_user.get('id'), json_user)
+
+    def test_get_detailed_user(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        users = User.objects.all()
+        for user in users:
+            url = reverse('user-detail', kwargs={'pk': user.id})
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            json_user = json.loads(str(response.content, 'utf-8'))
+            equal_user(self, json_user.get('id'), json_user)
+
+    def test_delete_user(self):
+        user = User.objects.create_user(username='testlololol',password='firestorm123123',email='git@gitkasld.com')
+        url = reverse('user-detail', kwargs={'pk': user.id})
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        delete_success = False
+        try:
+            User.objects.get(pk=user.id)
+        except ObjectDoesNotExist:
+            delete_success = True
+        self.assertEqual(delete_success, True)
 
     def test_get_current_user(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)

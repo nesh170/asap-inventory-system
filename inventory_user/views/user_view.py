@@ -14,6 +14,12 @@ class InventoryUserList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
 
 
+class InventoryUser(generics.RetrieveDestroyAPIView):
+    permission_classes = [IsAdminUser, TokenHasReadWriteScope]
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
 class InventoryCurrentUser(generics.RetrieveAPIView):
     permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
     queryset = User.objects.all()
