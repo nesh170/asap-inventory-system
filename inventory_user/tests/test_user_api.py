@@ -97,3 +97,13 @@ class GetCreateUserAPI(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         json_user = json.loads(str(response.content, 'utf-8'))
         equal_user(self, json_user.get('id'), json_user)
+
+    def test_get_unique_user_list(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('unique-user-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_user_list = json.loads(str(response.content, 'utf-8'))['results']
+        user_list = [user.get('username') for user in json_user_list]
+        correct_user_list = [user_name for user_name in User.objects.all().values_list('username', flat=True).distinct()]
+        self.assertEqual(user_list, correct_user_list)
