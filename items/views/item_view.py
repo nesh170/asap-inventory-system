@@ -42,7 +42,7 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class UniqueItemList(generics.ListAPIView):
     permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
-    queryset = Item.objects.all().values('name').distinct()
+    queryset = Item.objects.all().values('id', 'name').distinct()
     serializer_class = UniqueItemSerializer
     pagination_class = LargeResultsSetPagination
     filter_backends = (filters.SearchFilter,)
