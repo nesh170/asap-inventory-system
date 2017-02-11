@@ -9,6 +9,7 @@ class Disbursement(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='disbursed')
     quantity = models.PositiveIntegerField()
     timestamp = models.DateTimeField(auto_now=True)
+    comment = models.TextField(null=True, blank=True)
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receiver')
 
     def __str__(self):

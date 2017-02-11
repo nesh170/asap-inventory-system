@@ -78,8 +78,8 @@ class GetItemTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         json_item_list = json.loads(str(response.content, 'utf-8'))['results']
-        item_list = [item.get('name') for item in json_item_list]
-        correct_item_list = [item_name for item_name in Item.objects.all().values_list('name', flat=True).distinct()]
+        item_list = set([item.get('name') for item in json_item_list])
+        correct_item_list = set([item_name for item_name in Item.objects.all().values_list('name', flat=True).distinct()])
         self.assertEqual(item_list, correct_item_list)
 
 

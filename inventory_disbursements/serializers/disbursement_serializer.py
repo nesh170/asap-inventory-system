@@ -28,7 +28,7 @@ class DisbursementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Disbursement
-        fields = ('id', 'disburser', 'item', 'quantity', 'timestamp', 'receiver', 'item_id', 'receiver_id', )
+        fields = ('id', 'disburser', 'item', 'quantity', 'comment', 'timestamp', 'receiver', 'item_id', 'receiver_id', )
         extra_kwargs = {'item_id': {'write_only': True},
                         'receiver_id': {'write_only': True}}
 

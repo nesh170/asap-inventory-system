@@ -21,7 +21,7 @@ class DisbursementList(generics.ListCreateAPIView):
         item_id = serializer.validated_data.get('item_id')
         item = Item.objects.get(id=item_id)
         if quantity > item.quantity:
-            error_message = '{quantity} is greater than {name} avaliable, {item_quantity}'.format
+            error_message = '{quantity} is greater than {name} available, {item_quantity}'.format
             raise ValidationError(detail=error_message(quantity=quantity,name=item.name,item_quantity=item.quantity))
         serializer.save()
         item.quantity = item.quantity - quantity
