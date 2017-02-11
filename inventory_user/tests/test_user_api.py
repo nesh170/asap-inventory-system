@@ -98,9 +98,9 @@ class GetCreateUserAPI(APITestCase):
         json_user = json.loads(str(response.content, 'utf-8'))
         equal_user(self, json_user.get('id'), json_user)
 
-    def test_get_unique_user_list(self):
+    def test_get_large_user_list(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        url = reverse('unique-user-list')
+        url = reverse('large-user-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         json_user_list = json.loads(str(response.content, 'utf-8'))['results']

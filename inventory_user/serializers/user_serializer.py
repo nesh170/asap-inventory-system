@@ -20,8 +20,8 @@ class UserSerializer(serializers.ModelSerializer):
             return User.objects.create_user(username=username, password=password, email=email)
 
 
-class UniqueUserSerializer(serializers.ModelSerializer):
+class LargeUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', )
+        fields = ('id', 'username',)
 
