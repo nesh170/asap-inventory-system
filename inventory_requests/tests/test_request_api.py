@@ -229,33 +229,3 @@ class PatchRequestTestCases(APITestCase):
         data['reason'] = request_to_cancel.reason + ' cancellation reason is : ' + data.get('reason')
         data['admin_comment'] = "this is an admin comment"
         equal_request(self, data, json_request.get('id'))
-class DisburseRequestTestCase(APITestCase):
-    def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
-        self.application = Application(
-            name="Test Application",
-            redirect_uris="http://localhost",
-            user=self.admin,
-            client_type=Application.CLIENT_CONFIDENTIAL,
-            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
-        )
-        self.application.save()
-        self.tok = AccessToken.objects.create(
-            user=self.admin, token='1234567890',
-            application=self.application, scope='read write',
-            expires=datetime.now(timezone.utc) + timedelta(days=30)
-        )
-        oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        setup_logging()
-
-
-    def test_disburse(self):
-        self.client.force_authenticate(user=self.admin, token=self.tok)
-        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                      description="oscilloscope", location="hudson 116")
-        item_with_one_tag.tags.create(tag="test")
-        url = reverse('disburse')
-        data = {'item_id': item_with_one_tag.id, 'quantity': 2, 'receiver': 'ankit', 'disburse_comment': 'testing disburse'}
-        response = self.client.post(url, data, format='json')
-        json_disburse_response = json.loads(str(response.content, 'utf-8'))
-        equal_after_disburse(self, data, json_disburse_response.get('item_id'), item_with_one_tag.quantity)
