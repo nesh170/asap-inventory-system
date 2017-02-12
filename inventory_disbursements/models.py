@@ -6,7 +6,7 @@ from items.models import Item
 
 class Disbursement(models.Model):
     disburser = models.ForeignKey(User, on_delete=models.CASCADE, related_name='disburser')
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='disbursed')
+    item = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, related_name='disbursed')
     quantity = models.PositiveIntegerField()
     timestamp = models.DateTimeField(auto_now=True)
     comment = models.TextField(null=True, blank=True)
