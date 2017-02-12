@@ -8,7 +8,7 @@ from items.models import Item, Tag
 class UniqueItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ('name', )
+        fields = ('id', 'name')
 
 
 class NestedTagSerializer(serializers.ModelSerializer):
