@@ -32,8 +32,6 @@ def setup_logging():
     Action.objects.create(color="4", tag=ActionEnum.REQUEST_CREATED.value)
     Action.objects.create(color="5", tag=ActionEnum.DISBURSED.value)
 
-
-
 #this function tests if the JSON representation of a request (either returned from a get request
 def equal_request(test_client, request_json, request_id):
     request = Request.objects.get(pk=request_id)
@@ -50,10 +48,7 @@ def equal_request(test_client, request_json, request_id):
         test_client.assertEqual(request_json.get('admin'), request.admin.id) if type(request_json.get('admin')) is int \
             else test_client.assertEqual(request_json.get('admin').get('id'), request.admin.id)
 
-def equal_after_disburse(test_client, disburse_json, item_id, original_item_quantity):
-    item = Item.objects.get(pk=item_id)
-    test_client.assertEqual(disburse_json.get('item_id'), item.id)
-    test_client.assertEqual(original_item_quantity - disburse_json.get('quantity'), item.quantity)
+
 class GetRequestTestCases(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -93,6 +88,7 @@ class GetRequestTestCases(APITestCase):
         # for each request returned by GET request, all equal_request on each one to verify the JSON representation
         # contains the same information as the information in the database
         [equal_request(self, json_request, json_request.get('id')) for json_request in json_request_list]
+
     def test_get_detailed_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         for request_id in Request.objects.values_list('id', flat=True):
@@ -101,6 +97,7 @@ class GetRequestTestCases(APITestCase):
             response = self.client.get(url)
             #compare the JSON response received from the GET request to what is in database
             equal_request(self, json.loads(str(response.content, 'utf-8')), request_id)
+
     def test_get_requests_user(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('requests-list')
@@ -108,6 +105,7 @@ class GetRequestTestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         json_request_list = json.loads(str(response.content, 'utf-8'))['results']
         [equal_request(self, json_request, json_request.get('id')) for json_request in json_request_list]
+
 class PostRequestTestCases(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -185,6 +183,31 @@ class PatchRequestTestCases(APITestCase):
         data['admin_comment'] = "approval reason is : " + data.get('admin_comment')
         equal_request(self, data, json_request.get('id'))
 
+    def test_approve_request_fail_quantity(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        request_to_approve = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
+                                                   quantity=4, reason="test request")
+        data = {'id': request_to_approve.id, 'admin_comment': 'testing approve request'}
+        url = reverse('approve-request', kwargs={'pk': str(request_to_approve.id)})
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+    def test_approve_request_fail_status(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        request_to_approve = Request.objects.create(owner=self.admin, status="denied", item=item_with_one_tag,
+                                                   quantity=2, reason="test request")
+        data = {'id': request_to_approve.id, 'admin_comment': 'testing approve request'}
+        url = reverse('approve-request', kwargs={'pk': str(request_to_approve.id)})
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def test_deny_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
@@ -207,15 +230,42 @@ class PatchRequestTestCases(APITestCase):
         data['admin_comment'] = request_to_deny.admin_comment + ' denial reason is : ' + data.get('admin_comment')
         equal_request(self, data, json_request.get('id'))
 
+    def test_deny_request_fail(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        request_to_deny = Request.objects.create(owner=self.admin, status="cancelled", item=item_with_one_tag,
+                                                   quantity=2, reason="test request", admin_comment="this is an admin comment",
+                                                 admin=self.admin)
+        data = {'id': request_to_deny.id, 'admin_comment': 'testing deny request this should not work'}
+        url = reverse('deny-request', kwargs={'pk': str(request_to_deny.id)})
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_cancel_request_fail(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope", location="hudson 116")
+        item_with_one_tag.tags.create(tag="test")
+        request_to_cancel = Request.objects.create(owner=self.admin, status="approved", item=item_with_one_tag,
+                                                 quantity=2, reason="test request",
+                                                 admin_comment="this is an admin comment",
+                                                 admin=self.admin)
+        data = {'id': request_to_cancel.id, 'reason': 'testing cancellation of request, should not work'}
+        url = reverse('cancel-request', kwargs={'pk': str(request_to_cancel.id)})
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def test_cancel_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope", location="hudson 116")
         item_with_one_tag.tags.create(tag="test")
         request_to_cancel = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
-                                                 quantity=2, reason="test request",
-                                                 admin_comment="this is an admin comment",
-                                                 admin=self.admin)
+                                                   quantity=2, reason="test request",
+                                                   admin_comment="this is an admin comment",
+                                                   admin=self.admin)
         data = {'id': request_to_cancel.id, 'reason': 'testing cancellation of request'}
         url = reverse('cancel-request', kwargs={'pk': str(request_to_cancel.id)})
         response = self.client.patch(url, data, format='json')
