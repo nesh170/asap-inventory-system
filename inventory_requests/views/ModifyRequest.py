@@ -13,6 +13,42 @@ from datetime import datetime
 from inventory_logger.utility.logger import LoggerUtility
 from inventory_logger.action_enum import ActionEnum
 
+
+def approveDenyRequest(self, request, pk, request_type):
+    request_to_approve_deny = get_object(pk)
+    if (request_type == "approved"):
+        type_for_comment = "approval"
+        log_action = ActionEnum.REQUEST_APPROVED
+    else:
+        type_for_comment = "denial"
+        log_action = ActionEnum.REQUEST_DENIED
+    if modify_request_logic.can_approve_deny_cancel_request(request_to_approve_deny, request_type):
+        request_to_approve_deny.status = request_type
+        if (request_to_approve_deny.admin_comment is not None):
+            if (request.data.get('admin_comment') is not None):
+                request.data[
+                    'admin_comment'] = request_to_approve_deny.admin_comment + " " + type_for_comment + " reason is : " + request.data.get(
+                    'admin_comment')
+            else:
+                request.data['admin_comment'] = request_to_approve_deny.admin_comment;
+        else:
+            if (request.data.get('admin_comment') is not None):
+                request.data['admin_comment'] = type_for_comment + " reason is : " + request.data.get('admin_comment')
+            else:
+                request.data['admin_comment'] = None;
+        serializer = StatusSerializer.StatusSerializer(request_to_approve_deny, data=request.data)
+        if serializer.is_valid():
+            LoggerUtility.log_as_system(log_action,
+                                        "Request (ID: " + str(request_to_approve_deny.id) + ") " + request_type)
+            serializer.save(admin=request.user, admin_timestamp=datetime.now())
+            if request_type == "approved":
+                modify_request_logic.approve_request(request_to_approve_deny)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        raise MethodNotAllowed(self.patch, "Request cannot be " + request_type)
+
+
 def get_object(pk):
     try:
         return Request.objects.get(pk=pk)
@@ -21,31 +57,7 @@ def get_object(pk):
 class ApproveRequest(APIView):
    permission_classes = [TokenHasReadWriteScope, IsAdminUser]
    def patch(self, request, pk, format=None):
-       request_to_approve = get_object(pk)
-       if modify_request_logic.can_approve_deny_cancel_request(request_to_approve, "approved"):
-           request_to_approve.status = "approved"
-           if (request_to_approve.admin_comment is not None):
-               if (request.data.get('admin_comment') is not None):
-                   request.data[
-                       'admin_comment'] = request_to_approve.admin_comment + " approval reason is : " + request.data.get(
-                       'admin_comment')
-               else:
-                   request.data['admin_comment'] = request_to_approve.admin_comment;
-           else:
-               if (request.data.get('admin_comment') is not None):
-                   request.data['admin_comment'] = "approval reason is : " + request.data.get('admin_comment')
-               else:
-                   request.data['admin_comment'] = None;
-           serializer = StatusSerializer.StatusSerializer(request_to_approve, data=request.data)
-           if serializer.is_valid():
-               LoggerUtility.log_as_system(ActionEnum.REQUEST_APPROVED, "Request (ID: " + str(request_to_approve.id) + ") Approved")
-               serializer.save(admin=request.user, admin_timestamp=datetime.now())
-               modify_request_logic.approve_request(request_to_approve)
-
-               return Response(serializer.data)
-           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-       else:
-           raise MethodNotAllowed(self.patch, "Cannot approve request")
+       return approveDenyRequest(self, request, pk, "approved")
 
 class CancelRequest(APIView):
     permission_classes = [TokenHasReadWriteScope, IsAuthenticated]
@@ -71,25 +83,4 @@ class CancelRequest(APIView):
 class DenyRequest(APIView):
     permission_classes = [TokenHasReadWriteScope, IsAdminUser]
     def patch(self, request, pk, format=None):
-        request_to_deny = get_object(pk)
-        if modify_request_logic.can_approve_deny_cancel_request(request_to_deny, "denied"):
-            request_to_deny.status = "denied"
-            if (request_to_deny.admin_comment is not None):
-                if (request.data.get('admin_comment') is not None):
-                    request.data['admin_comment'] = request_to_deny.admin_comment + " denial reason is : " + request.data.get('admin_comment')
-                else:
-                    request.data['admin_comment'] = request_to_deny.admin_comment;
-            else:
-                if (request.data.get('admin_comment') is not None):
-                    request.data['admin_comment'] = "denial reason is : " + request.data.get('admin_comment')
-                else:
-                    request.data['admin_comment'] = None;
-            serializer = StatusSerializer.StatusSerializer(request_to_deny, data=request.data)
-            if serializer.is_valid():
-                LoggerUtility.log_as_system(ActionEnum.REQUEST_DENIED, "Request (ID: " + str(request_to_deny.id) + ") Denied")
-                #not sure if i need to save admin_comment here since it is already being saved
-                serializer.save(admin=request.user, admin_timestamp=datetime.now())
-                return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            raise MethodNotAllowed(self.patch, "Cannot deny request")
+        return approveDenyRequest(self, request, pk, "denied")
