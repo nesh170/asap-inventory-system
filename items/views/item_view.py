@@ -8,7 +8,7 @@ from inventory_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
 from items.logic.filter_item_logic import FilterItemLogic
 from items.models import Item
-from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializer
+from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializer, DetailedItemSerializer
 
 
 class ItemList(generics.ListCreateAPIView):
@@ -31,7 +31,7 @@ class ItemList(generics.ListCreateAPIView):
 class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
     queryset = Item.objects.all()
-    serializer_class = ItemSerializer
+    serializer_class = DetailedItemSerializer
 
     def delete(self, request, *args, **kwargs):
         item_name = self.get_object().name

@@ -23,7 +23,6 @@ def equal_item(test_client, item_json, item_id):
     test_client.assertEqual(item_json.get('quantity'), item.quantity)
     test_client.assertEqual(item_json.get('model_number'), item.model_number)
     test_client.assertEqual(item_json.get('description'), item.description)
-    test_client.assertEqual(item_json.get('location'), item.location)
     if item_json.get('tags') is not None:
         test_client.assertEqual([tagItem['tag'] for tagItem in item_json.get('tags', [])],
                                 [tag_item.tag for tag_item in item.tags.all()])
@@ -48,7 +47,7 @@ class GetItemTestCase(APITestCase):
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
 
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=0, model_number="48979",
-                                                description="Jameco", location="hudson 116")
+                                                description="Jameco")
         item_with_one_tag.tags.create(tag="test")
         basic_item = Item.objects.create(name="Oscilloscope", quantity=3)
         Action.objects.create(color='1', tag='ITEM CREATED')
@@ -161,7 +160,7 @@ class UpdateItemTestCase(APITestCase):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse(viewname='item-detail', kwargs={'pk': self.item_id})
         data = {'name': 'Electrolytic Capacitor', 'quantity': 2, 'model_number': '4',
-                'description': 'lol', 'location': 'tom'}
+                'description': 'lol'}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         item = Item.objects.get(pk=json.loads(str(response.content, 'utf-8')).get('id'))
@@ -169,7 +168,6 @@ class UpdateItemTestCase(APITestCase):
         self.assertEqual(data.get('quantity'), item.quantity)
         self.assertEqual(data.get('model_number'), item.model_number)
         self.assertEqual(data.get('description'), item.description)
-        self.assertEqual(data.get('location'), item.location)
 
     def test_update_name(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
