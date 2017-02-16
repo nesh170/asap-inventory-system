@@ -279,4 +279,3 @@ class PatchRequestTestCases(APITestCase):
         data['reason'] = request_to_cancel.reason + ' cancellation reason is : ' + data.get('reason')
         data['admin_comment'] = "this is an admin comment"
         equal_request(self, data, json_request.get('id'))
-

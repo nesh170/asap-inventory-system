@@ -41,6 +41,3 @@ class ItemSerializer(serializers.ModelSerializer):
         LoggerUtility.log_as_system(ActionEnum.ITEM_CREATED, username + " Created New Item:" + item.__str__())
         return item
 
-
-
-
