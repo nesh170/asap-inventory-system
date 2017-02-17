@@ -1,10 +1,11 @@
 from django.conf.urls import url
 
-from inventory_user.views.user_view import InventoryUserList, InventoryCurrentUser, InventoryUser, LargeUserList
+from inventory_shopping_cart.views.ShoppingCartView import ShoppingCartList
+from inventory_shopping_cart.views.DetailedShoppingCart import ViewDetailedShoppingCart, ActiveShoppingCart
 
 urlpatterns = [
-    url(r'^$', InventoryUserList.as_view(), name='user-list'),
-    url(r'^large/$', LargeUserList.as_view(), name='large-user-list'),
-    url(r'^current/$', InventoryCurrentUser.as_view(), name='user-current'),
-    url(r'^(?P<pk>[0-9]+)$', InventoryUser.as_view(), name='user-detail'),
+    url(r'^$', ShoppingCartList.as_view(), name='shopping-cart-list'),
+    url(r'^detailed/(?P<pk>[0-9]+)/$', ViewDetailedShoppingCart.as_view(), name='detailed-shopping-cart'),
+    url(r'^active/$', ActiveShoppingCart.as_view(), name='active-cart'),
+
 ]
