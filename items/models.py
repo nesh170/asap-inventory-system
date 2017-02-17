@@ -25,7 +25,7 @@ class Field(models.Model):
     name = models.CharField(max_length=100, unique=True)
     type = models.CharField(max_length=16, choices=[
         ('short_text', 'short-form text'), ('long_text', 'long-form text'),
-        ('int', 'integer'), ('float', 'floating-point number')], default='st')
+        ('int', 'integer'), ('float', 'floating-point number')])
     private = models.BooleanField(default=False)
 
     def __str__(self):

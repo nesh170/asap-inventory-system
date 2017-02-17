@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'inventory_logger.apps.InventoryLoggerConfig',
     'inventory_user.apps.InventoryUserConfig',
     'inventory_disbursements.apps.InventoryDisbursementsConfig',
+    'items.fixtures',
     'oauth2_provider',
     'corsheaders',
 ]
