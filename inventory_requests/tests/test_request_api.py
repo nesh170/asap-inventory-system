@@ -68,7 +68,7 @@ class GetRequestTestCases(APITestCase):
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
         setup_logging()
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=0, model_number="48979",
-                                                description="Jameco", location="hudson 116")
+                                                description="Jameco")
         item_with_one_tag.tags.create(tag="test")
 
         request_to_create = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag, quantity=2, reason="test request",
@@ -128,7 +128,7 @@ class PostRequestTestCases(APITestCase):
     def test_create_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         item_id = item_with_one_tag.id
         url = reverse('requests-list')
@@ -166,7 +166,7 @@ class PatchRequestTestCases(APITestCase):
     def test_approve_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         request_to_approve = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
                                                    quantity=2, reason="test request")
@@ -186,7 +186,7 @@ class PatchRequestTestCases(APITestCase):
     def test_approve_request_fail_quantity(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         request_to_approve = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
                                                    quantity=4, reason="test request")
@@ -199,7 +199,7 @@ class PatchRequestTestCases(APITestCase):
     def test_approve_request_fail_status(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         request_to_approve = Request.objects.create(owner=self.admin, status="denied", item=item_with_one_tag,
                                                    quantity=2, reason="test request")
@@ -211,7 +211,7 @@ class PatchRequestTestCases(APITestCase):
     def test_deny_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         request_to_deny = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
                                                    quantity=2, reason="test request", admin_comment="this is an admin comment",
@@ -233,7 +233,7 @@ class PatchRequestTestCases(APITestCase):
     def test_deny_request_fail(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         request_to_deny = Request.objects.create(owner=self.admin, status="cancelled", item=item_with_one_tag,
                                                    quantity=2, reason="test request", admin_comment="this is an admin comment",
@@ -246,7 +246,7 @@ class PatchRequestTestCases(APITestCase):
     def test_cancel_request_fail(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         request_to_cancel = Request.objects.create(owner=self.admin, status="approved", item=item_with_one_tag,
                                                  quantity=2, reason="test request",
@@ -260,7 +260,7 @@ class PatchRequestTestCases(APITestCase):
     def test_cancel_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope", location="hudson 116")
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
         request_to_cancel = Request.objects.create(owner=self.admin, status="outstanding", item=item_with_one_tag,
                                                    quantity=2, reason="test request",

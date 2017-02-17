@@ -1,6 +1,7 @@
 import json
 from datetime import timezone, datetime, timedelta
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from oauth2_provider.admin import Application
@@ -8,7 +9,7 @@ from oauth2_provider.models import AccessToken
 from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.contrib.auth.models import User
+
 from items.models import Item, Tag
 
 USERNAME = 'test'

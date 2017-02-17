@@ -2,7 +2,15 @@ from rest_framework import serializers
 
 from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
-from items.models import Item, Tag
+from items.factory.field_factory import FieldFactory
+from items.models import Item, Tag, Field
+from items.serializers.tag_serializer import NestedTagSerializer
+
+
+def create_fields(item):
+    factory = FieldFactory()
+    fields = Field.objects.all()
+    [factory.create_field(field, item) for field in fields]
 
 
 class UniqueItemSerializer(serializers.ModelSerializer):
@@ -11,18 +19,12 @@ class UniqueItemSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
-class NestedTagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ('id', 'tag')
-
-
 class ItemSerializer(serializers.ModelSerializer):
     tags = NestedTagSerializer(many=True, allow_null=True, required=False)
 
     class Meta:
         model = Item
-        fields = ('id', 'name', 'quantity', 'model_number', 'description', 'location', 'tags')
+        fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags')
 
     def create(self, validated_data):
         item = None
@@ -34,18 +36,8 @@ class ItemSerializer(serializers.ModelSerializer):
                     Tag.objects.create(item=item, **tag)
         except KeyError:
             item = Item.objects.create(**validated_data)
+        create_fields(item)
         username = self.context['request'].user.username
         LoggerUtility.log_as_system(ActionEnum.ITEM_CREATED, username + " Created New Item:" + item.__str__())
         return item
-
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.quantity = validated_data.get('quantity', instance.quantity)
-        instance.model_number = validated_data.get('model_number', instance.model_number)
-        instance.description = validated_data.get('description', instance.description)
-        instance.location = validated_data.get('location', instance.location)
-        instance.save()
-        username = self.context['request'].user.username
-        LoggerUtility.log_as_system(ActionEnum.ITEM_MODIFIED, username + " Modified Item:" + instance.name)
-        return instance
 
