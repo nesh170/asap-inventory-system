@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'inventory_disbursements.apps.InventoryDisbursementsConfig',
     'oauth2_provider',
     'corsheaders',
+    'inventory_shopping_cart.apps.InventoryShoppingCartConfig',
+    'inventory_shopping_cart_request.apps.InventoryShoppingCartRequestConfig',
 ]
 
 MIDDLEWARE = [
