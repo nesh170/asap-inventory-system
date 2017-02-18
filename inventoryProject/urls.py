@@ -29,5 +29,6 @@ urlpatterns = [
     url(r'^api/user/', include('inventory_user.urls')),
     url(r'^api/log/', include('inventory_logger.urls')),
     url(r'^api/disburse/', include('inventory_disbursements.urls')),
-    url(r'^api/o/', include('oauth2_provider.urls', namespace='oauth2_provider'))
+    url(r'^api/o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    url(r'^auth/', include('rest_framework_social_oauth2.urls')),
 ]
