@@ -8,7 +8,7 @@ from inventory_logger.serializers.log_serializer import LogSerializer
 
 
 class LogList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Log.objects.all()
     serializer_class = LogSerializer
     filter_backends = (DjangoFilterBackend, )

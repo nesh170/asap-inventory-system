@@ -9,7 +9,7 @@ from items.models import Item
 
 
 class DisbursementList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     serializer_class = DisbursementSerializer
 
     def get_queryset(self):

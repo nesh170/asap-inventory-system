@@ -1,4 +1,3 @@
-from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import filters
 from rest_framework import generics
 
@@ -13,7 +12,7 @@ from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializ
 
 
 class ItemList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     serializer_class = ItemSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name', 'model_number', 'tags__tag')
@@ -30,7 +29,7 @@ class ItemList(generics.ListCreateAPIView):
 
 
 class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Item.objects.all()
     serializer_class = DetailedItemSerializer
 
@@ -42,7 +41,7 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class UniqueItemList(generics.ListAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Item.objects.all().values('id', 'name').distinct()
     serializer_class = UniqueItemSerializer
     pagination_class = LargeResultsSetPagination

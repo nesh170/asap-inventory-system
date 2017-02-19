@@ -1,4 +1,3 @@
-from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import filters
 from rest_framework import generics
 
@@ -10,17 +9,17 @@ from items.serializers.tag_serializer import TagSerializer, TagSingleSerializer
 
 class TagList(generics.CreateAPIView):
     queryset = Tag.objects.all()
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     serializer_class = TagSerializer
 
 
 class TagDeletion(generics.DestroyAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Tag.objects.all()
 
 
 class UniqueTagList(generics.ListAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Tag.objects.all().values('tag').distinct()
     serializer_class = TagSingleSerializer
     pagination_class = LargeResultsSetPagination
