@@ -2,6 +2,8 @@ from rest_framework import serializers
 from inventory_shopping_cart_request.models import RequestTable
 from items.models import Item
 from inventory_shopping_cart.models import ShoppingCart
+from rest_framework.exceptions import MethodNotAllowed
+
 
 class NestedItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,7 +27,7 @@ class ShoppingCartRequestSerializer(serializers.ModelSerializer):
         shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_id)
         #TODO fix this - throws exception properly, but returns 500 internal server error, don't want to throw a 500
         if (shopping_cart.requests.filter(item=item).exists()):
-            raise Exception('Item already exists in shopping cart')
+            raise MethodNotAllowed(self.create, "Item already exists in cart - cannot be added")
         else:
             shopping_cart_request = RequestTable.objects.create(item=item, shopping_cart=shopping_cart, **validated_data)
             return shopping_cart_request
