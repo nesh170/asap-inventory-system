@@ -1,4 +1,3 @@
-from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import generics
 from rest_framework.permissions import IsAdminUser
 
@@ -9,37 +8,37 @@ from items.serializers.field_serializer import FieldSerializer, IntFieldSerializ
 
 class FieldList(generics.ListCreateAPIView):
     queryset = Field.objects.all()
-    permission_classes = [IsAdminUser, TokenHasReadWriteScope]
+    permission_classes = [IsAdminUser]
     serializer_class = FieldSerializer
 
 
 class FieldDeletion(generics.DestroyAPIView):
     queryset = Field.objects.all()
-    permission_classes = [IsAdminUser, TokenHasReadWriteScope]
+    permission_classes = [IsAdminUser]
     serializer_class = FieldSerializer
 
 
 class IntFieldUpdate(generics.UpdateAPIView):
     queryset = IntField.objects.all()
-    permission_classes = [IsAdminUser, TokenHasReadWriteScope]
+    permission_classes = [IsAdminUser]
     serializer_class = IntFieldSerializer
 
 
 class FloatFieldUpdate(generics.UpdateAPIView):
     queryset = FloatField.objects.all()
-    permission_classes = [IsAdminUser, TokenHasReadWriteScope]
+    permission_classes = [IsAdminUser]
     serializer_class = FloatFieldSerializer
 
 
 class ShortTextFieldUpdate(generics.UpdateAPIView):
     queryset = ShortTextField.objects.all()
-    permission_classes = [IsAdminUser, TokenHasReadWriteScope]
+    permission_classes = [IsAdminUser]
     serializer_class = ShortTextFieldSerializer
 
 
 class LongTextFieldUpdate(generics.UpdateAPIView):
     queryset = LongTextField.objects.all()
-    permission_classes = [IsAdminUser, TokenHasReadWriteScope]
+    permission_classes = [IsAdminUser]
     serializer_class = LongTextFieldSerializer
 
 

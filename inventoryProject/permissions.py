@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from rest_framework.compat import is_authenticated
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -7,7 +8,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         # Read permissions are allowed to any request,
         # so we'll always allow GET, HEAD or OPTIONS requests.
         if request.method in permissions.SAFE_METHODS:
-            return True
+            return is_authenticated(request.user)
 
         # The user has to be a staff
-        return request.user.is_staff
+        return is_authenticated(request.user) and request.user.is_staff

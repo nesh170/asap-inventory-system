@@ -31,6 +31,6 @@ urlpatterns = [
     url(r'^api/disburse/', include('inventory_disbursements.urls')),
     url(r'^api/o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^api/shoppingCartRequest/', include('inventory_shopping_cart_request.urls')),
-    url(r'^api/shoppingCart/', include('inventory_shopping_cart.urls'))
-
+    url(r'^api/shoppingCart/', include('inventory_shopping_cart.urls')),
+    url(r'^auth/', include('rest_framework_social_oauth2.urls')),
 ]

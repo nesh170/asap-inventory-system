@@ -50,10 +50,27 @@ INSTALLED_APPS = [
     'inventory_disbursements.apps.InventoryDisbursementsConfig',
     'items.fixtures',
     'oauth2_provider',
+    'social_django',
+    'rest_framework_social_oauth2',
+    'rest_framework.authtoken',
     'corsheaders',
     'inventory_shopping_cart.apps.InventoryShoppingCartConfig',
     'inventory_shopping_cart_request.apps.InventoryShoppingCartRequestConfig',
 ]
+
+# SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}
+SOCIAL_AUTH_DUKE_KEY = 'asap-inventory-system'
+SOCIAL_AUTH_DUKE_SECRET = '4VBvMIAw*KA5oL7EnoG8aLYY=*Tnrmb9o$$+Gqyxe$LYf@skQL'
+SOCIAL_AUTH_DUKE_SCOPE = ['basic', 'identity:netid:read']
+
+DRFSO2_PROPRIETARY_BACKEND_NAME = 'duke'
+
+
+
+AUTHENTICATION_BACKENDS = (
+    'inventoryProject.dukeAuth.DukeOAuth2',
+    'django.contrib.auth.backends.ModelBackend'
+)
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -85,7 +102,8 @@ CORS_ALLOW_METHODS = (
 
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
-    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'},
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600
 }
 
 ROOT_URLCONF = 'inventoryProject.urls'
@@ -102,6 +120,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -158,6 +178,8 @@ REST_FRAMEWORK = {
     'SEARCH_PARAM': "search",
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+        'rest_framework_social_oauth2.authentication.SocialAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     )
 }
 

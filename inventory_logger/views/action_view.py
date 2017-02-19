@@ -7,7 +7,7 @@ from inventory_logger.serializers.log_serializer import ActionSerializer
 
 
 class ActionList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly, TokenHasReadWriteScope]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Action.objects.all()
     serializer_class = ActionSerializer
     paginate_by = None
