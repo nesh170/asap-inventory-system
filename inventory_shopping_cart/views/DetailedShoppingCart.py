@@ -31,11 +31,11 @@ class ActiveShoppingCart(APIView):
             user = self.request.user
             return ShoppingCart.objects.filter(owner=user).get(status='active')
         except ShoppingCart.DoesNotExist:
-            #TODO: fix the reason thing below, instead of using a blank string
-            ShoppingCart.objects.create(owner=user, status='active', reason='')
-            raise Http404
+            #TODO: fix the reason thing below, right now using default string
+            new_shopping_cart = ShoppingCart.objects.create(owner=user, status='active', reason='Submitting a request for approval')
+            return new_shopping_cart
 
-    def get(self, request, pk, format=None):
-        shopping_cart = self.get_object(pk)
+    def get(self, request, format=None):
+        shopping_cart = self.get_active()
         serializer = ShoppingCartSerializer(shopping_cart)
         return Response(serializer.data)
