@@ -20,20 +20,20 @@ TEST_USERNAME = 'ankit'
 TEST_PASSWORD = 'lol'
 
 
-def equalDisbursement(client, cart_id, disbursement_id, data):
+def equal_disbursement(client, cart_id, disbursement_id, data):
     disbursement_item = Disbursement.objects.get(pk=disbursement_id)
     client.assertEqual(cart_id, disbursement_item.cart.id)
     client.assertEqual(disbursement_item.quantity, data.get("quantity"))
     client.assertEqual(disbursement_item.item.id, data.get("item_id"))
 
 
-def equalCart(client, cart_id, data):
+def equal_cart(client, cart_id, data):
     cart = Cart.objects.get(pk=cart_id)
     client.assertEqual(cart.disburser.id, data.get('disburser').get('id'))
     if cart.receiver is not None:
         client.assertEqual(cart.receiver.id, data.get('receiver_id'))
-    [equalDisbursement(client=client, cart_id=disbursement.get('cart_id'), disbursement_id=disbursement.get('id'),
-                       data=disbursement) for disbursement in data.get('disbursements')]
+    [equal_disbursement(client=client, cart_id=disbursement.get('cart_id'), disbursement_id=disbursement.get('id'),
+                        data=disbursement) for disbursement in data.get('disbursements')]
 
 
 class DisbursementAPITest(APITestCase):
@@ -66,7 +66,7 @@ class DisbursementAPITest(APITestCase):
         json_response = json.loads(str(response.content, 'utf-8'))
         self.assertEqual(json_response['count'], Cart.objects.count())
         json_disbursement_list = json_response['results']
-        [equalCart(self, cart.get('id'), cart) for cart in json_disbursement_list]
+        [equal_cart(self, cart.get('id'), cart) for cart in json_disbursement_list]
 
     def test_get_existing_active_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -76,7 +76,7 @@ class DisbursementAPITest(APITestCase):
         json_response = json.loads(str(response.content, 'utf-8'))
         active_cart_id = Cart.objects.get(receiver=None, disburser=self.admin).id
         self.assertEqual(active_cart_id, json_response.get('id'))
-        equalCart(self, active_cart_id, json_response)
+        equal_cart(self, active_cart_id, json_response)
 
     def test_get_new_active_cart(self):
         self.cart.receiver = self.receiver
@@ -121,6 +121,18 @@ class DisbursementAPITest(APITestCase):
                          "receiver_id is required to submit a cart")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_cart_submission_item_quantity_not_satisfied(self):
+        item = Item.objects.create(name="ankit", quantity=50)
+        disbursement = Disbursement.objects.create(cart=self.cart, item=item, quantity=51)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        data = {'receiver_id': self.receiver.id, 'comment': 'lit'}
+        url = reverse(viewname='cart-submission', kwargs={'pk': self.cart.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         'Item ankit has quantity 50 but needs to disburse 51')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        disbursement.delete()
+
     def test_cart_submission_successful(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         data = {'receiver_id': self.receiver.id, 'comment': 'lit'}
@@ -131,6 +143,8 @@ class DisbursementAPITest(APITestCase):
         self.assertEqual(submitted_cart.id, self.cart.id)
         self.assertEqual(submitted_cart.receiver.id, data.get('receiver_id'))
         self.assertEqual(submitted_cart.comment, data.get('comment'))
+        updated_item = Item.objects.get(pk=self.item.id)
+        self.assertEqual(updated_item.quantity, self.item.quantity - self.disbursement.quantity)
         self.cart.receiver = None
         self.cart.comment = None
         self.cart.save()
@@ -216,8 +230,8 @@ class DisbursementAPITest(APITestCase):
         response = self.client.post(path=url, data=data)
         json_response = json.loads(str(response.content, 'utf-8'))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        equalDisbursement(client=self, cart_id=data.get('cart_id'), disbursement_id=json_response.get('id'),
-                          data=json_response)
+        equal_disbursement(client=self, cart_id=data.get('cart_id'), disbursement_id=json_response.get('id'),
+                           data=json_response)
 
 
 

@@ -67,6 +67,20 @@ class ActiveCart(APIView):
         return Response(serializer.data)
 
 
+def subtract_item_quantity(disbursement):
+    item = disbursement.item
+    item.quantity -= disbursement.quantity
+    item.save()
+
+
+def precheck_item_quantity(disbursement):
+    item = disbursement.item
+    if disbursement.quantity > item.quantity:
+        error_str = "Item {item} has quantity {quantity} but needs to disburse {disburse_quantity}".format
+        raise MethodNotAllowed(detail=error_str(item=item.name, quantity=item.quantity,
+                                                disburse_quantity=disbursement.quantity), method=precheck_item_quantity)
+
+
 class CartSubmission(generics.UpdateAPIView):
     permission_classes = [IsAdminUser]
     serializer_class = CartSerializer
@@ -80,7 +94,11 @@ class CartSubmission(generics.UpdateAPIView):
             raise NotFound("User is not found in database")
         if serializer.instance.receiver is not None:
             raise MethodNotAllowed(detail="This cart has been disbursed", method=self.perform_update)
+        invalid_disbursements = [precheck_item_quantity(disbursement) for disbursement in
+                                 Disbursement.objects.filter(cart_id=serializer.instance.id)]
 
+        [subtract_item_quantity(disbursement) for disbursement in
+         Disbursement.objects.filter(cart_id=serializer.instance.id)]
         serializer.save()
 
 
