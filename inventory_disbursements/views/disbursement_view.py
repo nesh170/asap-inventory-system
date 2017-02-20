@@ -1,6 +1,7 @@
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
-from rest_framework.exceptions import MethodNotAllowed, NotFound
+from rest_framework.exceptions import MethodNotAllowed, NotFound, ParseError
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -36,7 +37,7 @@ class DisbursementCreation(generics.CreateAPIView):
         if cart.receiver is not None:
             raise MethodNotAllowed(detail="The cart needs to be active", method=self.perform_create)
         if cart.disbursements.filter(item=item).exists():
-            raise MethodNotAllowed(detail="Item is already in database", method=self.perform_create)
+            raise MethodNotAllowed(detail="Item is already in cart", method=self.perform_create)
         if quantity >= item.quantity:
             raise MethodNotAllowed(detail="Quantity to be disbursed is more than item value", method=self.perform_create)
         serializer.save()
@@ -61,7 +62,6 @@ class ActiveCart(APIView):
         try:
             cart = Cart.objects.get(disburser=request.user, receiver=None)
         except ObjectDoesNotExist:
-            print('created new cart')
             cart = Cart.objects.create(disburser=request.user)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
@@ -73,8 +73,14 @@ class CartSubmission(generics.UpdateAPIView):
     queryset = Cart.objects.all()
 
     def perform_update(self, serializer):
+        if serializer.validated_data.get('receiver_id') is None:
+            raise ParseError("receiver_id is required to submit a cart")
+        user = get_or_none(User, pk=serializer.validated_data.get('receiver_id'))
+        if user is None:
+            raise NotFound("User is not found in database")
         if serializer.instance.receiver is not None:
             raise MethodNotAllowed(detail="This cart has been disbursed", method=self.perform_update)
+
         serializer.save()
 
 
