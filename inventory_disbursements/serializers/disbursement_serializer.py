@@ -1,9 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from inventory_disbursements.models import Disbursement
-from inventory_logger.action_enum import ActionEnum
-from inventory_logger.utility.logger import LoggerUtility
+from inventory_disbursements.models import Disbursement, Cart
 from items.models import Item
 
 
@@ -16,25 +14,30 @@ class NestedUserSerializer(serializers.ModelSerializer):
 class NestedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ('id','name','quantity')
+        fields = ('id', 'name', 'quantity')
 
 
-class DisbursementSerializer(serializers.ModelSerializer):
-    disburser = NestedUserSerializer(read_only=True, many=False)
-    item = NestedItemSerializer(read_only=True, many=False)
-    receiver = NestedUserSerializer(read_only=True, many=False)
-    item_id = serializers.IntegerField(required=True)
-    receiver_id = serializers.IntegerField(required=True)
+class  DisbursementSerializer(serializers.ModelSerializer):
+    item = NestedItemSerializer(read_only=True)
+    item_id = serializers.IntegerField()
+    cart_id = serializers.IntegerField()
 
     class Meta:
         model = Disbursement
-        fields = ('id', 'disburser', 'item', 'quantity', 'comment', 'timestamp', 'receiver', 'item_id', 'receiver_id', )
+        fields = ('id', 'item', 'quantity', 'item_id', 'cart_id')
         extra_kwargs = {'item_id': {'write_only': True},
-                        'receiver_id': {'write_only': True}}
+                        'cart_id': {'write_only': True}}
 
-    def create(self, validated_data):
-        disburser = self.context['request'].user
-        disbursement = Disbursement.objects.create(disburser=disburser, **validated_data)
-        LoggerUtility.log_as_system(ActionEnum.DISBURSED, disbursement.__str__())
-        return disbursement
+
+class CartSerializer(serializers.ModelSerializer):
+    disburser = NestedUserSerializer(read_only=True, many=False)
+    receiver = NestedUserSerializer(read_only=True, many=False)
+    disbursements = DisbursementSerializer(read_only=True, many=True)
+    receiver_id = serializers.IntegerField()
+
+    class Meta:
+        model = Cart
+        fields = ('id', 'disburser', 'receiver', 'comment', 'disbursements', 'receiver_id')
+        extra_kwargs = {'receiver_id': {'write_only': True}}
+
 

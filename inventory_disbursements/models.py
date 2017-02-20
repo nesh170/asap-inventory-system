@@ -8,7 +8,7 @@ class Cart(models.Model):
     disburser = models.ForeignKey(User, on_delete=models.CASCADE, related_name='disburser', limit_choices_to={'is_staff': True})
     comment = models.TextField(null=True, blank=True)
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receiver', null=True, blank=True)
-    timestamp = models.DateTimeField(auto_created=True)
+    timestamp = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         disbursement_cart_string = "Cart by {admin} for {receiver} has {items_quantity} items".format
