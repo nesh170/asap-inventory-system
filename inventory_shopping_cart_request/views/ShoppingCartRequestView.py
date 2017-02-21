@@ -33,7 +33,7 @@ class DeleteShoppingCartRequest(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
-class ModifyQuantity(APIView):
+class ModifyQuantityRequested(APIView):
     permission_classes = [TokenHasReadWriteScope]
     def patch(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
