@@ -7,7 +7,7 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, MethodNotAllowed, NotFound
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
@@ -26,6 +26,20 @@ class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminUser]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def perform_update(self, serializer):
+        data = serializer.validated_data
+        user = serializer.instance
+        if data.get("is_superuser") is None and data.get("is_staff") is None:
+            serializer.save()
+        else:
+            is_superuser = data.get("is_superuser")
+            is_staff = data.get("is_staff")
+            if (is_superuser is None or is_staff is None) or (is_superuser and not is_staff):
+                raise MethodNotAllowed(detail="Both is_superuser and is_staff has to be true if is_superuser is true"
+                                              " and they both have to be included",
+                                       method=self.patch)
+            serializer.save()
 
 
 class InventoryCurrentUser(generics.RetrieveAPIView):
