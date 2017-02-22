@@ -1,7 +1,8 @@
 from rest_framework import filters
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 
-from inventoryProject.permissions import IsAdminOrReadOnly
+from inventoryProject.permissions import IsStaffOrReadOnly
 from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
@@ -12,7 +13,7 @@ from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializ
 
 
 class ItemList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
     serializer_class = ItemSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name', 'model_number', 'tags__tag')
@@ -29,7 +30,7 @@ class ItemList(generics.ListCreateAPIView):
 
 
 class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly, ]
     queryset = Item.objects.all()
     serializer_class = DetailedItemSerializer
 
@@ -41,7 +42,7 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class UniqueItemList(generics.ListAPIView):
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Item.objects.all().values('id', 'name').distinct()
     serializer_class = UniqueItemSerializer
     pagination_class = LargeResultsSetPagination

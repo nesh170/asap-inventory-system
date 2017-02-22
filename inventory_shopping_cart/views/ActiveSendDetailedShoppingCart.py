@@ -1,13 +1,13 @@
 from django.http import Http404
 from rest_framework import status
-
-from inventoryProject.permissions import IsAdminOrReadOnly
-from inventory_shopping_cart.models import ShoppingCart
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import MethodNotAllowed
 
+from inventoryProject.permissions import IsStaffOrReadOnly
+from inventory_shopping_cart.models import ShoppingCart
 from inventory_shopping_cart.serializers.ShoppingCartSerializer import ShoppingCartSerializer
+
 
 def get_shopping_cart(pk):
     try:
@@ -16,14 +16,14 @@ def get_shopping_cart(pk):
         raise Http404
 
 class ViewDetailedShoppingCart(APIView):
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
     def get(self, request, pk, format=None):
         shopping_cart = get_shopping_cart(pk)
         serializer = ShoppingCartSerializer(shopping_cart)
         return Response(serializer.data)
 
 class ActiveShoppingCart(APIView):
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
     def get_active(self):
         try:
             user = self.request.user

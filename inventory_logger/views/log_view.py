@@ -2,13 +2,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import generics
 
-from inventoryProject.permissions import IsAdminOrReadOnly
+from inventoryProject.permissions import IsStaffOrReadOnly
 from inventory_logger.models import Log
 from inventory_logger.serializers.log_serializer import LogSerializer
 
 
 class LogList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
     queryset = Log.objects.all()
     serializer_class = LogSerializer
     filter_backends = (DjangoFilterBackend, )

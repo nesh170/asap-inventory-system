@@ -7,23 +7,23 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import ParseError, MethodNotAllowed, NotFound
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.exceptions import ParseError, MethodNotAllowed
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from inventoryProject.permissions import IsAdminOrReadOnly
+from inventoryProject.permissions import IsStaffUser, IsSuperUser, IsSuperUserDelete
 from inventory_user.serializers.user_serializer import UserSerializer, LargeUserSerializer
 from items.custom_pagination import LargeResultsSetPagination
 
 
 class InventoryUserList(generics.ListCreateAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsSuperUser]
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
 class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsSuperUser, IsSuperUserDelete]
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -53,7 +53,7 @@ class InventoryCurrentUser(generics.RetrieveAPIView):
 
 
 class LargeUserList(generics.ListAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsStaffUser]
     queryset = User.objects.all().values('id', 'username').distinct()
     serializer_class = LargeUserSerializer
     pagination_class = LargeResultsSetPagination
@@ -80,7 +80,7 @@ def get_duke_access_token(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrReadOnly])
+@permission_classes([IsAuthenticated])
 def get_api_token(request):
     try:
         token = Token.objects.get(user=request.user)

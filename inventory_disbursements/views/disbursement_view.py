@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_none
 from inventory_disbursements.models import Cart, Disbursement
 from inventory_disbursements.serializers.disbursement_serializer import CartSerializer, DisbursementSerializer
@@ -22,7 +23,7 @@ class CartList(generics.ListAPIView):
 
 
 class DisbursementCreation(generics.CreateAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsStaffUser]
     serializer_class = DisbursementSerializer
     queryset = Disbursement.objects.all()
 
@@ -44,7 +45,7 @@ class DisbursementCreation(generics.CreateAPIView):
 
 
 class DisbursementDeletion(generics.DestroyAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsStaffUser]
     serializer_class = DisbursementSerializer
     queryset = Disbursement.objects.all()
 
@@ -56,7 +57,7 @@ class DisbursementDeletion(generics.DestroyAPIView):
 
 
 class ActiveCart(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsStaffUser]
 
     def get(self, request):
         try:
@@ -82,7 +83,7 @@ def precheck_item_quantity(disbursement):
 
 
 class CartSubmission(generics.UpdateAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsStaffUser]
     serializer_class = CartSerializer
     queryset = Cart.objects.all()
 
