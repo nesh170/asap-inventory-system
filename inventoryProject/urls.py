@@ -20,7 +20,6 @@ from django.views.generic.base import RedirectView
 
 urlpatterns = [
     url(r'^api/admin/', admin.site.urls),
-    url(r'^api/request/', include('inventory_requests.urls')),
     url(r'^api/accounts/logout/$', auth_views.logout),
     url(r'^api/accounts/login/$', auth_views.login, {'template_name': 'admin/login.html'}),
     url(r'^api/accounts/$', RedirectView.as_view(url='/')),
