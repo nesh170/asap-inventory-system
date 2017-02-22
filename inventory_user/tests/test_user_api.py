@@ -19,9 +19,10 @@ def equal_user(equal_client, user_id, data):
     equal_client.assertEqual(user.username, data.get('username'))
     equal_client.assertEqual(user.email, data.get('email'))
     equal_client.assertEqual(user.is_staff, data.get('is_staff'))
+    equal_client.assertEqual(user.is_superuser, data.get('is_superuser'))
 
 
-class GetCreateUserAPI(APITestCase):
+class UserAPITest(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         User.objects.create_superuser('piazza', 'lol@test.com', PASSWORD)
@@ -43,7 +44,8 @@ class GetCreateUserAPI(APITestCase):
     def test_create_super_user(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('user-list')
-        data = {'username': 'lol', 'password': 'Biebs4lyfe', 'email': 'sorry@toolate.com', 'is_staff': True}
+        data = {'username': 'lol', 'password': 'Biebs4lyfe', 'email': 'sorry@toolate.com', 'is_staff': True,
+                'is_superuser': True}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         json_user = json.loads(str(response.content, 'utf-8'))
@@ -56,6 +58,7 @@ class GetCreateUserAPI(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         json_user = json.loads(str(response.content, 'utf-8'))
+        data['is_superuser'] = json_user.get('is_superuser')
         equal_user(self, json_user.get('id'), data)
 
     def test_get_all_user(self):
@@ -78,17 +81,17 @@ class GetCreateUserAPI(APITestCase):
             equal_user(self, json_user.get('id'), json_user)
 
     def test_delete_user(self):
-        user = User.objects.create_user(username='testlololol',password='firestorm123123',email='git@gitkasld.com')
+        user = User.objects.create_user(username='testlololol', password='firestorm123123', email='git@gitkasld.com')
         url = reverse('user-detail', kwargs={'pk': user.id})
         self.client.force_authenticate(user=self.admin, token=self.tok)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        delete_success = False
+        success_delete = False
         try:
             User.objects.get(pk=user.id)
         except ObjectDoesNotExist:
-            delete_success = True
-        self.assertEqual(delete_success, True)
+            success_delete = True
+        self.assertEqual(success_delete, True)
 
     def test_get_current_user(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -107,3 +110,69 @@ class GetCreateUserAPI(APITestCase):
         user_list = [user.get('username') for user in json_user_list]
         correct_user_list = [user_name for user_name in User.objects.all().values_list('username', flat=True).distinct()]
         self.assertEqual(set(user_list), set(correct_user_list))
+
+    def test_update_user_is_superuser_staff_not_specificied(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        user = User.objects.create_user(username='lolsadoq', password='ty1892371203', email='nesh@lol.com')
+        data = {'is_superuser': True}
+        url = reverse('user-detail', kwargs={'pk': user.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        updated_user = User.objects.get(pk=user.id)
+        self.assertEqual(updated_user.is_superuser, False)
+
+    def test_update_user_is_superuser_not_staff(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        user = User.objects.create_user(username='lol', password='ty1892371203', email='nesh@lol.com')
+        data = {'is_superuser': True, 'is_staff': False}
+        url = reverse('user-detail', kwargs={'pk': user.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        updated_user = User.objects.get(pk=user.id)
+        self.assertEqual(updated_user.is_superuser, False)
+
+    def test_update_user_is_superuser(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        user = User.objects.create_user(username='lol232', password='ty1892371203', email='nesh@lol.com')
+        data = {'is_superuser': True, 'is_staff': True}
+        url = reverse('user-detail', kwargs={'pk': user.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_user = User.objects.get(pk=user.id)
+        self.assertEqual(updated_user.is_superuser, True)
+        self.assertEqual(updated_user.is_staff, True)
+
+    def test_update_user_is_staff_not_superuser(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        user = User.objects.create_user(username='lol232sd1', password='ty1892371203', email='nesh@lol.com')
+        data = {'is_staff': True}
+        url = reverse('user-detail', kwargs={'pk': user.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        updated_user = User.objects.get(pk=user.id)
+        self.assertEqual(updated_user.is_superuser, False)
+        self.assertEqual(updated_user.is_staff, False)
+
+    def test_update_user_is_staff(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        user = User.objects.create_user(username='lol232sd1', password='ty1892371203', email='nesh@lol.com')
+        data = {'is_staff': True, 'is_superuser': False}
+        url = reverse('user-detail', kwargs={'pk': user.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_user = User.objects.get(pk=user.id)
+        self.assertEqual(updated_user.is_superuser, False)
+        self.assertEqual(updated_user.is_staff, True)
+
+    def test_update_user_email(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        user = User.objects.create_user(username='asd123343', password='ty1892371203', email='nesh@lol.com')
+        data = {'email': 'nesh@145.com'}
+        url = reverse('user-detail', kwargs={'pk': user.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_user = User.objects.get(pk=user.id)
+        self.assertEqual(updated_user.email, data.get('email'))
+        self.assertEqual(updated_user.is_superuser, user.is_superuser)
+        self.assertEqual(updated_user.is_staff, user.is_staff)
+
