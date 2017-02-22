@@ -106,4 +106,4 @@ class GetCreateUserAPI(APITestCase):
         json_user_list = json.loads(str(response.content, 'utf-8'))['results']
         user_list = [user.get('username') for user in json_user_list]
         correct_user_list = [user_name for user_name in User.objects.all().values_list('username', flat=True).distinct()]
-        self.assertEqual(user_list, correct_user_list)
+        self.assertEqual(set(user_list), set(correct_user_list))
