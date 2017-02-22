@@ -25,14 +25,17 @@ class DeleteShoppingCartRequest(APIView):
     def delete(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
         user = self.request.user
-        active_shopping_cart = ShoppingCart.objects.filter(owner=user).get(status='active')
-        requests = active_shopping_cart.requests
-        #if request exists in active shopping cart
-        if (requests.filter(id=shopping_cart_request.id).exists()):
-            shopping_cart_request.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        if (ShoppingCart.objects.filter(owner=user, status='active').exists()):
+            active_shopping_cart = ShoppingCart.objects.filter(owner=user).get(status='active')
+            requests = active_shopping_cart.requests
+            #if request exists in active shopping cart
+            if (requests.filter(id=shopping_cart_request.id).exists()):
+                shopping_cart_request.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            raise MethodNotAllowed("Cannot delete item from shopping cart that is not active")
 class ModifyQuantityRequested(APIView):
     permission_classes = [TokenHasReadWriteScope]
     def patch(self, request, pk, format=None):

@@ -30,7 +30,6 @@ class ActiveShoppingCart(APIView):
             user = self.request.user
             return ShoppingCart.objects.filter(owner=user).get(status='active')
         except ShoppingCart.DoesNotExist:
-            #TODO: fix the reason thing below, right now using default string
             new_shopping_cart = ShoppingCart.objects.create(owner=user, status='active', reason='Submitting a request for approval')
             return new_shopping_cart
 
