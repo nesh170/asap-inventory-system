@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework.exceptions import ParseError
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -10,13 +11,13 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        username = validated_data.get('username')
-        password = validated_data.get('password')
-        email = validated_data.get('email')
-        is_staff = validated_data.get('is_staff')
-        is_superuser = validated_data.get('is_superuser')
-        return User.objects.create_superuser(username=username, password=password, email=email) if is_superuser \
-            else User.objects.create(username=username, password=password, email=email, is_staff=is_staff)
+        is_superuser = validated_data.get('is_superuser', False)
+        try:
+            user = User.objects.create_superuser(**validated_data) \
+                if is_superuser else User.objects.create(**validated_data)
+        except ValueError:
+            raise ParseError(detail="Both is_staff and is_superuser has to be true for admin creation")
+        return user
 
 
 class LargeUserSerializer(serializers.ModelSerializer):
