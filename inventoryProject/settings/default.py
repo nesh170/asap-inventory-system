@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'items.apps.ItemsConfig',
     'rest_framework',
-    'inventory_requests.apps.InventoryRequestsConfig',
     'inventory_logger.apps.InventoryLoggerConfig',
     'inventory_user.apps.InventoryUserConfig',
     'inventory_disbursements.apps.InventoryDisbursementsConfig',
@@ -54,6 +53,8 @@ INSTALLED_APPS = [
     'rest_framework_social_oauth2',
     'rest_framework.authtoken',
     'corsheaders',
+    'inventory_shopping_cart.apps.InventoryShoppingCartConfig',
+    'inventory_shopping_cart_request.apps.InventoryShoppingCartRequestConfig',
 ]
 
 # SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}

@@ -70,7 +70,7 @@ class DisbursementAPITest(APITestCase):
 
     def test_get_existing_active_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        url = reverse('active-cart')
+        url = reverse('active-disbursement-cart')
         response = self.client.get(path=url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         json_response = json.loads(str(response.content, 'utf-8'))
@@ -82,7 +82,7 @@ class DisbursementAPITest(APITestCase):
         self.cart.receiver = self.receiver
         self.cart.save()
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        url = reverse('active-cart')
+        url = reverse('active-disbursement-cart')
         response = self.client.get(path=url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         json_response = json.loads(str(response.content, 'utf-8'))

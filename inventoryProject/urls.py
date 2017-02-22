@@ -20,7 +20,6 @@ from django.views.generic.base import RedirectView
 
 urlpatterns = [
     url(r'^api/admin/', admin.site.urls),
-    url(r'^api/request/', include('inventory_requests.urls')),
     url(r'^api/accounts/logout/$', auth_views.logout),
     url(r'^api/accounts/login/$', auth_views.login, {'template_name': 'admin/login.html'}),
     url(r'^api/accounts/$', RedirectView.as_view(url='/')),
@@ -29,5 +28,7 @@ urlpatterns = [
     url(r'^api/log/', include('inventory_logger.urls')),
     url(r'^api/disburse/', include('inventory_disbursements.urls')),
     url(r'^api/o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    url(r'^api/shoppingCartRequest/', include('inventory_shopping_cart_request.urls')),
+    url(r'^api/shoppingCart/', include('inventory_shopping_cart.urls')),
     url(r'^auth/', include('rest_framework_social_oauth2.urls')),
 ]
