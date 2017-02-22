@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from inventory_shopping_cart.views.ShoppingCartList import ShoppingCartList
-from inventory_shopping_cart.views.DetailedShoppingCart import ViewDetailedShoppingCart, ActiveShoppingCart, SendCart
+from inventory_shopping_cart.views.ActiveSendDetailedShoppingCart import ViewDetailedShoppingCart, ActiveShoppingCart, SendCart
 from inventory_shopping_cart_request.views.ShoppingCartRequestView import ShoppingCartRequestList, DeleteShoppingCartRequest, ModifyQuantityRequested
 from inventory_shopping_cart.views.ModifyShoppingCart import ApproveShoppingCart, DenyShoppingCart, CancelShoppingCart
 urlpatterns = [

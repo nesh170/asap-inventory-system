@@ -1,4 +1,3 @@
-from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import generics
 
 from inventory_shopping_cart.models import ShoppingCart
@@ -6,7 +5,6 @@ from inventory_shopping_cart.serializers.ShoppingCartSerializer import ShoppingC
 
 
 class ShoppingCartList(generics.ListCreateAPIView):
-    permission_classes = [TokenHasReadWriteScope]
     serializer_class = ShoppingCartSerializer
     def get_queryset(self):
         user = self.request.user

@@ -1,5 +1,4 @@
 from django.http import Http404
-from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
@@ -11,7 +10,6 @@ from inventory_shopping_cart.models import ShoppingCart
 from rest_framework.exceptions import MethodNotAllowed
 
 class ShoppingCartRequestList(generics.ListCreateAPIView):
-    permission_classes = [TokenHasReadWriteScope]
     serializer_class = ShoppingCartRequestSerializer
     queryset = RequestTable.objects.all()
 
@@ -21,7 +19,6 @@ def get_request(pk):
     except RequestTable.DoesNotExist:
         raise Http404
 class DeleteShoppingCartRequest(APIView):
-    permission_classes = [TokenHasReadWriteScope]
     def delete(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
         user = self.request.user
@@ -37,7 +34,6 @@ class DeleteShoppingCartRequest(APIView):
         else:
             raise MethodNotAllowed("Cannot delete item from shopping cart that is not active")
 class ModifyQuantityRequested(APIView):
-    permission_classes = [TokenHasReadWriteScope]
     def patch(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
         shopping_cart = shopping_cart_request.shopping_cart

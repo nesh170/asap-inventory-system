@@ -110,6 +110,8 @@ class GetRequestTestCases(APITestCase):
             response = self.client.get(url)
             #compare the JSON response received from the GET request to what is in database
             equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), shopping_cart_id)
+
+
     #this tests the case where an active shopping cart already exists
     def test_get_active_shopping_cart_already_exists(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -149,14 +151,6 @@ class ActiveCartTestCase(APITestCase):
         response = self.client.get(url)
         active_shopping_cart = ShoppingCart.objects.get(status="active")
         equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), active_shopping_cart.id)
-
-#     def test_get_requests_user(self):
-#         self.client.force_authenticate(user=self.admin, token=self.tok)
-#         url = reverse('requests-list')
-#         response = self.client.get(url)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         json_request_list = json.loads(str(response.content, 'utf-8'))['results']
-#         [equal_request(self, json_request, json_request.get('id')) for json_request in json_request_list]
 
 class PostRequestTestCases(APITestCase):
     def setUp(self):
@@ -214,7 +208,6 @@ class PostRequestTestCases(APITestCase):
         data = {'item_id': item_with_one_tag.id, 'quantity_requested': 2}
         response = self.client.post(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
-        json_response = json.loads(str(response.content, 'utf-8'))
         updated_requests_cart = updated_shopping_cart.requests.all()
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(updated_requests_cart.count(), 1)
@@ -234,7 +227,6 @@ class PostRequestTestCases(APITestCase):
         response = self.client.post(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
         updated_requests_cart = updated_shopping_cart.requests.all()
-        json_response = json.loads(str(response.content, 'utf-8'))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         addFail = False
         try:
@@ -256,7 +248,6 @@ class PostRequestTestCases(APITestCase):
         response = self.client.post(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
         updated_requests_cart = updated_shopping_cart.requests.all()
-        json_response = json.loads(str(response.content, 'utf-8'))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         addFail = False
         try:
@@ -418,6 +409,8 @@ class PatchRequestTestCases(APITestCase):
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_send.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(updated_shopping_cart.status, shopping_cart_to_send.status)
+        self.assertEqual(updated_shopping_cart.reason, shopping_cart_to_send.reason)
+
 
     def test_modify_quantity(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -549,7 +542,6 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(shopping_cart_to_deny.admin_comment, updated_shopping_cart.admin_comment)
         self.assertEqual(shopping_cart_to_deny.status, updated_shopping_cart.status)
 
-
     def test_cancel_shopping_cart_fail(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
@@ -566,6 +558,8 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(shopping_cart_to_cancel.reason, updated_shopping_cart.reason)
         self.assertEqual(shopping_cart_to_cancel.status, updated_shopping_cart.status)
+
+
     def test_cancel_shopping_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",

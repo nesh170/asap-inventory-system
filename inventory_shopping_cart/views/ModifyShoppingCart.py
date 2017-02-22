@@ -1,5 +1,4 @@
 from django.http import Http404
-from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
@@ -54,12 +53,12 @@ def get_shopping_cart(pk):
     except ShoppingCart.DoesNotExist:
         raise Http404
 class ApproveShoppingCart(APIView):
-   permission_classes = [TokenHasReadWriteScope, IsAdminUser]
+   permission_classes = [IsAdminUser]
    def patch(self, request, pk, format=None):
        return approveDenyShoppingCart(self, request, pk, "approved")
 
 class CancelShoppingCart(APIView):
-    permission_classes = [TokenHasReadWriteScope, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     def patch(self, request, pk, format=None):
         shopping_cart_to_cancel = get_shopping_cart(pk)
         if modify_shopping_cart_logic.can_approve_deny_cancel_shopping_cart(shopping_cart_to_cancel, "cancelled"):
@@ -80,6 +79,6 @@ class CancelShoppingCart(APIView):
 
 
 class DenyShoppingCart(APIView):
-    permission_classes = [TokenHasReadWriteScope, IsAdminUser]
+    permission_classes = [IsAdminUser]
     def patch(self, request, pk, format=None):
         return approveDenyShoppingCart(self, request, pk, "denied")

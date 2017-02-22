@@ -1,5 +1,4 @@
 from django.http import Http404
-from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import status
 
 from inventoryProject.permissions import IsAdminOrReadOnly
@@ -17,14 +16,14 @@ def get_shopping_cart(pk):
         raise Http404
 
 class ViewDetailedShoppingCart(APIView):
-    permission_classes = [TokenHasReadWriteScope, IsAdminOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
     def get(self, request, pk, format=None):
         shopping_cart = get_shopping_cart(pk)
         serializer = ShoppingCartSerializer(shopping_cart)
         return Response(serializer.data)
 
 class ActiveShoppingCart(APIView):
-    permission_classes = [TokenHasReadWriteScope, IsAdminOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
     def get_active(self):
         try:
             user = self.request.user
@@ -38,7 +37,6 @@ class ActiveShoppingCart(APIView):
         serializer = ShoppingCartSerializer(shopping_cart)
         return Response(serializer.data)
 class SendCart(APIView):
-    permission_classes = [TokenHasReadWriteScope]
     def patch(self, request, pk, format=None):
         shopping_cart = get_shopping_cart(pk)
         if (shopping_cart.status=="active"):
