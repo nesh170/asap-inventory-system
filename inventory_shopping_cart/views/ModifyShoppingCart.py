@@ -1,5 +1,4 @@
-from django.http import Http404
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, NotFound
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from rest_framework import status
@@ -44,14 +43,14 @@ def approveDenyShoppingCart(self, request, pk, shopping_cart_type):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
-        raise MethodNotAllowed(self.patch, "Request cannot be " + shopping_cart_type)
+        raise MethodNotAllowed(self.patch, detail="Request cannot be " + shopping_cart_type)
 
 
 def get_shopping_cart(pk):
     try:
         return ShoppingCart.objects.get(pk=pk)
     except ShoppingCart.DoesNotExist:
-        raise Http404
+        raise NotFound(detail="Shopping Cart not found")
 class ApproveShoppingCart(APIView):
    permission_classes = [IsAdminUser]
    def patch(self, request, pk, format=None):
@@ -75,7 +74,7 @@ class CancelShoppingCart(APIView):
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            raise MethodNotAllowed(self.patch, "Cannot cancel request")
+            raise MethodNotAllowed(self.patch, detail="Cannot cancel request")
 
 
 class DenyShoppingCart(APIView):
