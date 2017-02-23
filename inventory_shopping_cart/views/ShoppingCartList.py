@@ -10,6 +10,5 @@ class ShoppingCartList(generics.ListCreateAPIView):
     serializer_class = ShoppingCartSerializer
     def get_queryset(self):
         user = self.request.user
-        #TODO make sure this check is correct (for is_staff)
         return ShoppingCart.objects.exclude(status="cancelled") if user.is_staff \
             else ShoppingCart.objects.filter(owner=user).exclude(status="cancelled")
