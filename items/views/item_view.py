@@ -2,7 +2,7 @@ from rest_framework import filters
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-from inventoryProject.permissions import IsStaffOrReadOnly
+from inventoryProject.permissions import IsStaffOrReadOnly, IsSuperUserDelete
 from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
@@ -30,7 +30,7 @@ class ItemList(generics.ListCreateAPIView):
 
 
 class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsStaffOrReadOnly, ]
+    permission_classes = [IsStaffOrReadOnly, IsSuperUserDelete]
     queryset = Item.objects.all()
     serializer_class = DetailedItemSerializer
 
