@@ -1,15 +1,19 @@
 from rest_framework import filters
 from rest_framework import generics
+from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from inventoryProject.permissions import IsStaffOrReadOnly, IsSuperUserDelete
+from inventoryProject.permissions import IsStaffOrReadOnly, IsSuperUserDelete, IsStaffUser
 from inventory_logger.action_enum import ActionEnum
 from inventory_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
 from items.logic.filter_item_logic import FilterItemLogic
 from items.models import Item
 from items.serializers.detailed_item_serializer import DetailedItemSerializer
-from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializer
+from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializer, ItemQuantitySerializer
 
 
 class ItemList(generics.ListCreateAPIView):
@@ -40,6 +44,11 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
         LoggerUtility.log_as_system(ActionEnum.ITEM_DESTROYED, request.user.username + " DESTROYED " + item_name)
         return return_value
 
+    def patch(self, request, *args, **kwargs):
+        if request.user.is_staff and not request.user.is_superuser and request.data.get('quantity') is not None:
+            raise PermissionDenied('Staff/Managers are not allowed to change the quantity')
+        return self.partial_update(request, *args, **kwargs)
+
 
 class UniqueItemList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -48,4 +57,17 @@ class UniqueItemList(generics.ListAPIView):
     pagination_class = LargeResultsSetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name', )
+
+
+class ItemQuantityModification(generics.CreateAPIView):
+    permission_classes = [IsStaffUser]
+    serializer_class = ItemQuantitySerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        item = serializer.save()
+        item_serializer = ItemSerializer(item)
+        return Response(item_serializer.data, status=status.HTTP_200_OK)
+
 

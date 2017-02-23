@@ -15,6 +15,8 @@ from items.models import Item
 
 USERNAME = 'test'
 PASSWORD = 'testPassword'
+STAFF_USERNAME = 'staff'
+STAFF_PASSWORD = 'password'
 
 
 def equal_item(test_client, item_json, item_id):
@@ -151,10 +153,45 @@ class UpdateItemTestCase(APITestCase):
             application=self.application, scope='read write',
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
+        self.staff = User.objects.create_user(username=STAFF_USERNAME,password=STAFF_PASSWORD,is_staff=True)
+        self.staff_application = Application(
+            name="Test_Staff Application",
+            redirect_uris="http://localhost",
+            user=self.staff,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+        )
+        self.staff_application.save()
+        self.staff_tok = AccessToken.objects.create(
+            user=self.staff, token='1234567890123',
+            application=self.staff_application, scope='read write',
+            expires=datetime.now(timezone.utc) + timedelta(days=30)
+        )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
         Action.objects.create(color='1', tag='ITEM CREATED')
         Action.objects.create(color='2', tag='ITEM DESTROYED')
         Action.objects.create(color='3', tag='ITEM MODIFIED')
+
+    def test_update_quantity_using_staff(self):
+        self.client.force_authenticate(user=self.staff, token=self.staff_tok)
+        url = reverse(viewname='item-detail', kwargs={'pk': self.item_id})
+        data = {'quantity': 2}
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(json.loads(str(response.content, 'utf-8')).get('detail'),
+                         "Staff/Managers are not allowed to change the quantity")
+
+    def test_update_all_using_staff(self):
+        self.client.force_authenticate(user=self.staff, token=self.staff_tok)
+        url = reverse(viewname='item-detail', kwargs={'pk': self.item_id})
+        data = {'name': 'Light Rails Capacitor', 'model_number': '412343',
+                'description': 'lol'}
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        item = Item.objects.get(pk=json.loads(str(response.content, 'utf-8')).get('id'))
+        self.assertEqual(data.get('name'), item.name)
+        self.assertEqual(data.get('model_number'), item.model_number)
+        self.assertEqual(data.get('description'), item.description)
 
     def test_update_all(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
