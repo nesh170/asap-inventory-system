@@ -17,15 +17,15 @@ class Log(models.Model):
     initiating_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='initiator')
     nature = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='nature')
     timestamp = models.DateTimeField(auto_now=True)
-    effected_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='affected')
+    affected_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='affected', null=True, blank=True)
 
     def __str__(self):
         log_string = "{nature} was by {initiator} to {affected} on {timestamp}".format
         return log_string(nature=self.nature.tag, initiator=self.initiating_user.username,
-                          affected=self.effected_user.username, timestamp=self.timestamp)
+                          affected=self.affected_user.username, timestamp=self.timestamp)
 
 class ItemLog(models.Model):
-    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='log')
+    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='item_log')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='item')
 
     def __str__(self):
