@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,6 +11,7 @@ from rest_framework.exceptions import MethodNotAllowed, NotFound
 
 
 class ShoppingCartRequestList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ShoppingCartRequestSerializer
     queryset = RequestTable.objects.all()
 
@@ -19,6 +21,7 @@ def get_request(pk):
     except RequestTable.DoesNotExist:
         raise NotFound(detail="Shopping Cart Request not found")
 class DeleteShoppingCartRequest(APIView):
+    permission_classes = [IsAuthenticated]
     def delete(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
         user = self.request.user
@@ -34,6 +37,7 @@ class DeleteShoppingCartRequest(APIView):
         else:
             raise MethodNotAllowed("Cannot delete item from shopping cart that is not active")
 class ModifyQuantityRequested(APIView):
+    permission_classes = [IsAuthenticated]
     def patch(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
         shopping_cart = shopping_cart_request.shopping_cart

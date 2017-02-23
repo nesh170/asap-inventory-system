@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed, NotFound
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,14 +15,14 @@ def get_shopping_cart(pk):
         raise NotFound(detail="Shopping Cart not found")
 
 class ViewDetailedShoppingCart(APIView):
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsAuthenticated]
     def get(self, request, pk, format=None):
         shopping_cart = get_shopping_cart(pk)
         serializer = ShoppingCartSerializer(shopping_cart)
         return Response(serializer.data)
 
 class ActiveShoppingCart(APIView):
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsAuthenticated]
     def get_active(self):
         try:
             user = self.request.user
@@ -35,6 +36,7 @@ class ActiveShoppingCart(APIView):
         serializer = ShoppingCartSerializer(shopping_cart)
         return Response(serializer.data)
 class SendCart(APIView):
+    permission_classes = [IsAuthenticated]
     def patch(self, request, pk, format=None):
         shopping_cart = get_shopping_cart(pk)
         if (shopping_cart.status=="active"):

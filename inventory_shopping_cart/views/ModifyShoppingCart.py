@@ -1,9 +1,11 @@
 from rest_framework.exceptions import MethodNotAllowed, NotFound
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from inventoryProject.permissions import IsStaffUser
 from inventory_shopping_cart.business_logic import modify_shopping_cart_logic
 from inventory_shopping_cart.serializers import StatusSerializer, CancelSerializer
 from datetime import datetime
@@ -52,7 +54,7 @@ def get_shopping_cart(pk):
     except ShoppingCart.DoesNotExist:
         raise NotFound(detail="Shopping Cart not found")
 class ApproveShoppingCart(APIView):
-   permission_classes = [IsAdminUser]
+   permission_classes = [IsStaffUser]
    def patch(self, request, pk, format=None):
        return approveDenyShoppingCart(self, request, pk, "approved")
 
@@ -78,6 +80,6 @@ class CancelShoppingCart(APIView):
 
 
 class DenyShoppingCart(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsStaffUser]
     def patch(self, request, pk, format=None):
         return approveDenyShoppingCart(self, request, pk, "denied")
