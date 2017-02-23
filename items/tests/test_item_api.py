@@ -215,6 +215,31 @@ class UpdateItemTestCase(APITestCase):
         item = Item.objects.get(pk=json.loads(str(response.content, 'utf-8')).get('id'))
         self.assertEqual(data.get('name'), item.name)
 
+    def test_log_addition_acquisitions_item_not_found(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='item-quantity-modification')
+        data = {'item_id': 10234, 'quantity': 10}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_log_addition_acquisitions_quantity_is_zero(self):
+        item = Item.objects.create(name='Replication gun', quantity=100)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='item-quantity-modification')
+        data = {'item_id': item.id, 'quantity': 0}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_log_addition_acquisitions(self):
+        item = Item.objects.create(name='Magnetic Accelerated Cannon', quantity=100)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='item-quantity-modification')
+        data = {'item_id': item.id, 'quantity': 10}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_item = Item.objects.get(pk=item.id)
+        self.assertEqual(updated_item.quantity, item.quantity + data.get('quantity'))
+
 
 class DeleteItemTestCase(APITestCase):
         def setUp(self):
