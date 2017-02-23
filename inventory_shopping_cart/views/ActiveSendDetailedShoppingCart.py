@@ -1,11 +1,10 @@
-from django.http import Http404
 from rest_framework import status
 
 from inventoryProject.permissions import IsAdminOrReadOnly
 from inventory_shopping_cart.models import ShoppingCart
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, NotFound
 
 from inventory_shopping_cart.serializers.ShoppingCartSerializer import ShoppingCartSerializer
 
@@ -13,7 +12,7 @@ def get_shopping_cart(pk):
     try:
         return ShoppingCart.objects.get(pk=pk)
     except ShoppingCart.DoesNotExist:
-        raise Http404
+        raise NotFound(detail="Shopping Cart not found")
 
 class ViewDetailedShoppingCart(APIView):
     permission_classes = [IsAdminOrReadOnly]

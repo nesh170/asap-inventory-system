@@ -1,4 +1,3 @@
-from django.http import Http404
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
@@ -7,7 +6,8 @@ from rest_framework.views import APIView
 from inventory_shopping_cart_request.models import RequestTable
 from inventory_shopping_cart_request.serializers.ShoppingCartRequestSerializer import ShoppingCartRequestSerializer
 from inventory_shopping_cart.models import ShoppingCart
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, NotFound
+
 
 class ShoppingCartRequestList(generics.ListCreateAPIView):
     serializer_class = ShoppingCartRequestSerializer
@@ -17,7 +17,7 @@ def get_request(pk):
     try:
         return RequestTable.objects.get(pk=pk)
     except RequestTable.DoesNotExist:
-        raise Http404
+        raise NotFound(detail="Shopping Cart Request not found")
 class DeleteShoppingCartRequest(APIView):
     def delete(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
