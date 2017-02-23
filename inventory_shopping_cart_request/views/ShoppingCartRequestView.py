@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,6 +11,7 @@ from rest_framework.exceptions import MethodNotAllowed, NotFound
 
 
 class ShoppingCartRequestList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ShoppingCartRequestSerializer
     queryset = RequestTable.objects.all()
 
@@ -19,6 +21,7 @@ def get_request(pk):
     except RequestTable.DoesNotExist:
         raise NotFound(detail="Shopping Cart Request not found")
 class DeleteShoppingCartRequest(APIView):
+    permission_classes = [IsAuthenticated]
     def delete(self, request, pk, format=None):
         shopping_cart_request = get_request(pk)
         user = self.request.user
@@ -33,24 +36,22 @@ class DeleteShoppingCartRequest(APIView):
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else:
             raise MethodNotAllowed("Cannot delete item from shopping cart that is not active")
-class ModifyQuantityRequested(APIView):
-    def patch(self, request, pk, format=None):
-        shopping_cart_request = get_request(pk)
-        shopping_cart = shopping_cart_request.shopping_cart
-        serializer = ShoppingCartRequestSerializer(shopping_cart_request, data=request.data)
-        if (request.data.get('quantity_requested') >= 0 and shopping_cart.status=='active'):
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            if (request.data.get('quantity_requested') < 0 and shopping_cart.status != 'active'):
-                raise MethodNotAllowed(self.patch, "Quantity cannot be negative and item with quantity to modify must be part of active cart")
-            elif (shopping_cart.status != 'active'):
-                raise MethodNotAllowed(self.patch, "Item with quantity to modify must be part of active cart")
-            elif (request.data.get('quantity_requested') < 0):
-                raise MethodNotAllowed(self.patch, "Quantity cannot be negative")
-            #should never reach this else statement
-            else:
-                raise MethodNotAllowed(self.patch, "Method not allowed")
+
+
+class ModifyQuantityRequested(generics.UpdateAPIView):
+    queryset = RequestTable.objects.all()
+    serializer_class = ShoppingCartRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        quantity_requested = request.data.get('quantity_requested')
+        if quantity_requested is None:
+            raise MethodNotAllowed(detail='Require quantity_requested')
+        request_obj = self.get_object()
+        shopping_cart = request_obj.shopping_cart
+        if shopping_cart.status != 'active':
+            raise MethodNotAllowed(self.patch, "Item with quantity to modify must be part of active cart")
+        if request.data.get('quantity_requested') <= 0:
+            raise MethodNotAllowed(self.patch, "Quantity must be greater than 0")
+        return self.partial_update(request, *args, **kwargs)
+
