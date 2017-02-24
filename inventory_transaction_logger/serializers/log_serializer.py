@@ -20,15 +20,17 @@ class ItemLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemLog
         fields = ('id', 'log_id', 'item', 'item_id')
+
 class LogSerializer(serializers.ModelSerializer):
     nature_id = serializers.IntegerField(write_only=True)
     nature = ActionSerializer(many=False, read_only=True)
     initiating_user = UserSerializer(read_only=True, many=False)
     affected_user = UserSerializer(read_only=True, many=False)
     item_log = ItemLogSerializer(read_only=True, many=True)
+    #cart_log =
     class Meta:
         model = Log
-        fields = ('id', 'initiating_user', 'nature', 'nature_id', 'timestamp', 'affected_user', 'item_log')
+        fields = ('id', 'initiating_user', 'nature', 'nature_id', 'timestamp', 'affected_user', 'item_log', 'cart_log')
 
     def create(self, validated_data):
         username = self.context.get("request").user.username
