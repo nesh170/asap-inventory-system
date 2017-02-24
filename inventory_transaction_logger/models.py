@@ -2,10 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 
 from items.models import Item
-<<<<<<< HEAD
 from inventory_shopping_cart.models import ShoppingCart
-=======
->>>>>>> 07e498464fb7e22fceeef799f235c659fc628d50
+
 
 
 class Action(models.Model):
