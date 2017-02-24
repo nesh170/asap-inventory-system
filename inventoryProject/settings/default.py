@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'social_django',
     'rest_framework_social_oauth2',
     'rest_framework.authtoken',
+    'rest_framework_docs',
     'corsheaders',
     'inventory_shopping_cart.apps.InventoryShoppingCartConfig',
     'inventory_shopping_cart_request.apps.InventoryShoppingCartRequestConfig',
