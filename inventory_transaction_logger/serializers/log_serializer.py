@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from inventory_transaction_logger.models import Log, Action, ItemLog, ShoppingCartLog
 from inventory_user.serializers.user_serializer import UserSerializer
-from inventory_shopping_cart.serializers import ShoppingCartSerializer
 from inventory_shopping_cart.models import ShoppingCart
 from items.models import Item
 
@@ -44,15 +43,9 @@ class LogSerializer(serializers.ModelSerializer):
     initiating_user = UserSerializer(read_only=True, many=False)
     affected_user = UserSerializer(read_only=True, many=False)
     item_log = ItemLogSerializer(read_only=True, many=True)
-    cart_log = ShoppingCartLogSerializer(read_only=True, many=True)
+    shopping_cart_log = ShoppingCartLogSerializer(read_only=True, many=True)
 
 
     class Meta:
         model = Log
-        fields = ('id', 'initiating_user', 'nature', 'nature_id', 'timestamp', 'affected_user', 'item_log', 'cart_log')
-
-    def create(self, validated_data):
-        username = self.context.get("request").user.username
-        action_id = validated_data.get("action_id")
-        action = Action.objects.get(pk=action_id)
-        return Log.objects.create(user=username, action=action, **validated_data)
+        fields = ('id', 'initiating_user', 'nature', 'nature_id', 'timestamp', 'affected_user', 'item_log', 'shopping_cart_log', 'comment')
