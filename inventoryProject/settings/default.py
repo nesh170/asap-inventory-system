@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'inventory_shopping_cart.apps.InventoryShoppingCartConfig',
     'inventory_shopping_cart_request.apps.InventoryShoppingCartRequestConfig',
+    'inventory_transaction_logger.apps.InventoryTransactionLoggerConfig'
 ]
 
 # SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}

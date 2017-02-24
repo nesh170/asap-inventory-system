@@ -31,4 +31,6 @@ urlpatterns = [
     url(r'^api/shoppingCartRequest/', include('inventory_shopping_cart_request.urls')),
     url(r'^api/shoppingCart/', include('inventory_shopping_cart.urls')),
     url(r'^auth/', include('rest_framework_social_oauth2.urls')),
+    url(r'^api/logger/', include('inventory_transaction_logger.urls')),
+
 ]
