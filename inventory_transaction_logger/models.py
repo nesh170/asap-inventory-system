@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 
 from items.models import Item
+from inventory_shopping_cart.models import ShoppingCart
+
 
 
 class Action(models.Model):
@@ -31,5 +33,9 @@ class ItemLog(models.Model):
     def __str__(self):
         item_log_string = "{log} : {item}".format
         return item_log_string(log=self.log.nature.tag, item=self.item.name)
+
+class ShoppingCartLog(models.Model):
+    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='cart_log')
+    cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE, related_name='cart')
 
 

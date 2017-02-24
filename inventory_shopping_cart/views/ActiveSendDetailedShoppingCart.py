@@ -28,7 +28,7 @@ class ActiveShoppingCart(APIView):
             user = self.request.user
             return ShoppingCart.objects.filter(owner=user).get(status='active')
         except ShoppingCart.DoesNotExist:
-            new_shopping_cart = ShoppingCart.objects.create(owner=user, status='active', reason='Submitting a request for approval')
+            new_shopping_cart = ShoppingCart.objects.create(owner=user, status='active', reason='This is the cart for ' + user.username)
             return new_shopping_cart
 
     def get(self, request, format=None):
