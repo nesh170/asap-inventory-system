@@ -54,4 +54,3 @@ class ModifyQuantityRequested(generics.UpdateAPIView):
         if request.data.get('quantity_requested') <= 0:
             raise MethodNotAllowed(self.patch, "Quantity must be greater than 0")
         return self.partial_update(request, *args, **kwargs)
-
