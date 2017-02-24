@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from inventory_shopping_cart_request.models import RequestTable
 from inventory_shopping_cart_request.serializers.ShoppingCartRequestSerializer import ShoppingCartRequestSerializer
 from inventory_shopping_cart.models import ShoppingCart
-from rest_framework.exceptions import MethodNotAllowed, NotFound
+from rest_framework.exceptions import MethodNotAllowed, NotFound, ParseError
 
 
 class ShoppingCartRequestList(generics.ListCreateAPIView):
@@ -46,11 +46,15 @@ class ModifyQuantityRequested(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         quantity_requested = request.data.get('quantity_requested')
         if quantity_requested is None:
-            raise MethodNotAllowed(detail='Require quantity_requested')
+            raise MethodNotAllowed(self.patch, detail='Require quantity_requested')
+        return self.partial_update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        self.get_object()
         request_obj = self.get_object()
         shopping_cart = request_obj.shopping_cart
         if shopping_cart.status != 'active':
             raise MethodNotAllowed(self.patch, "Item with quantity to modify must be part of active cart")
-        if request.data.get('quantity_requested') <= 0:
-            raise MethodNotAllowed(self.patch, "Quantity must be greater than 0")
-        return self.partial_update(request, *args, **kwargs)
+        if serializer.validated_data.get('quantity_requested') <= 0:
+            raise ParseError(detail="Quantity must be greater than 0")
+        serializer.save()
