@@ -7,9 +7,10 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import ParseError, MethodNotAllowed
+from rest_framework.exceptions import ParseError, MethodNotAllowed, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser, IsSuperUser, IsSuperUserDelete
 from inventory_user.serializers.user_serializer import UserSerializer, LargeUserSerializer
@@ -79,14 +80,27 @@ def get_duke_access_token(request):
         return Response(data=response.json(), status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_api_token(request):
-    try:
-        token = Token.objects.get(user=request.user)
-    except ObjectDoesNotExist:
-        token = Token.objects.create(user=request.user)
-    return Response(data={'token': token.key}, status=status.HTTP_200_OK)
+class ApiToken(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            token = Token.objects.get(user=request.user)
+        except ObjectDoesNotExist:
+            token = Token.objects.create(user=request.user)
+        return Response(data={'token': token.key}, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        try:
+            token = Token.objects.get(user=request.user)
+        except ObjectDoesNotExist:
+            raise NotFound(detail="User does not have a token")
+        token.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+
 
 
 
