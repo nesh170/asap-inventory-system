@@ -454,7 +454,7 @@ class PatchRequestTestCases(APITestCase):
         url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
         response = self.client.patch(url, data, format='json')
         updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(updated_shopping_cart_request.quantity_requested, shopping_cart_request.quantity_requested)
 
     def test_approve_shopping_cart(self):
