@@ -2,7 +2,7 @@ from django.conf.urls import url
 
 from items.views.field_view import FieldList, FieldDeletion, IntFieldUpdate, FloatFieldUpdate, ShortTextFieldUpdate, \
     LongTextFieldUpdate
-from items.views.item_view import ItemList, ItemDetail, UniqueItemList
+from items.views.item_view import ItemList, ItemDetail, UniqueItemList, ItemQuantityModification
 from items.views.tag_view import TagDeletion, TagList, UniqueTagList
 
 urlpatterns = [
@@ -16,6 +16,7 @@ urlpatterns = [
     url(r'^field/(?P<pk>[0-9]+)$', FieldDeletion.as_view(), name='field-deletion'),
     url(r'^field/int/(?P<pk>[0-9]+)$', IntFieldUpdate.as_view(), name='int-field-update'),
     url(r'^field/float/(?P<pk>[0-9]+)$', FloatFieldUpdate.as_view(), name='float-field-update'),
-    url(r'^field/shorttext/(?P<pk>[0-9]+)$', ShortTextFieldUpdate.as_view(), name='short-text-field-update'),
-    url(r'^field/longtext/(?P<pk>[0-9]+)$', LongTextFieldUpdate.as_view(), name='long-text-field-update'),
+    url(r'^field/short_text/(?P<pk>[0-9]+)$', ShortTextFieldUpdate.as_view(), name='short-text-field-update'),
+    url(r'^field/long_text/(?P<pk>[0-9]+)$', LongTextFieldUpdate.as_view(), name='long-text-field-update'),
+    url(r'^quantity$', ItemQuantityModification.as_view(), name='item-quantity-modification'),
 ]

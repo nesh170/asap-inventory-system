@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from inventory_user.views.user_view import InventoryUserList, InventoryCurrentUser, InventoryUser, LargeUserList, \
-    get_duke_access_token, get_api_token
+    get_duke_access_token, ApiToken
 
 urlpatterns = [
     url(r'^$', InventoryUserList.as_view(), name='user-list'),
@@ -9,5 +9,5 @@ urlpatterns = [
     url(r'^current/$', InventoryCurrentUser.as_view(), name='user-current'),
     url(r'^(?P<pk>[0-9]+)$', InventoryUser.as_view(), name='user-detail'),
     url(r'^auth/duke$', get_duke_access_token, name='auth-duke'),
-    url(r'^auth/token', get_api_token, name='auth-api')
+    url(r'^auth/token', ApiToken.as_view(), name='auth-api')
 ]
