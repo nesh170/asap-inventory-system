@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
+from inventory_disbursements.models import Cart
 from inventory_shopping_cart.models import ShoppingCart
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.models import Log, Action, ItemLog, ShoppingCartLog
@@ -35,7 +36,9 @@ def equal_item(test_equal, item_log, item_affected):
             item_affected_tag = item_affected_tags[x]
             test_equal.assertEqual(item_log_tag, item_affected_tag)
 
-def equal_log(test_equal, log_id, initiating_user, nature_enum, affected_user, comment, items_affected = None, carts_affected = None):
+
+def equal_log(test_equal, log_id, initiating_user, nature_enum, affected_user, comment, items_affected = None,
+              carts_affected = None, disbursement_affected = None):
     log_entry = Log.objects.get(pk=log_id)
     test_equal.assertEqual(log_entry.initiating_user, initiating_user)
     test_equal.assertEqual(log_entry.nature.tag, nature_enum.value)
@@ -54,6 +57,11 @@ def equal_log(test_equal, log_id, initiating_user, nature_enum, affected_user, c
             shoppping_cart_log = shopping_cart_logs[y]
             shopping_cart_affected = carts_affected[y]
             equal_shopping_cart(test_equal, shoppping_cart_log, shopping_cart_affected)
+    if disbursement_affected is not None:
+        updated_disbursement_cart = log_entry.disbursement_log.all()
+        test_equal.assertEqual(updated_disbursement_cart.count(), len(disbursement_affected))
+        [test_equal.assertEqual(updated_disbursement_cart.get(pk=disburse.id).cart, disburse.cart)
+         for disburse in updated_disbursement_cart]
 
 
 class LogUtilityTestCase(TestCase):
@@ -75,8 +83,11 @@ class LogUtilityTestCase(TestCase):
         another_shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="another shopping cart",
                                                             admin_comment="hi", admin=self.admin)
         shopping_cart_affected = [shopping_cart, another_shopping_cart]
-        log_entry = LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED, self.normal_user, 'Creating an item', items_affected, shopping_cart_affected)
-        equal_log(self, log_entry.id, self.admin, ActionEnum.ITEM_CREATED, self.normal_user, 'Creating an item', items_affected, shopping_cart_affected)
+        disbursement_cart = [Cart.objects.create(disburser=self.admin, receiver=self.normal_user, comment="lit")]
+        log_entry = LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED, self.normal_user, 'Creating an item',
+                                      items_affected, shopping_cart_affected, disbursement_cart)
+        equal_log(self, log_entry.id, self.admin, ActionEnum.ITEM_CREATED, self.normal_user, 'Creating an item',
+                  items_affected, shopping_cart_affected, disbursement_cart)
 
     def test_utility_no_item_cart(self):
         log_entry = LoggerUtility.log(self.admin, ActionEnum.CUSTOM_FIELD_CREATED, self.normal_user, 'Creating a custom field')

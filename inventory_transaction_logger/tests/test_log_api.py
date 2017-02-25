@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 
+from inventory_disbursements.models import Cart
 from inventory_shopping_cart.models import ShoppingCart
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.models import Log, Action
@@ -44,6 +45,11 @@ def equal_log(test_client, data, log_id):
         [equal_cart(test_client, cart_data, log) for cart_data in data.get("shopping_cart_log")]
     if data.get("item_log") is not None:
         [equal_item(test_client, item_data, log) for item_data in data.get("item_log")]
+    if data.get("disbursement_log") is not None:
+        test_client.assertEqual(len(data.get("disbursement_log")), log.disbursement_log.count())
+        [test_client.assertEqual(disbursement_json.get("id"), log.disbursement_log.get(pk=disbursement_json.get('id')).id)
+         for disbursement_json in data.get("disbursement_log")]
+
 
 class LogTestCase(APITestCase):
     def setUp(self):
@@ -75,8 +81,9 @@ class LogTestCase(APITestCase):
         another_shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="another shopping cart",
                                                             admin_comment="hi", admin=self.admin)
         shopping_cart_affected = [shopping_cart, another_shopping_cart]
-        LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED, self.normal_user, "This is creating a request", items_affected, shopping_cart_affected)
-
+        disbursement_cart = [Cart.objects.create(disburser=self.admin, receiver=self.normal_user, comment="lit")]
+        LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED, self.normal_user, "This is creating a request",
+                          items_affected, shopping_cart_affected, disbursement_cart)
 
     def test_get_logs(self):
         url = reverse('log-list')
@@ -87,12 +94,11 @@ class LogTestCase(APITestCase):
         json_request_list = json.loads(str(response.content, 'utf-8'))['results']
         [equal_log(self, json_request, json_request.get('id')) for json_request in json_request_list]
 
-
     def test_get_detailed_log(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         for log_id in Log.objects.values_list('id', flat=True):
             url = reverse('detailed-log', kwargs={'pk': str(log_id)})
-            #make the get request
+            # make the get request
             response = self.client.get(url)
-            #compare the JSON response received from the GET request to what is in database
+            # compare the JSON response received from the GET request to what is in database
             equal_log(self, json.loads(str(response.content, 'utf-8')), log_id)
