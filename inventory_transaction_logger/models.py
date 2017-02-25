@@ -3,7 +3,7 @@ from django.db import models
 
 from items.models import Item
 from inventory_shopping_cart.models import ShoppingCart
-
+from inventory_disbursements.models import Cart
 
 
 class Action(models.Model):
@@ -26,6 +26,7 @@ class Log(models.Model):
         return log_string(nature=self.nature.tag, initiator=self.initiating_user.username,
                           affected=self.affected_user.username, timestamp=self.timestamp)
 
+
 class ItemLog(models.Model):
     log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='item_log')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='item')
@@ -34,8 +35,22 @@ class ItemLog(models.Model):
         item_log_string = "{log} : {item}".format
         return item_log_string(log=self.log.nature.tag, item=self.item.name)
 
+
 class ShoppingCartLog(models.Model):
     log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='cart_log')
     cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE, related_name='cart')
+
+    def __str__(self):
+        item_log_string = "{log} : {cart}".format
+        return item_log_string(log=self.log.nature.tag, cart=self.cart)
+
+
+class DisbursementCartLog(models.Model):
+    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='disbursement_log')
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='disbursement_cart')
+
+    def __str__(self):
+        item_log_string = "{log} : {cart}".format
+        return item_log_string(log=self.log.nature.tag, cart=self.cart)
 
 
