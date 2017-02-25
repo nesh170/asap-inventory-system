@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffOrReadOnly, IsSuperUserDelete, IsStaffUser
-from inventory_logger.action_enum import ActionEnum
-from inventory_logger.utility.logger import LoggerUtility
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
 from items.logic.filter_item_logic import FilterItemLogic
 from items.models import Item
@@ -41,7 +41,10 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         item_name = self.get_object().name
         return_value = self.destroy(request, *args, **kwargs)
-        LoggerUtility.log_as_system(ActionEnum.ITEM_DESTROYED, request.user.username + " DESTROYED " + item_name)
+        #LoggerUtility.log_as_system(ActionEnum.ITEM_DESTROYED, request.user.username + " DESTROYED " + item_name)
+        comment_string = "Item with name {name} was deleted by {username}".format
+        comment = comment_string(name=item_name, username=request.user.username)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.ITEM_DELETED, comment=comment, items_affected=[self.get_object()])
         return return_value
 
     def patch(self, request, *args, **kwargs):

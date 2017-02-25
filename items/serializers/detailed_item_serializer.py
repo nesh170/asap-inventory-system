@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from inventory_logger.action_enum import ActionEnum
-from inventory_logger.utility.logger import LoggerUtility
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.models import Item, IntField, FloatField, ShortTextField, LongTextField
 from items.serializers.field_serializer import IntFieldSerializer, FloatFieldSerializer, ShortTextFieldSerializer, \
     LongTextFieldSerializer
@@ -46,5 +46,10 @@ class DetailedItemSerializer(serializers.ModelSerializer):
         instance.description = validated_data.get('description', instance.description)
         instance.save()
         username = self.context['request'].user.username
-        LoggerUtility.log_as_system(ActionEnum.ITEM_MODIFIED, username + " Modified Item:" + instance.name)
+        comment_string = "Item with name {name} was modified by {username} with these changes: name: {name_change};" \
+                                                             " quantity: {quantity_change}; model_number: {model_number_change};" \
+                                                             " description: {description_change}".format
+        comment = comment_string(name=instance.name, username=username, name_change=validated_data.get('name'), quantity_change=validated_data.get('quantity'),
+                                 model_number_change=validated_data.get('model_number'), description_change=validated_data.get('description'))
+        LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.ITEM_MODIFIED, comment=comment, items_affected=[instance])
         return instance

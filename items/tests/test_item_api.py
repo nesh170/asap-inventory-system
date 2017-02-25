@@ -10,7 +10,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_logger.models import Action
+from inventory_transaction_logger.models import Action
 from items.models import Item
 
 USERNAME = 'test'
@@ -53,7 +53,7 @@ class GetItemTestCase(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         basic_item = Item.objects.create(name="Oscilloscope", quantity=3)
         Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='ITEM DESTROYED')
+        Action.objects.create(color='2', tag='ITEM DELETED')
         Action.objects.create(color='3', tag='ITEM MODIFIED')
 
     def test_get_items(self):
