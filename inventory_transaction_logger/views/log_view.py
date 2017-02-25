@@ -24,7 +24,7 @@ class LogList(generics.ListAPIView):
     serializer_class = LogSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_class = LogFilter
-    search_fields = ('initiating_user__username', 'comment', 'item_log__item__name', 'affected_user__username', )
+    search_fields = ('initiating_user__username', 'item_log__item__name', 'affected_user__username', )
 
 def get_log(pk):
     try:

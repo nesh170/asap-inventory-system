@@ -22,9 +22,9 @@ class Log(models.Model):
     affected_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='affected', null=True, blank=True)
     comment = models.TextField(null=True, blank=True)
     def __str__(self):
-        log_string = "{nature} was by {initiator} to {affected} on {timestamp} with comment {comment}".format
+        log_string = "{nature} was by {initiator} on {timestamp} with id {id}".format
         return log_string(nature=self.nature.tag, initiator=self.initiating_user.username,
-                          affected=self.affected_user.username, timestamp=self.timestamp, comment=self.comment)
+                          timestamp=self.timestamp, id=self.id)
 
 class ItemLog(models.Model):
     log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='item_log')
