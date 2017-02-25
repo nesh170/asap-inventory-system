@@ -9,8 +9,8 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_logger.action_enum import ActionEnum
-from inventory_logger.models import Action
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.models import Action
 from inventory_shopping_cart.models import ShoppingCart
 from inventory_shopping_cart_request.models import RequestTable
 from items.models import Item

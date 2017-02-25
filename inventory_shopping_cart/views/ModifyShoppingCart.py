@@ -9,8 +9,8 @@ from inventoryProject.permissions import IsStaffUser
 from inventory_shopping_cart.business_logic import modify_shopping_cart_logic
 from inventory_shopping_cart.serializers import StatusSerializer, CancelSerializer
 from datetime import datetime
-from inventory_logger.utility.logger import LoggerUtility
-from inventory_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
+from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_shopping_cart.models import ShoppingCart
 
 def approveDenyShoppingCart(self, request, pk, shopping_cart_type):
@@ -25,11 +25,13 @@ def approveDenyShoppingCart(self, request, pk, shopping_cart_type):
         shopping_cart_to_approve_deny.status = shopping_cart_type
         serializer = StatusSerializer.StatusSerializer(shopping_cart_to_approve_deny, data=request.data)
         if serializer.is_valid():
-            LoggerUtility.log_as_system(log_action,
-                                        "Request (ID: " + str(shopping_cart_to_approve_deny.id) + ") " + shopping_cart_type)
             serializer.save(admin=request.user, admin_timestamp=datetime.now())
             if shopping_cart_type == "approved":
                 modify_shopping_cart_logic.approve_shopping_cart(shopping_cart_to_approve_deny)
+            comment = "Shopping Cart Belonging to " + shopping_cart_to_approve_deny.owner.username + " " + shopping_cart_type + " by " + request.user.username
+            LoggerUtility.log(initiating_user=request.user, nature_enum=log_action,
+                              affected_user=shopping_cart_to_approve_deny.owner,
+                              comment=comment, carts_affected=[shopping_cart_to_approve_deny])
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
@@ -59,8 +61,11 @@ class CancelShoppingCart(APIView):
                 request.data['reason'] = shopping_cart_to_cancel.reason
             serializer = CancelSerializer.CancelSerializer(shopping_cart_to_cancel, data=request.data)
             if serializer.is_valid():
-                LoggerUtility.log_as_system(ActionEnum.REQUEST_CANCELLED, "Request (ID: " + str(shopping_cart_to_cancel.id) + ") Cancelled")
                 serializer.save()
+                comment = "Shopping Cart Belonging to " + shopping_cart_to_cancel.owner.username + " cancelled by " + request.user.username
+                LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CANCELLED,
+                                  affected_user=request.user,
+                                  comment=comment, carts_affected=[shopping_cart_to_cancel])
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
