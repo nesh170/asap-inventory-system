@@ -454,7 +454,7 @@ class PatchRequestTestCases(APITestCase):
         url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
         response = self.client.patch(url, data, format='json')
         updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(updated_shopping_cart_request.quantity_requested, shopping_cart_request.quantity_requested)
 
     def test_approve_shopping_cart(self):
@@ -473,7 +473,7 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(updated_shopping_cart.status, "approved")
         self.assertEqual(updated_item.quantity, item_with_one_tag.quantity - shopping_cart_request.quantity_requested)
-        self.assertEqual(updated_shopping_cart.admin_comment, "this is an admin comment approval reason is : testing approve request")
+        self.assertEqual(updated_shopping_cart.admin_comment, "testing approve request")
 
     def test_approve_shopping_cart_fail_quantity(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -522,8 +522,7 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(updated_shopping_cart.status, "denied")
         self.assertEqual(updated_item.quantity, item_with_one_tag.quantity)
-        self.assertEqual(updated_shopping_cart.admin_comment,
-                         "this is an admin comment denial reason is : testing deny request")
+        self.assertEqual(updated_shopping_cart.admin_comment, "testing deny request")
 
     def test_deny_shopping_cart_fail(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)

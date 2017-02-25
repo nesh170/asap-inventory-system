@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from inventory_shopping_cart_request.models import RequestTable
 from inventory_shopping_cart_request.serializers.ShoppingCartRequestSerializer import ShoppingCartRequestSerializer
 from inventory_shopping_cart.models import ShoppingCart
-from rest_framework.exceptions import MethodNotAllowed, NotFound
+from rest_framework.exceptions import MethodNotAllowed, NotFound, ParseError
 
 
 class ShoppingCartRequestList(generics.ListCreateAPIView):
@@ -38,6 +38,8 @@ class DeleteShoppingCartRequest(APIView):
             raise MethodNotAllowed("Cannot delete item from shopping cart that is not active")
 
 
+
+
 class ModifyQuantityRequested(generics.UpdateAPIView):
     queryset = RequestTable.objects.all()
     serializer_class = ShoppingCartRequestSerializer
@@ -56,5 +58,5 @@ class ModifyQuantityRequested(generics.UpdateAPIView):
         if shopping_cart.status != 'active':
             raise MethodNotAllowed(self.patch, "Item with quantity to modify must be part of active cart")
         if serializer.validated_data.get('quantity_requested') <= 0:
-            raise MethodNotAllowed(self.patch, "Quantity must be greater than 0")
+            raise ParseError(detail="Quantity must be greater than 0")
         serializer.save()

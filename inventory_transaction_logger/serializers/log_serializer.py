@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from inventory_transaction_logger.models import Log, Action, ItemLog, ShoppingCartLog
-from inventory_user.serializers.user_serializer import UserSerializer
 from inventory_shopping_cart.models import ShoppingCart
 from items.models import Item
 
@@ -27,7 +26,7 @@ class ItemLogSerializer(serializers.ModelSerializer):
 class NestedShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
-        fields = ('owner', 'status', 'reason', 'timestamp')
+        fields = ('id', 'owner', 'status', 'reason', 'timestamp')
 
 class ShoppingCartLogSerializer(serializers.ModelSerializer):
     shopping_cart = NestedShoppingCartSerializer(many=False, allow_null=False, read_only=True)
@@ -40,8 +39,8 @@ class ShoppingCartLogSerializer(serializers.ModelSerializer):
 class LogSerializer(serializers.ModelSerializer):
     nature_id = serializers.IntegerField(write_only=True)
     nature = ActionSerializer(many=False, read_only=True)
-    initiating_user = UserSerializer(read_only=True, many=False)
-    affected_user = UserSerializer(read_only=True, many=False)
+    initiating_user = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
+    affected_user = serializers.SlugRelatedField(many=False, read_only=True, slug_field='username')
     item_log = ItemLogSerializer(read_only=True, many=True)
     shopping_cart_log = ShoppingCartLogSerializer(read_only=True, many=True)
 
