@@ -23,18 +23,6 @@ def approveDenyShoppingCart(self, request, pk, shopping_cart_type):
         log_action = ActionEnum.REQUEST_DENIED
     if modify_shopping_cart_logic.can_approve_deny_cancel_shopping_cart(shopping_cart_to_approve_deny, shopping_cart_type):
         shopping_cart_to_approve_deny.status = shopping_cart_type
-        if (shopping_cart_to_approve_deny.admin_comment is not None):
-            if (request.data.get('admin_comment') is not None):
-                request.data[
-                    'admin_comment'] = shopping_cart_to_approve_deny.admin_comment + " " + type_for_comment + " reason is : " + request.data.get(
-                    'admin_comment')
-            else:
-                request.data['admin_comment'] = shopping_cart_to_approve_deny.admin_comment;
-        else:
-            if (request.data.get('admin_comment') is not None):
-                request.data['admin_comment'] = type_for_comment + " reason is : " + request.data.get('admin_comment')
-            else:
-                request.data['admin_comment'] = None;
         serializer = StatusSerializer.StatusSerializer(shopping_cart_to_approve_deny, data=request.data)
         if serializer.is_valid():
             LoggerUtility.log_as_system(log_action,
