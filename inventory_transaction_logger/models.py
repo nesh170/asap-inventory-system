@@ -20,11 +20,11 @@ class Log(models.Model):
     nature = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='nature')
     timestamp = models.DateTimeField(auto_now=True)
     affected_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='affected', null=True, blank=True)
-
+    comment = models.TextField(null=True, blank=True)
     def __str__(self):
-        log_string = "{nature} was by {initiator} to {affected} on {timestamp}".format
+        log_string = "{nature} was by {initiator} on {timestamp} with id {id}".format
         return log_string(nature=self.nature.tag, initiator=self.initiating_user.username,
-                          affected=self.affected_user.username, timestamp=self.timestamp)
+                          timestamp=self.timestamp, id=self.id)
 
 class ItemLog(models.Model):
     log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='item_log')
@@ -35,7 +35,7 @@ class ItemLog(models.Model):
         return item_log_string(log=self.log.nature.tag, item=self.item.name)
 
 class ShoppingCartLog(models.Model):
-    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='cart_log')
-    cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE, related_name='cart')
+    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='shopping_cart_log')
+    shopping_cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE, related_name='cart')
 
 
