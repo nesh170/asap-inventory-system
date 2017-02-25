@@ -35,23 +35,25 @@ def equal_item(test_equal, item_log, item_affected):
             item_affected_tag = item_affected_tags[x]
             test_equal.assertEqual(item_log_tag, item_affected_tag)
 
-def equal_log(test_equal, log_id, initiating_user, nature_enum, affected_user, comment, items_affected = [], carts_affected = []):
+def equal_log(test_equal, log_id, initiating_user, nature_enum, affected_user, comment, items_affected = None, carts_affected = None):
     log_entry = Log.objects.get(pk=log_id)
     test_equal.assertEqual(log_entry.initiating_user, initiating_user)
     test_equal.assertEqual(log_entry.nature.tag, nature_enum.value)
     test_equal.assertEqual(log_entry.affected_user, affected_user)
     if comment is not None:
         test_equal.assertEqual(log_entry.comment, comment)
-    item_logs = log_entry.item_log.all()
-    for x in range(0, len(item_logs)):
-        item_log = item_logs[x]
-        item_affected = items_affected[x]
-        equal_item(test_equal, item_log, item_affected)
-    shopping_cart_logs = log_entry.shopping_cart_log.all()
-    for y in range(0, len(shopping_cart_logs)):
-        shoppping_cart_log = shopping_cart_logs[y]
-        shopping_cart_affected = carts_affected[y]
-        equal_shopping_cart(test_equal, shoppping_cart_log, shopping_cart_affected)
+    if items_affected is not None:
+        item_logs = log_entry.item_log.all()
+        for x in range(0, len(item_logs)):
+            item_log = item_logs[x]
+            item_affected = items_affected[x]
+            equal_item(test_equal, item_log, item_affected)
+    if carts_affected is not None:
+        shopping_cart_logs = log_entry.shopping_cart_log.all()
+        for y in range(0, len(shopping_cart_logs)):
+            shoppping_cart_log = shopping_cart_logs[y]
+            shopping_cart_affected = carts_affected[y]
+            equal_shopping_cart(test_equal, shoppping_cart_log, shopping_cart_affected)
 
 
 class LogUtilityTestCase(TestCase):

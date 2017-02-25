@@ -10,9 +10,4 @@ class LoggerUtility:
          items_affected] if items_affected is not None else []
         [ShoppingCartLog.objects.create(log=log_entry, shopping_cart=cart) for cart in
          carts_affected] if carts_affected is not None else []
-
-        for item in items_affected:
-            ItemLog.objects.create(log=log_entry, item=item)
-        for cart in carts_affected:
-            ShoppingCartLog.objects.create(log=log_entry, shopping_cart=cart)
         return log_entry
