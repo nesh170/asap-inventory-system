@@ -12,7 +12,8 @@ class Cart(models.Model):
 
     def __str__(self):
         disbursement_cart_string = "Cart by {admin} for {receiver} has {items_quantity} items".format
-        return disbursement_cart_string(admin=self.disburser, receiver=self.receiver,
+        return disbursement_cart_string(admin=self.disburser if self.disburser is not None else 'NULL',
+                                        receiver=self.receiver if self.disburser is not None else 'NULL',
                                         items_quantity=self.disbursements.count())
 
 
@@ -23,5 +24,5 @@ class Disbursement(models.Model):
 
     def __str__(self):
         disbursement_string = "{admin} gave {quantity} {item} to {receiver} on {timestamp}".format
-        return disbursement_string(quantity=self.quantity, item=self.item.name, admin=self.cart,
+        return disbursement_string(quantity=self.quantity, item=self.item, admin=self.cart.disburser,
                                    receiver=self.cart.receiver, timestamp=self.cart.timestamp)
