@@ -41,7 +41,7 @@ class DisbursementCreation(generics.CreateAPIView):
             raise MethodNotAllowed(detail="The cart needs to be active", method=self.perform_create)
         if cart.disbursements.filter(item=item).exists():
             raise MethodNotAllowed(detail="Item is already in cart", method=self.perform_create)
-        if quantity >= item.quantity:
+        if item.quantity < quantity:
             raise MethodNotAllowed(detail="Quantity to be disbursed is more than item value", method=self.perform_create)
         serializer.save()
 
