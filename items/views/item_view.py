@@ -40,9 +40,10 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         item = self.get_object()
         item_name = self.get_object().name
-        comment_string = "Item with name {name} was deleted by {username}".format
-        comment = comment_string(name=item_name, username=request.user.username)
-        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.ITEM_DELETED, comment=comment, items_affected=[item])
+        comment_string = "Item name: {name}".format
+        comment = comment_string(name=item_name)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.ITEM_DELETED, comment=comment,
+                          items_affected=[item])
         return_value = self.destroy(request, *args, **kwargs)
         return return_value
 

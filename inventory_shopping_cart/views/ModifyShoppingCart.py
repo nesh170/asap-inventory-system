@@ -14,13 +14,11 @@ from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_shopping_cart.models import ShoppingCart
 
 
-def approveDenyShoppingCart(self, request, pk, shopping_cart_type):
+def approve_deny_shopping_cart(self, request, pk, shopping_cart_type):
     shopping_cart_to_approve_deny = get_shopping_cart(pk)
     if shopping_cart_type == "approved":
-        type_for_comment = "approval"
         log_action = ActionEnum.REQUEST_APPROVED
     else:
-        type_for_comment = "denial"
         log_action = ActionEnum.REQUEST_DENIED
     if modify_shopping_cart_logic.can_approve_deny_cancel_shopping_cart(shopping_cart_to_approve_deny, shopping_cart_type):
         shopping_cart_to_approve_deny.status = shopping_cart_type
@@ -29,10 +27,9 @@ def approveDenyShoppingCart(self, request, pk, shopping_cart_type):
             serializer.save(admin=request.user, admin_timestamp=datetime.now())
             if shopping_cart_type == "approved":
                 modify_shopping_cart_logic.approve_shopping_cart(shopping_cart_to_approve_deny)
-            comment = "Shopping Cart Belonging to " + shopping_cart_to_approve_deny.owner.username + " " + shopping_cart_type + " by " + request.user.username
             LoggerUtility.log(initiating_user=request.user, nature_enum=log_action,
                               affected_user=shopping_cart_to_approve_deny.owner,
-                              comment=comment, carts_affected=[shopping_cart_to_approve_deny])
+                              carts_affected=[shopping_cart_to_approve_deny])
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
@@ -44,13 +41,18 @@ def get_shopping_cart(pk):
         return ShoppingCart.objects.get(pk=pk)
     except ShoppingCart.DoesNotExist:
         raise NotFound(detail="Shopping Cart not found")
+
+
 class ApproveShoppingCart(APIView):
    permission_classes = [IsStaffUser]
+
    def patch(self, request, pk, format=None):
-       return approveDenyShoppingCart(self, request, pk, "approved")
+       return approve_deny_shopping_cart(self, request, pk, "approved")
+
 
 class CancelShoppingCart(APIView):
     permission_classes = [IsAuthenticated]
+
     def patch(self, request, pk, format=None):
         shopping_cart_to_cancel = get_shopping_cart(pk)
         if modify_shopping_cart_logic.can_approve_deny_cancel_shopping_cart(shopping_cart_to_cancel, "cancelled"):
@@ -63,10 +65,8 @@ class CancelShoppingCart(APIView):
             serializer = CancelSerializer.CancelSerializer(shopping_cart_to_cancel, data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                comment = "Shopping Cart Belonging to " + shopping_cart_to_cancel.owner.username + " cancelled by " + request.user.username
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CANCELLED,
-                                  affected_user=request.user,
-                                  comment=comment, carts_affected=[shopping_cart_to_cancel])
+                                  affected_user=request.user, carts_affected=[shopping_cart_to_cancel])
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:

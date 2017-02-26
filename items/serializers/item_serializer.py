@@ -40,10 +40,10 @@ class ItemSerializer(serializers.ModelSerializer):
             item = Item.objects.create(**validated_data)
         create_fields(item)
         username = self.context['request'].user.username
-        comment_string = "Item with name {name} was created by {username} with fields:" \
+        comment_string = "Item with name {name} was created with fields:" \
                          " quantity: {quantity}; model_number: {model_number};" \
                          " description: {description}".format
-        comment = comment_string(name=item.name, username=username, quantity=item.quantity,
+        comment = comment_string(name=item.name, quantity=item.quantity,
                                  model_number=item.model_number,
                                  description=item.description)
         LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.ITEM_MODIFIED,
@@ -84,5 +84,3 @@ class ItemQuantitySerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise MethodNotAllowed(detail="Update is not allowed", method=self.update)
-
-
