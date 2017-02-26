@@ -19,25 +19,22 @@ class NestedItemSerializer(serializers.ModelSerializer):
 
 class  DisbursementSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(read_only=True)
-    item_id = serializers.IntegerField()
-    cart_id = serializers.IntegerField()
+    item_id = serializers.IntegerField(write_only=True)
+    cart_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Disbursement
         fields = ('id', 'item', 'quantity', 'item_id', 'cart_id')
-        extra_kwargs = {'item_id': {'write_only': True},
-                        'cart_id': {'write_only': True}}
 
 
 class CartSerializer(serializers.ModelSerializer):
     disburser = NestedUserSerializer(read_only=True, many=False)
     receiver = NestedUserSerializer(read_only=True, many=False)
     disbursements = DisbursementSerializer(read_only=True, many=True)
-    receiver_id = serializers.IntegerField()
+    receiver_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Cart
         fields = ('id', 'disburser', 'receiver', 'comment', 'disbursements', 'receiver_id')
-        extra_kwargs = {'receiver_id': {'write_only': True}}
 
 
