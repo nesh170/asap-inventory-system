@@ -46,7 +46,7 @@ class DisbursementCreation(generics.CreateAPIView):
         serializer.save()
 
 
-class DisbursementDeletion(generics.DestroyAPIView):
+class DisbursementUpdateDeletion(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = DisbursementSerializer
     queryset = Disbursement.objects.all()
@@ -56,6 +56,22 @@ class DisbursementDeletion(generics.DestroyAPIView):
         if instance.cart.receiver is not None:
             raise MethodNotAllowed(detail='You can only modify an active Disbursement Cart', method=self.destroy)
         return self.destroy(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.cart.receiver is not None:
+            raise MethodNotAllowed(detail='You can only modify an active Disbursement Cart', method=self.patch)
+        return self.partial_update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        disbursement = self.get_object()
+        quantity = serializer.validated_data.get('quantity')
+        if quantity is None:
+            raise ParseError("Only quantity can be edited")
+        if disbursement.item.quantity < quantity:
+            raise MethodNotAllowed(detail="Quantity to be disbursed is more than item value",
+                                   method=self.perform_update)
+        serializer.save()
 
 
 class ActiveCart(APIView):
