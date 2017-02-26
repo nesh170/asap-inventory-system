@@ -31,6 +31,9 @@ def equal_item(test_client, item_json, item_id):
 
 
 class GetItemTestCase(APITestCase):
+    fixtures = ['action.json']
+
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -52,9 +55,6 @@ class GetItemTestCase(APITestCase):
                                                 description="Jameco")
         item_with_one_tag.tags.create(tag="test")
         basic_item = Item.objects.create(name="Oscilloscope", quantity=3)
-        Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='ITEM DELETED')
-        Action.objects.create(color='3', tag='ITEM MODIFIED')
 
     def test_get_items(self):
         url = reverse('item-list')
@@ -85,6 +85,8 @@ class GetItemTestCase(APITestCase):
 
 
 class PostItemTestCase(APITestCase):
+    fixtures = ['action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -101,9 +103,7 @@ class PostItemTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='ITEM DESTROYED')
-        Action.objects.create(color='3', tag='ITEM MODIFIED')
+
 
     def test_post_items_with_tags(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -136,6 +136,9 @@ class PostItemTestCase(APITestCase):
 
 
 class UpdateItemTestCase(APITestCase):
+    fixtures = ['action.json']
+
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         basic_item = Item.objects.create(name="Capacitor", quantity=9000)
@@ -168,9 +171,7 @@ class UpdateItemTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='ITEM DESTROYED')
-        Action.objects.create(color='3', tag='ITEM MODIFIED')
+
 
     def test_update_quantity_using_staff(self):
         self.client.force_authenticate(user=self.staff, token=self.staff_tok)
@@ -242,7 +243,9 @@ class UpdateItemTestCase(APITestCase):
 
 
 class DeleteItemTestCase(APITestCase):
-        def setUp(self):
+    fixtures = ['action.json']
+
+    def setUp(self):
             self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
             basic_item = Item.objects.create(name="Cryogenic", quantity=9000)
             self.item_id = basic_item.id
@@ -260,18 +263,15 @@ class DeleteItemTestCase(APITestCase):
                 expires=datetime.now(timezone.utc) + timedelta(days=30)
             )
             oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
-            Action.objects.create(color='1', tag='ITEM CREATED')
-            Action.objects.create(color='2', tag='ITEM DESTROYED')
-            Action.objects.create(color='3', tag='ITEM MODIFIED')
 
-        def test_delete(self):
-            self.client.force_authenticate(user=self.admin, token=self.tok)
-            url = reverse(viewname='item-detail', kwargs={'pk': self.item_id})
-            response = self.client.delete(url)
-            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-            delete_success = False
-            try:
-                Item.objects.get(pk=self.item_id)
-            except ObjectDoesNotExist:
-                delete_success = True
-            self.assertEqual(delete_success, True)
+    def test_delete(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='item-detail', kwargs={'pk': self.item_id})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        delete_success = False
+        try:
+            Item.objects.get(pk=self.item_id)
+        except ObjectDoesNotExist:
+            delete_success = True
+        self.assertEqual(delete_success, True)

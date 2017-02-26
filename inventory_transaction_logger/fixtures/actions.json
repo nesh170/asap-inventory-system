@@ -14,4 +14,5 @@
   {"model": "inventory_transaction_logger.action", "pk": 13, "fields": {"color": "#FFDEAD", "tag": "DESTRUCTION ITEM INSTANCES"}},
   {"model": "inventory_transaction_logger.action", "pk": 14, "fields": {"color": "#2E8B57", "tag": "ITEMS DISBURSED"}},
   {"model": "inventory_transaction_logger.action", "pk": 15, "fields": {"color": "#F0FF0F", "tag": "CUSTOM FIELD CREATED"}},
-  {"model": "inventory_transaction_logger.action", "pk": 16, "fields": {"color": "#B22222", "tag": "CUSTOM FIELD DELETED"}}]
+  {"model": "inventory_transaction_logger.action", "pk": 16, "fields": {"color": "#B22222", "tag": "CUSTOM FIELD DELETED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 17, "fields": {"color": "#FF3030", "tag": "CUSTOM FIELD VALUE MODIFIED"}}]

@@ -17,6 +17,8 @@ PASSWORD = 'testPassword'
 
 
 class CreateDeleteTagTestCase(APITestCase):
+    fixtures = ['action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         basic_item = Item.objects.create(name="fire", quantity=4)
@@ -72,8 +74,3 @@ class CreateDeleteTagTestCase(APITestCase):
         tag_list = [tag.get('tag') for tag in json_object]
         correct_tag_list = [tag for tag in Tag.objects.all().values_list('tag', flat=True).distinct()]
         self.assertEqual(correct_tag_list, tag_list)
-
-
-
-
-

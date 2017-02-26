@@ -2,8 +2,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, MethodNotAllowed, ParseError
 
-from inventory_logger.action_enum import ActionEnum
-from inventory_logger.utility.logger import LoggerUtility
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.factory.field_factory import FieldFactory
 from items.models import Item, Tag, Field
 from items.serializers.tag_serializer import NestedTagSerializer
@@ -40,7 +40,14 @@ class ItemSerializer(serializers.ModelSerializer):
             item = Item.objects.create(**validated_data)
         create_fields(item)
         username = self.context['request'].user.username
-        LoggerUtility.log_as_system(ActionEnum.ITEM_CREATED, username + " Created New Item:" + item.__str__())
+        comment_string = "Item with name {name} was created by {username} with fields:" \
+                         " quantity: {quantity}; model_number: {model_number};" \
+                         " description: {description}".format
+        comment = comment_string(name=item.name, username=username, quantity=item.quantity,
+                                 model_number=item.model_number,
+                                 description=item.description)
+        LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.ITEM_MODIFIED,
+                          comment=comment, items_affected=[item])
         return item
 
 
@@ -58,11 +65,15 @@ class ItemQuantitySerializer(serializers.Serializer):
         quantity = validated_data.get('quantity', 0)
         comment = validated_data.get('comment', "No Comment")
         if quantity < 0:
-            # TODO: log destruction here later with comments
-            print('LOG DESTRUCTION' + comment)
+            comment_string = "{number} instances of item with name {name} were lost/destroyed. Comment: {comment}".format
+            comment = comment_string(number=quantity, name=item.name, comment=comment)
+            LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.DESTRUCTION_ITEM_INSTANCES,
+                              comment=comment, items_affected=[item])
         elif quantity > 0:
-            # TODO: log accquisition here later with comments
-            print('LOG ACCQUISITION' + comment)
+            comment_string = "{number} instances of item with name {name} were acquired. Comment: {comment}".format
+            comment = comment_string(number=quantity, name=item.name, comment=comment)
+            LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.ADDITIONAL_ITEM_INSTANCES,
+                              comment=comment, items_affected=[item])
         else:
             raise ParseError(detail="Quantity must be a nonzero value")
         item.quantity = item.quantity + quantity
