@@ -153,7 +153,7 @@ class DisbursementAPITest(APITestCase):
         self.cart.receiver = self.receiver
         self.cart.save()
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        url = reverse(viewname='disbursement-deletion', kwargs={'pk': self.disbursement.id})
+        url = reverse(viewname='disbursement-edits', kwargs={'pk': self.disbursement.id})
         response = self.client.delete(path=url)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], "You can only modify an active Disbursement Cart")
@@ -164,7 +164,7 @@ class DisbursementAPITest(APITestCase):
         item = Item.objects.create(name="litItem", quantity=10)
         disbursement = Disbursement.objects.create(cart=self.cart, item=item, quantity=4)
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        url = reverse(viewname='disbursement-deletion', kwargs={'pk': disbursement.id})
+        url = reverse(viewname='disbursement-edits', kwargs={'pk': disbursement.id})
         response = self.client.delete(path=url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         success_delete = False
@@ -173,6 +173,17 @@ class DisbursementAPITest(APITestCase):
         except ObjectDoesNotExist:
             success_delete = True
         self.assertEqual(success_delete, True)
+
+    def test_disbursement_update_successful(self):
+        item = Item.objects.create(name="litIte", quantity=10)
+        disbursement = Disbursement.objects.create(cart=self.cart, item=item, quantity=1)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='disbursement-edits', kwargs={'pk': disbursement.id})
+        data = {"quantity": 3}
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
+        self.assertEqual(updated_disbursement.quantity, data.get('quantity'))
 
     def test_disbursement_creation_item_not_found(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
