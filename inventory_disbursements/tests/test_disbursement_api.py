@@ -24,7 +24,7 @@ def equal_disbursement(client, cart_id, disbursement_id, data):
     disbursement_item = Disbursement.objects.get(pk=disbursement_id)
     client.assertEqual(cart_id, disbursement_item.cart.id)
     client.assertEqual(disbursement_item.quantity, data.get("quantity"))
-    client.assertEqual(disbursement_item.item.id, data.get("item_id"))
+    client.assertEqual(disbursement_item.item.id, data.get("item").get("id"))
 
 
 def equal_cart(client, cart_id, data):
@@ -32,7 +32,7 @@ def equal_cart(client, cart_id, data):
     client.assertEqual(cart.disburser.id, data.get('disburser').get('id'))
     if cart.receiver is not None:
         client.assertEqual(cart.receiver.id, data.get('receiver_id'))
-    [equal_disbursement(client=client, cart_id=disbursement.get('cart_id'), disbursement_id=disbursement.get('id'),
+    [equal_disbursement(client=client, cart_id=cart_id, disbursement_id=disbursement.get('id'),
                         data=disbursement) for disbursement in data.get('disbursements')]
 
 

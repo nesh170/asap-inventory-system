@@ -17,44 +17,32 @@ class FieldSerializer(serializers.ModelSerializer):
 
 
 class IntFieldSerializer(serializers.ModelSerializer):
-    field_id = serializers.IntegerField()
-    item_id = serializers.IntegerField()
     field = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
     class Meta:
         model = IntField
-        fields = ('id', 'item', 'field', 'value', 'field_id', 'item_id')
-        extra_kwargs = {'field_id': {'write_only': True}, 'item_id': {'write_only': True}}
+        fields = ('id', 'item', 'field', 'value')
 
 
 class FloatFieldSerializer(serializers.ModelSerializer):
-    field_id = serializers.IntegerField()
-    item_id = serializers.IntegerField()
     field = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
     class Meta:
         model = FloatField
-        fields = ('id', 'item', 'field', 'value', 'field_id', 'item_id')
-        extra_kwargs = {'field_id': {'write_only': True}, 'item_id': {'write_only': True}}
+        fields = ('id', 'item', 'field', 'value')
 
 
 class ShortTextFieldSerializer(serializers.ModelSerializer):
-    field_id = serializers.IntegerField()
-    item_id = serializers.IntegerField()
     field = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
     class Meta:
         model = ShortTextField
-        fields = ('id', 'item', 'field', 'value', 'field_id', 'item_id')
-        extra_kwargs = {'field_id': {'write_only': True}, 'item_id': {'write_only': True}}
+        fields = ('id', 'item', 'field', 'value')
 
 
 class LongTextFieldSerializer(serializers.ModelSerializer):
-    field_id = serializers.IntegerField()
-    item_id = serializers.IntegerField()
     field = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
     class Meta:
         model = LongTextField
-        fields = ('id', 'item', 'field', 'value', 'field_id', 'item_id')
-        extra_kwargs = {'field_id': {'write_only': True}, 'item_id': {'write_only': True}}
+        fields = ('id', 'item', 'field', 'value')

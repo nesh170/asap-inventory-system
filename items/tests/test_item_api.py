@@ -175,12 +175,17 @@ class UpdateItemTestCase(APITestCase):
 
     def test_update_quantity_using_staff(self):
         self.client.force_authenticate(user=self.staff, token=self.staff_tok)
+        item = Item.objects.get(pk=self.item_id)
         url = reverse(viewname='item-detail', kwargs={'pk': self.item_id})
-        data = {'quantity': 2}
+        data = {'quantity': 2, 'name': "lit"}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(json.loads(str(response.content, 'utf-8')).get('detail'),
                          "Staff/Managers are not allowed to change the quantity")
+        item_updated = Item.objects.get(pk=self.item_id)
+        self.assertEqual(item.name, item_updated.name)
+        self.assertEqual(item.quantity, item_updated.quantity)
+
 
     def test_update_all_using_staff(self):
         self.client.force_authenticate(user=self.staff, token=self.staff_tok)
@@ -228,6 +233,14 @@ class UpdateItemTestCase(APITestCase):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse(viewname='item-quantity-modification')
         data = {'item_id': item.id, 'quantity': 0}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_log_destruction_more_than_avaliable(self):
+        item = Item.objects.create(name='Pulsear gun', quantity=100)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='item-quantity-modification')
+        data = {'item_id': item.id, 'quantity': -1000}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
