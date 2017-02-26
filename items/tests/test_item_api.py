@@ -235,6 +235,14 @@ class UpdateItemTestCase(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_log_destruction_more_than_avaliable(self):
+        item = Item.objects.create(name='Pulsear gun', quantity=100)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='item-quantity-modification')
+        data = {'item_id': item.id, 'quantity': -1000}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_log_addition_acquisitions(self):
         item = Item.objects.create(name='Magnetic Accelerated Cannon', quantity=100)
         self.client.force_authenticate(user=self.admin, token=self.tok)

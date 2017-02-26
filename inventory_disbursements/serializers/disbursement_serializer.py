@@ -17,7 +17,7 @@ class NestedItemSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'quantity')
 
 
-class  DisbursementSerializer(serializers.ModelSerializer):
+class DisbursementSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(read_only=True)
     item_id = serializers.IntegerField(write_only=True)
     cart_id = serializers.IntegerField(write_only=True)
