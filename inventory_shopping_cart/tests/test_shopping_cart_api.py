@@ -52,14 +52,14 @@ def equal_shopping_cart(test_client, shopping_cart_json, shopping_cart_id):
         requestDB = requestsDatabase[x]
         requestJSON = requestsJSON[x]
         test_client.assertEqual(requestJSON.get('id'), requestDB.id)
-        test_client.assertEqual(requestJSON.get('quantity_requested'), requestDB.quantity_requested)
+        test_client.assertEqual(requestJSON.get('quantity'), requestDB.quantity)
         test_client.assertEqual(requestJSON.get('item').get('id'), requestDB.item.id)
         test_client.assertEqual(requestJSON.get('item').get('name'), requestDB.item.name)
         test_client.assertEqual(requestJSON.get('item').get('quantity'), requestDB.item.quantity)
 
 def equal_shopping_cart_request(test_client, shopping_cart_request_json, shopping_cart_request_id):
     shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request_id)
-    test_client.assertEqual(shopping_cart_request_json.get('quantity_requested'), shopping_cart_request.quantity_requested)
+    test_client.assertEqual(shopping_cart_request_json.get('quantity'), shopping_cart_request.quantity)
     test_client.assertEqual(shopping_cart_request_json.get('item').get('id'), shopping_cart_request.item.id)
     test_client.assertEqual(shopping_cart_request_json.get('item').get('quantity'), shopping_cart_request.item.quantity)
     test_client.assertEqual(shopping_cart_request_json.get('item').get('name'), shopping_cart_request.item.name)
@@ -87,7 +87,7 @@ class GetRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
                                                     admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=2, shopping_cart=shopping_cart)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart)
 
     def test_get_shopping_carts(self):
         url = reverse('shopping-cart-list')
@@ -143,7 +143,7 @@ class ActiveCartTestCase(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                     admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=2, shopping_cart=shopping_cart)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart)
 
     def test_get_active_shopping_cart_not_exists(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -180,9 +180,9 @@ class PostRequestTestCases(APITestCase):
                                                   description="resistor")
         shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="active",
                                                             reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_add_to)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
         url = reverse('add-to-cart')
-        data = {'item_id': item_with_zero_tags.id, 'quantity_requested': 2}
+        data = {'item_id': item_with_zero_tags.id, 'quantity': 2}
         response = self.client.post(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
         json_response = json.loads(str(response.content, 'utf-8'))
@@ -203,9 +203,9 @@ class PostRequestTestCases(APITestCase):
 
         shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="active",
                                                             reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_add_to)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
         url = reverse('add-to-cart')
-        data = {'item_id': item_with_one_tag.id, 'quantity_requested': 2}
+        data = {'item_id': item_with_one_tag.id, 'quantity': 2}
         response = self.client.post(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
         updated_requests_cart = updated_shopping_cart.requests.all()
@@ -221,9 +221,9 @@ class PostRequestTestCases(APITestCase):
                                                   description="resistor")
         shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="active",
                                                             reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_add_to)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
         url = reverse('add-to-cart')
-        data = {'item_id': item_with_zero_tags.id, 'quantity_requested': -2}
+        data = {'item_id': item_with_zero_tags.id, 'quantity': -2}
         response = self.client.post(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
         updated_requests_cart = updated_shopping_cart.requests.all()
@@ -242,9 +242,9 @@ class PostRequestTestCases(APITestCase):
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
         shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_add_to)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
         url = reverse('add-to-cart')
-        data = {'item_id': item_with_zero_tags.id, 'quantity_requested': 2}
+        data = {'item_id': item_with_zero_tags.id, 'quantity': 2}
         response = self.client.post(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
         updated_requests_cart = updated_shopping_cart.requests.all()
@@ -284,8 +284,8 @@ class DeleteItemTestCases(APITestCase):
                                                   description="resistor")
         shopping_cart_to_delete_from = ShoppingCart.objects.create(owner=self.admin, status="active",
                                                             reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_delete_from)
-        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity_requested=2, shopping_cart=shopping_cart_to_delete_from)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_delete_from)
+        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_delete_from)
         url = reverse('delete-from-cart', kwargs={'pk': str(shopping_cart_request_second_item.id)})
         response = self.client.delete(url)
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_delete_from.id)
@@ -316,8 +316,8 @@ class DeleteItemTestCases(APITestCase):
                                                   description="resistor")
         shopping_cart_to_delete_from = ShoppingCart.objects.create(owner=self.admin, status="outstanding",
                                                             reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_delete_from)
-        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity_requested=2, shopping_cart=shopping_cart_to_delete_from)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_delete_from)
+        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_delete_from)
         url = reverse('delete-from-cart', kwargs={'pk': str(shopping_cart_request_second_item.id)})
         response = self.client.delete(url)
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_delete_from.id)
@@ -338,10 +338,10 @@ class DeleteItemTestCases(APITestCase):
                                                   description="resistor")
         shopping_cart_to_delete_from = ShoppingCart.objects.create(owner=self.admin, status="active",
                                                             reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_delete_from)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_delete_from)
         another_shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                                    admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity_requested=2, shopping_cart=another_shopping_cart)
+        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=another_shopping_cart)
         #shoppping_cart_request_second_item doesn't exist in active shopping cart
         url = reverse('delete-from-cart', kwargs={'pk': str(shopping_cart_request_second_item.id)})
         response = self.client.delete(url)
@@ -383,8 +383,8 @@ class PatchRequestTestCases(APITestCase):
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
         shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_send)
-        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity_requested=2, shopping_cart=shopping_cart_to_send)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_send)
+        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_send)
         data = {'id': shopping_cart_to_send.id, 'reason': "testing send cart"}
         url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
         response = self.client.patch(url, data, format='json')
@@ -401,8 +401,8 @@ class PatchRequestTestCases(APITestCase):
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
         shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_send)
-        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity_requested=2, shopping_cart=shopping_cart_to_send)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_send)
+        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_send)
         data = {'id': shopping_cart_to_send.id, 'reason': "testing send cart"}
         url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
         response = self.client.patch(url, data, format='json')
@@ -419,13 +419,13 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_modify = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity_requested': 2}
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_modify)
+        data = {'item_id': item_with_one_tag.id, 'quantity': 2}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
         response = self.client.patch(url, data, format='json')
         updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(updated_shopping_cart_request.quantity_requested, data.get('quantity_requested'))
+        self.assertEqual(updated_shopping_cart_request.quantity, data.get('quantity'))
 
     def test_modify_quantity_fail_status(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -434,13 +434,13 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_modify = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity_requested': 2}
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_modify)
+        data = {'item_id': item_with_one_tag.id, 'quantity': 2}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
         response = self.client.patch(url, data, format='json')
         updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(updated_shopping_cart_request.quantity_requested, shopping_cart_request.quantity_requested)
+        self.assertEqual(updated_shopping_cart_request.quantity, shopping_cart_request.quantity)
 
     def test_modify_quantity_fail_negative_quantity(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -449,13 +449,13 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_modify = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=1, shopping_cart=shopping_cart_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity_requested': -5}
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_modify)
+        data = {'item_id': item_with_one_tag.id, 'quantity': -5}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
         response = self.client.patch(url, data, format='json')
         updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(updated_shopping_cart_request.quantity_requested, shopping_cart_request.quantity_requested)
+        self.assertEqual(updated_shopping_cart_request.quantity, shopping_cart_request.quantity)
 
     def test_approve_shopping_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -464,7 +464,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_approve = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                     admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=2, shopping_cart=shopping_cart_to_approve)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart_to_approve)
         data = {'id': shopping_cart_to_approve.id, 'admin_comment': 'testing approve request'}
         url = reverse('approve-shopping-cart', kwargs={'pk': str(shopping_cart_to_approve.id)})
         response = self.client.patch(url, data, format='json')
@@ -472,7 +472,7 @@ class PatchRequestTestCases(APITestCase):
         updated_item = Item.objects.get(pk=item_with_one_tag.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(updated_shopping_cart.status, "approved")
-        self.assertEqual(updated_item.quantity, item_with_one_tag.quantity - shopping_cart_request.quantity_requested)
+        self.assertEqual(updated_item.quantity, item_with_one_tag.quantity - shopping_cart_request.quantity)
         self.assertEqual(updated_shopping_cart.admin_comment, "testing approve request")
 
     def test_approve_shopping_cart_fail_quantity(self):
@@ -482,7 +482,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_approve = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=4, shopping_cart=shopping_cart_to_approve)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=4, shopping_cart=shopping_cart_to_approve)
         data = {'id': shopping_cart_to_approve.id, 'admin_comment': 'testing approve request'}
         url = reverse('approve-shopping-cart', kwargs={'pk': str(shopping_cart_to_approve.id)})
         response = self.client.patch(url, data, format='json')
@@ -497,7 +497,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_approve = ShoppingCart.objects.create(owner=self.admin, status="denied", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=4, shopping_cart=shopping_cart_to_approve)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=4, shopping_cart=shopping_cart_to_approve)
         data = {'id': shopping_cart_to_approve.id, 'admin_comment': 'testing approve request'}
         url = reverse('approve-shopping-cart', kwargs={'pk': str(shopping_cart_to_approve.id)})
         response = self.client.patch(url, data, format='json')
@@ -512,7 +512,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_deny = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=4,
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=4,
                                                             shopping_cart=shopping_cart_to_deny)
         data = {'id': shopping_cart_to_deny.id, 'admin_comment': 'testing deny request'}
         url = reverse('deny-shopping-cart', kwargs={'pk': str(shopping_cart_to_deny.id)})
@@ -531,7 +531,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_deny = ShoppingCart.objects.create(owner=self.admin, status="cancelled", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=2,
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2,
                                                             shopping_cart=shopping_cart_to_deny)
         data = {'id': shopping_cart_to_deny.id, 'admin_comment': 'testing deny request'}
         url = reverse('deny-shopping-cart', kwargs={'pk': str(shopping_cart_to_deny.id)})
@@ -548,7 +548,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_cancel = ShoppingCart.objects.create(owner=self.admin, status="approved", reason="test shopping cart",
                                                                admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=2,
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2,
                                                             shopping_cart=shopping_cart_to_cancel)
         data = {'id': shopping_cart_to_cancel.id, 'reason': 'testing cancellation of request, should not work'}
         url = reverse('cancel-shopping-cart', kwargs={'pk': str(shopping_cart_to_cancel.id)})
@@ -566,7 +566,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         shopping_cart_to_cancel = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity_requested=2, shopping_cart=shopping_cart_to_cancel)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart_to_cancel)
         data = {'id': shopping_cart_to_cancel.id, 'reason': 'testing cancellation of request, should not work'}
         url = reverse('cancel-shopping-cart', kwargs={'pk': str(shopping_cart_to_cancel.id)})
         response = self.client.patch(url, data, format='json')

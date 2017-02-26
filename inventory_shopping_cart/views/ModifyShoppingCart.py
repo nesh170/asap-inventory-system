@@ -13,9 +13,10 @@ from inventory_logger.utility.logger import LoggerUtility
 from inventory_logger.action_enum import ActionEnum
 from inventory_shopping_cart.models import ShoppingCart
 
+
 def approveDenyShoppingCart(self, request, pk, shopping_cart_type):
     shopping_cart_to_approve_deny = get_shopping_cart(pk)
-    if (shopping_cart_type == "approved"):
+    if shopping_cart_type == "approved":
         type_for_comment = "approval"
         log_action = ActionEnum.REQUEST_APPROVED
     else:
