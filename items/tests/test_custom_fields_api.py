@@ -17,7 +17,7 @@ ADMIN_PASSWORD = 'password'
 
 
 class FieldsAPI(APITestCase):
-    fixtures = ['action.json']
+    fixtures = ['item_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(ADMIN_USERNAME, 'test@test.com', ADMIN_PASSWORD)

@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'items.apps.ItemsConfig',
     'rest_framework',
-    'inventory_logger.apps.InventoryLoggerConfig',
     'inventory_user.apps.InventoryUserConfig',
     'inventory_disbursements.apps.InventoryDisbursementsConfig',
     'items.fixtures',

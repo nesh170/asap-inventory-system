@@ -4,11 +4,10 @@ from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffOrReadOnly, IsSuperUserDelete, IsStaffUser
-from inventory_logger.action_enum import ActionEnum
-from inventory_logger.utility.logger import LoggerUtility
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
 from items.logic.filter_item_logic import FilterItemLogic
 from items.models import Item
@@ -39,9 +38,13 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DetailedItemSerializer
 
     def delete(self, request, *args, **kwargs):
+        item = self.get_object()
         item_name = self.get_object().name
+        comment_string = "Item name: {name}".format
+        comment = comment_string(name=item_name)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.ITEM_DELETED, comment=comment,
+                          items_affected=[item])
         return_value = self.destroy(request, *args, **kwargs)
-        LoggerUtility.log_as_system(ActionEnum.ITEM_DESTROYED, request.user.username + " DESTROYED " + item_name)
         return return_value
 
     def patch(self, request, *args, **kwargs):
@@ -69,5 +72,3 @@ class ItemQuantityModification(generics.CreateAPIView):
         item = serializer.save()
         item_serializer = ItemSerializer(item)
         return Response(item_serializer.data, status=status.HTTP_200_OK)
-
-

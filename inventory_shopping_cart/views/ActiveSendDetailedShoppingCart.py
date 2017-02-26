@@ -7,6 +7,9 @@ from rest_framework.views import APIView
 from inventoryProject.permissions import IsStaffOrReadOnly
 from inventory_shopping_cart.models import ShoppingCart
 from inventory_shopping_cart.serializers.ShoppingCartSerializer import ShoppingCartSerializer
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
+
 
 def get_shopping_cart(pk):
     try:
@@ -45,6 +48,8 @@ class SendCart(APIView):
             serializer = ShoppingCartSerializer(shopping_cart, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CREATED,
+                                  carts_affected=[shopping_cart])
                 return Response(serializer.data)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

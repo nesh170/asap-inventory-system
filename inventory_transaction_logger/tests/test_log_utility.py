@@ -37,12 +37,13 @@ def equal_item(test_equal, item_log, item_affected):
             test_equal.assertEqual(item_log_tag, item_affected_tag)
 
 
-def equal_log(test_equal, log_id, initiating_user, nature_enum, affected_user, comment, items_affected = None,
+def equal_log(test_equal, log_id, initiating_user, nature_enum, comment, affected_user = None, items_affected = None,
               carts_affected = None, disbursement_affected = None):
     log_entry = Log.objects.get(pk=log_id)
     test_equal.assertEqual(log_entry.initiating_user, initiating_user)
     test_equal.assertEqual(log_entry.nature.tag, nature_enum.value)
-    test_equal.assertEqual(log_entry.affected_user, affected_user)
+    if affected_user is not None:
+        test_equal.assertEqual(log_entry.affected_user, affected_user)
     if comment is not None:
         test_equal.assertEqual(log_entry.comment, comment)
     if items_affected is not None:
@@ -65,12 +66,12 @@ def equal_log(test_equal, log_id, initiating_user, nature_enum, affected_user, c
 
 
 class LogUtilityTestCase(TestCase):
+    fixtures = ['logger_action.json']
+
     def setUp(self):
 
         self.admin = User.objects.create_superuser(ADMIN_USERNAME, 'test@test.com', ADMIN_PASSWORD)
         self.normal_user = User.objects.create_user(USER_USERNAME, 'user@testforlife.com', USER_PASSWORD)
-        Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='CUSTOM FIELD CREATED')
 
     def test_utility_item_cart_provided(self):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
@@ -84,13 +85,11 @@ class LogUtilityTestCase(TestCase):
                                                             admin_comment="hi", admin=self.admin)
         shopping_cart_affected = [shopping_cart, another_shopping_cart]
         disbursement_cart = [Cart.objects.create(disburser=self.admin, receiver=self.normal_user, comment="lit")]
-        log_entry = LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED, self.normal_user, 'Creating an item',
+        log_entry = LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED,  'Creating an item', self.normal_user,
                                       items_affected, shopping_cart_affected, disbursement_cart)
-        equal_log(self, log_entry.id, self.admin, ActionEnum.ITEM_CREATED, self.normal_user, 'Creating an item',
+        equal_log(self, log_entry.id, self.admin, ActionEnum.ITEM_CREATED, 'Creating an item', self.normal_user,
                   items_affected, shopping_cart_affected, disbursement_cart)
 
     def test_utility_no_item_cart(self):
-        log_entry = LoggerUtility.log(self.admin, ActionEnum.CUSTOM_FIELD_CREATED, self.normal_user, 'Creating a custom field')
-        equal_log(self, log_entry.id, self.admin, ActionEnum.CUSTOM_FIELD_CREATED, self.normal_user, 'Creating a custom field')
-
-
+        log_entry = LoggerUtility.log(self.admin, ActionEnum.CUSTOM_FIELD_CREATED, 'Creating a custom field', self.normal_user)
+        equal_log(self, log_entry.id, self.admin, ActionEnum.CUSTOM_FIELD_CREATED,  'Creating a custom field', self.normal_user)

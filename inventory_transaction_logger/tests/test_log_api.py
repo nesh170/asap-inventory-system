@@ -38,7 +38,8 @@ def equal_item(test_client, item_data, log):
 def equal_log(test_client, data, log_id):
     log = Log.objects.get(pk=log_id)
     test_client.assertEqual(log.initiating_user.username, data.get('initiating_user'))
-    test_client.assertEqual(log.affected_user.username, data.get('affected_user'))
+    if data.get('affected_user') is not None:
+        test_client.assertEqual(log.affected_user.username, data.get('affected_user'))
     nature_data = data.get("nature")
     test_client.assertEqual(log.nature.tag, nature_data.get("tag"))
     if data.get("shopping_cart_log") is not None:
@@ -52,6 +53,8 @@ def equal_log(test_client, data, log_id):
 
 
 class LogTestCase(APITestCase):
+    fixtures = ['logger_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(ADMIN_USERNAME, 'test@test.com', ADMIN_PASSWORD)
         self.normal_user = User.objects.create_user(USER_USERNAME, 'user@testforlife.com', USER_PASSWORD)
@@ -69,8 +72,6 @@ class LogTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
-        Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='CUSTOM FIELD CREATED')
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
@@ -82,7 +83,7 @@ class LogTestCase(APITestCase):
                                                             admin_comment="hi", admin=self.admin)
         shopping_cart_affected = [shopping_cart, another_shopping_cart]
         disbursement_cart = [Cart.objects.create(disburser=self.admin, receiver=self.normal_user, comment="lit")]
-        LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED, self.normal_user, "This is creating a request",
+        LoggerUtility.log(self.admin, ActionEnum.ITEM_CREATED,  "This is creating a request", self.normal_user,
                           items_affected, shopping_cart_affected, disbursement_cart)
 
     def test_get_logs(self):

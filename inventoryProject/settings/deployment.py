@@ -28,7 +28,7 @@ except IOError as e:
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -44,11 +44,33 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'items.apps.ItemsConfig',
     'rest_framework',
-    'inventory_logger.apps.InventoryLoggerConfig',
     'inventory_user.apps.InventoryUserConfig',
+    'inventory_disbursements.apps.InventoryDisbursementsConfig',
+    'items.fixtures',
     'oauth2_provider',
+    'social_django',
+    'rest_framework_social_oauth2',
+    'rest_framework.authtoken',
+    'rest_framework_docs',
     'corsheaders',
+    'inventory_shopping_cart.apps.InventoryShoppingCartConfig',
+    'inventory_shopping_cart_request.apps.InventoryShoppingCartRequestConfig',
+    'inventory_transaction_logger.apps.InventoryTransactionLoggerConfig'
 ]
+
+# SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}
+SOCIAL_AUTH_DUKE_KEY = 'asap-inventory-system'
+SOCIAL_AUTH_DUKE_SECRET = '4VBvMIAw*KA5oL7EnoG8aLYY=*Tnrmb9o$$+Gqyxe$LYf@skQL'
+SOCIAL_AUTH_DUKE_SCOPE = ['basic', 'identity:netid:read']
+
+DRFSO2_PROPRIETARY_BACKEND_NAME = 'duke'
+
+
+
+AUTHENTICATION_BACKENDS = (
+    'inventoryProject.dukeAuth.DukeOAuth2',
+    'django.contrib.auth.backends.ModelBackend'
+)
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -80,7 +102,8 @@ CORS_ALLOW_METHODS = (
 
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
-    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'},
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600
 }
 
 ROOT_URLCONF = 'inventoryProject.urls'
@@ -97,6 +120,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -153,8 +178,18 @@ REST_FRAMEWORK = {
     'SEARCH_PARAM': "search",
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+        'rest_framework_social_oauth2.authentication.SocialAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     )
 }
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
@@ -173,8 +208,5 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
-STATIC_URL = '/static/'
-
-#SSL
-SECURE_PROXY_SSL_HEADER = {'HTTP_X_FORWARDED_PROTO', 'https'}
-SECURE_SSL_REDIRECT = True
+STATIC_URL = '/static/django/'
+STATIC_ROOT = BASE_DIR

@@ -10,6 +10,8 @@ from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_none
 from inventory_disbursements.models import Cart, Disbursement
 from inventory_disbursements.serializers.disbursement_serializer import CartSerializer, DisbursementSerializer
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.models import Item
 
 
@@ -111,14 +113,12 @@ class CartSubmission(generics.UpdateAPIView):
             raise NotFound("User is not found in database")
         if serializer.instance.receiver is not None:
             raise MethodNotAllowed(detail="This cart has been disbursed", method=self.perform_update)
-        invalid_disbursements = [precheck_item_quantity(disbursement) for disbursement in
+        [precheck_item_quantity(disbursement) for disbursement in
                                  Disbursement.objects.filter(cart_id=serializer.instance.id)]
-
         [subtract_item_quantity(disbursement) for disbursement in
          Disbursement.objects.filter(cart_id=serializer.instance.id)]
         serializer.save()
-
-
-
-
-
+        comment_string = "Disbursed {number} items".format
+        comment = comment_string(number=Disbursement.objects.filter(cart_id=serializer.instance.id).count())
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.ITEMS_DISBURSED,
+                          comment=comment, affected_user=user, disbursement_affected=[self.get_object()])
