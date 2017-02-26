@@ -17,7 +17,7 @@ class NestedItemSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'quantity')
 
 
-class  DisbursementSerializer(serializers.ModelSerializer):
+class DisbursementSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(read_only=True)
     item_id = serializers.IntegerField()
     cart_id = serializers.IntegerField()
@@ -39,5 +39,3 @@ class CartSerializer(serializers.ModelSerializer):
         model = Cart
         fields = ('id', 'disburser', 'receiver', 'comment', 'disbursements', 'receiver_id')
         extra_kwargs = {'receiver_id': {'write_only': True}}
-
-

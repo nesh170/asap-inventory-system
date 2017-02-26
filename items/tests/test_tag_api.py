@@ -17,7 +17,7 @@ PASSWORD = 'testPassword'
 
 
 class CreateDeleteTagTestCase(APITestCase):
-    fixtures = ['action.json']
+    fixtures = ['item_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)

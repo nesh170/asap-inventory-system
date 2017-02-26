@@ -31,7 +31,7 @@ def equal_item(test_client, item_json, item_id):
 
 
 class GetItemTestCase(APITestCase):
-    fixtures = ['action.json']
+    fixtures = ['item_action.json']
 
 
     def setUp(self):
@@ -85,7 +85,7 @@ class GetItemTestCase(APITestCase):
 
 
 class PostItemTestCase(APITestCase):
-    fixtures = ['action.json']
+    fixtures = ['item_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -136,7 +136,7 @@ class PostItemTestCase(APITestCase):
 
 
 class UpdateItemTestCase(APITestCase):
-    fixtures = ['action.json']
+    fixtures = ['item_action.json']
 
 
     def setUp(self):
@@ -243,7 +243,7 @@ class UpdateItemTestCase(APITestCase):
 
 
 class DeleteItemTestCase(APITestCase):
-    fixtures = ['action.json']
+    fixtures = ['item_action.json']
 
     def setUp(self):
             self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)

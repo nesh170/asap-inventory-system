@@ -28,12 +28,6 @@ PASSWORD = 'testPassword'
     new information in the database and the JSON representation that was sent using a POST request).
 '''
 
-def setup_logging():
-    Action.objects.create(color="1", tag=ActionEnum.REQUEST_APPROVED.value)
-    Action.objects.create(color="2", tag=ActionEnum.REQUEST_CANCELLED.value)
-    Action.objects.create(color="3", tag=ActionEnum.REQUEST_DENIED.value)
-    Action.objects.create(color="4", tag=ActionEnum.REQUEST_CREATED.value)
-    Action.objects.create(color="5", tag=ActionEnum.DISBURSED.value)
 
 #this function tests if the JSON representation of a request (either returned from a get request
 def equal_shopping_cart(test_client, shopping_cart_json, shopping_cart_id):
@@ -65,6 +59,8 @@ def equal_shopping_cart_request(test_client, shopping_cart_request_json, shoppin
     test_client.assertEqual(shopping_cart_request_json.get('item').get('name'), shopping_cart_request.item.name)
 
 class GetRequestTestCases(APITestCase):
+    fixtures = ['shopping_cart_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -81,7 +77,6 @@ class GetRequestTestCases(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        setup_logging()
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=5, model_number="48979",
                                                 description="Jameco")
         item_with_one_tag.tags.create(tag="test")
@@ -121,6 +116,8 @@ class GetRequestTestCases(APITestCase):
         equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), active_shopping_cart.id)
 
 class ActiveCartTestCase(APITestCase):
+    fixtures = ['shopping_cart_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -137,7 +134,6 @@ class ActiveCartTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        setup_logging()
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=5, model_number="48979",
                                                 description="Jameco")
         item_with_one_tag.tags.create(tag="test")
@@ -153,6 +149,8 @@ class ActiveCartTestCase(APITestCase):
         equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), active_shopping_cart.id)
 
 class PostRequestTestCases(APITestCase):
+    fixtures = ['shopping_cart_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -169,7 +167,6 @@ class PostRequestTestCases(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        setup_logging()
 
     def test_add_item(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -257,6 +254,8 @@ class PostRequestTestCases(APITestCase):
         self.assertEqual(addFail, True)
 
 class DeleteItemTestCases(APITestCase):
+    fixtures = ['shopping_cart_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -273,7 +272,6 @@ class DeleteItemTestCases(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        setup_logging()
 
     def test_delete_item(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -357,6 +355,8 @@ class DeleteItemTestCases(APITestCase):
 
 
 class PatchRequestTestCases(APITestCase):
+    fixtures = ['shopping_cart_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -373,7 +373,6 @@ class PatchRequestTestCases(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
-        setup_logging()
 
     def test_send_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)

@@ -66,12 +66,12 @@ def equal_log(test_equal, log_id, initiating_user, nature_enum, comment, affecte
 
 
 class LogUtilityTestCase(TestCase):
+    fixtures = ['logger_action.json']
+
     def setUp(self):
 
         self.admin = User.objects.create_superuser(ADMIN_USERNAME, 'test@test.com', ADMIN_PASSWORD)
         self.normal_user = User.objects.create_user(USER_USERNAME, 'user@testforlife.com', USER_PASSWORD)
-        Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='CUSTOM FIELD CREATED')
 
     def test_utility_item_cart_provided(self):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
@@ -93,5 +93,3 @@ class LogUtilityTestCase(TestCase):
     def test_utility_no_item_cart(self):
         log_entry = LoggerUtility.log(self.admin, ActionEnum.CUSTOM_FIELD_CREATED, 'Creating a custom field', self.normal_user)
         equal_log(self, log_entry.id, self.admin, ActionEnum.CUSTOM_FIELD_CREATED,  'Creating a custom field', self.normal_user)
-
-

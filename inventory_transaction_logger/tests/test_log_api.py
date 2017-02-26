@@ -53,6 +53,8 @@ def equal_log(test_client, data, log_id):
 
 
 class LogTestCase(APITestCase):
+    fixtures = ['logger_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(ADMIN_USERNAME, 'test@test.com', ADMIN_PASSWORD)
         self.normal_user = User.objects.create_user(USER_USERNAME, 'user@testforlife.com', USER_PASSWORD)
@@ -70,8 +72,6 @@ class LogTestCase(APITestCase):
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
         oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
-        Action.objects.create(color='1', tag='ITEM CREATED')
-        Action.objects.create(color='2', tag='CUSTOM FIELD CREATED')
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
