@@ -174,6 +174,30 @@ class DisbursementAPITest(APITestCase):
             success_delete = True
         self.assertEqual(success_delete, True)
 
+    def test_disbursement_update_nonactive_cart(self):
+        self.cart.receiver = self.receiver
+        self.cart.save()
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='disbursement-edits', kwargs={'pk': self.disbursement.id})
+        data = {"quantity": 3}
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "You can only modify an active Disbursement Cart")
+        self.cart.receiver = None
+        self.cart.save()
+
+    def test_disbursement_update_over_disburse(self):
+        item = Item.objects.create(name="over12398", quantity=10)
+        disbursement = Disbursement.objects.create(cart=self.cart, item=item, quantity=1)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='disbursement-edits', kwargs={'pk': disbursement.id})
+        data = {"quantity": 30}
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "Quantity to be disbursed is more than item quantity")
+
     def test_disbursement_update_successful(self):
         item = Item.objects.create(name="litIte", quantity=10)
         disbursement = Disbursement.objects.create(cart=self.cart, item=item, quantity=1)
