@@ -48,8 +48,7 @@ class SendCart(APIView):
             serializer = ShoppingCartSerializer(shopping_cart, data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                comment = "Request Created by " + request.user.username
-                LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CREATED, comment=comment,
+                LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CREATED,
                                   carts_affected=[shopping_cart])
                 return Response(serializer.data)
             else:
