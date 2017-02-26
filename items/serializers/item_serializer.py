@@ -66,6 +66,8 @@ class ItemQuantitySerializer(serializers.Serializer):
         else:
             raise ParseError(detail="Quantity must be a nonzero value")
         item.quantity = item.quantity + quantity
+        if item.quantity < 0:
+            raise ParseError(detail="Updated item quantity cannot be below 0")
         item.save()
         return item
 
