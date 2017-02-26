@@ -3,7 +3,7 @@ from inventory_transaction_logger.models import Log, Action, ItemLog, ShoppingCa
 
 class LoggerUtility:
     @staticmethod
-    def log(initiating_user, nature_enum, comment, affected_user = None, items_affected = None,
+    def log(initiating_user, nature_enum, comment="", affected_user = None, items_affected = None,
             carts_affected = None, disbursement_affected = None):
         action = Action.objects.get(tag=nature_enum.value)
         if affected_user is not None:

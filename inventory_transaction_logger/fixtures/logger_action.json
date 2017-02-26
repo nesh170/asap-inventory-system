@@ -3,7 +3,7 @@
   {"model": "inventory_transaction_logger.action", "pk": 2, "fields": {"color": "#FF0000", "tag": "REQUEST DENIED"}},
   {"model": "inventory_transaction_logger.action", "pk": 3, "fields": {"color": "#FFA500", "tag": "REQUEST CANCELLED"}},
   {"model": "inventory_transaction_logger.action", "pk": 4, "fields": {"color": "#7FFFD4", "tag": "REQUEST CREATED"}},
-  {"model": "inventory_transaction_logger.action", "pk": 5, "fields": {"color": "#FFFF00", "tag": "DISBURSED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 5, "fields": {"color": "#FFFF00", "tag": "ITEMS DISBURSED"}},
   {"model": "inventory_transaction_logger.action", "pk": 6, "fields": {"color": "#008080", "tag": "ITEM CREATED"}},
   {"model": "inventory_transaction_logger.action", "pk": 7, "fields": {"color": "#FF69B4", "tag": "ITEM DELETED"}},
   {"model": "inventory_transaction_logger.action", "pk": 8, "fields": {"color": "#AFEEEE", "tag": "ITEM MODIFIED"}},

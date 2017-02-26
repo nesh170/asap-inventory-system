@@ -37,6 +37,8 @@ def equal_cart(client, cart_id, data):
 
 
 class DisbursementAPITest(APITestCase):
+    fixtures = ['disbursement_action.json']
+
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.receiver = User.objects.create_user(TEST_USERNAME, 'test@test.com', TEST_PASSWORD)
@@ -232,24 +234,3 @@ class DisbursementAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         equal_disbursement(client=self, cart_id=data.get('cart_id'), disbursement_id=json_response.get('id'),
                            data=json_response)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

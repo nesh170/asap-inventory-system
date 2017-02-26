@@ -59,7 +59,7 @@ def equal_shopping_cart_request(test_client, shopping_cart_request_json, shoppin
     test_client.assertEqual(shopping_cart_request_json.get('item').get('name'), shopping_cart_request.item.name)
 
 class GetRequestTestCases(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['disbursement_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)

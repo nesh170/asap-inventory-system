@@ -76,4 +76,4 @@ class CancelShoppingCart(APIView):
 class DenyShoppingCart(APIView):
     permission_classes = [IsStaffUser]
     def patch(self, request, pk, format=None):
-        return approveDenyShoppingCart(self, request, pk, "denied")
+        return approve_deny_shopping_cart(self, request, pk, "denied")
