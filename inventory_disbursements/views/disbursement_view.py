@@ -69,7 +69,7 @@ class DisbursementUpdateDeletion(generics.RetrieveUpdateDestroyAPIView):
         if quantity is None:
             raise ParseError("Only quantity can be edited")
         if disbursement.item.quantity < quantity:
-            raise MethodNotAllowed(detail="Quantity to be disbursed is more than item value",
+            raise MethodNotAllowed(detail="Quantity to be disbursed is more than item quantity",
                                    method=self.perform_update)
         serializer.save()
 
