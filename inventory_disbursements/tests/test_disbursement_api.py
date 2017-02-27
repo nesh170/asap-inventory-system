@@ -70,6 +70,14 @@ class DisbursementAPITest(APITestCase):
         json_disbursement_list = json_response['results']
         [equal_cart(self, cart.get('id'), cart) for cart in json_disbursement_list]
 
+    def test_get_detailed_cart_view(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        for cart_id in Cart.objects.values_list('id', flat=True):
+            url = reverse(viewname='cart-submission', kwargs={'pk': str(cart_id)})
+            response = self.client.get(url)
+            equal_cart(self, cart_id, json.loads(str(response.content, 'utf-8')))
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_get_existing_active_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('active-disbursement-cart')
@@ -158,7 +166,8 @@ class DisbursementAPITest(APITestCase):
         url = reverse(viewname='disbursement-edits', kwargs={'pk': self.disbursement.id})
         response = self.client.delete(path=url)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], "You can only modify an active Disbursement Cart")
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "You can only modify an active Disbursement Cart")
         self.cart.receiver = None
         self.cart.save()
 
@@ -198,7 +207,18 @@ class DisbursementAPITest(APITestCase):
         response = self.client.patch(path=url, data=data)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
-                         "Quantity to be disbursed is more than item quantity")
+                         "Quantity disbursed 30 cannot be greater than item quantity, 10")
+
+    def test_disbursement_update_zero_quantity(self):
+        item = Item.objects.create(name="ola1253", quantity=10)
+        disbursement = Disbursement.objects.create(cart=self.cart, item=item, quantity=5)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='disbursement-edits', kwargs={'pk': disbursement.id})
+        data = {"quantity": 0}
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "Quantity cannot be 0")
 
     def test_disbursement_update_successful(self):
         item = Item.objects.create(name="litIte", quantity=10)
@@ -256,8 +276,18 @@ class DisbursementAPITest(APITestCase):
         data = {'item_id': item.id, 'cart_id': self.cart.id, 'quantity': 101}
         response = self.client.post(path=url, data=data)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
-                         "Quantity to be disbursed is more than item value")
+                         "Quantity disbursed 101 cannot be greater than item quantity, 100")
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_disbursement_creation_zero_quantity(self):
+        item = Item.objects.create(name= 'Test Item Work1234', quantity=100)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('disbursement-creation')
+        data = {'item_id': item.id, 'cart_id': self.cart.id, 'quantity': 0}
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "Quantity cannot be 0")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_disbursement_creation_success(self):
         item = Item.objects.create(name= 'success', quantity=100)
