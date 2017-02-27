@@ -9,6 +9,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     admin = UserSerializer(read_only=True, many=False)
     owner = UserSerializer(read_only=True, many=False)
     requests = ShoppingCartRequestSerializer(read_only=True, many=True)
+    reason = serializers.CharField(required=True)
 
     class Meta:
         model = ShoppingCart

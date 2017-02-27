@@ -549,7 +549,7 @@ class PatchRequestTestCases(APITestCase):
                                                                admin_comment="this is an admin comment", admin=self.admin)
         shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2,
                                                             shopping_cart=shopping_cart_to_cancel)
-        data = {'id': shopping_cart_to_cancel.id, 'reason': 'testing cancellation of request, should not work'}
+        data = {'id': shopping_cart_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
         url = reverse('cancel-shopping-cart', kwargs={'pk': str(shopping_cart_to_cancel.id)})
         response = self.client.patch(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_cancel.id)
@@ -566,7 +566,7 @@ class PatchRequestTestCases(APITestCase):
         shopping_cart_to_cancel = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
                                                               admin_comment="this is an admin comment", admin=self.admin)
         shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart_to_cancel)
-        data = {'id': shopping_cart_to_cancel.id, 'reason': 'testing cancellation of request, should not work'}
+        data = {'id': shopping_cart_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
         url = reverse('cancel-shopping-cart', kwargs={'pk': str(shopping_cart_to_cancel.id)})
         response = self.client.patch(url, data, format='json')
         updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_cancel.id)

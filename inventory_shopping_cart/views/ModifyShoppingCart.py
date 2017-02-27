@@ -7,7 +7,9 @@ from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
 from inventory_shopping_cart.business_logic import modify_shopping_cart_logic
-from inventory_shopping_cart.serializers import StatusSerializer, CancelSerializer
+from inventory_shopping_cart.serializers.CancelSerializer import CancelSerializer
+from inventory_shopping_cart.serializers.StatusSerializer import StatusSerializer
+from inventory_shopping_cart.serializers.ShoppingCartSerializer import ShoppingCartSerializer
 from datetime import datetime
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from inventory_transaction_logger.action_enum import ActionEnum
@@ -22,7 +24,7 @@ def approve_deny_shopping_cart(self, request, pk, shopping_cart_type):
         log_action = ActionEnum.REQUEST_DENIED
     if modify_shopping_cart_logic.can_approve_deny_cancel_shopping_cart(shopping_cart_to_approve_deny, shopping_cart_type):
         shopping_cart_to_approve_deny.status = shopping_cart_type
-        serializer = StatusSerializer.StatusSerializer(shopping_cart_to_approve_deny, data=request.data)
+        serializer = StatusSerializer(shopping_cart_to_approve_deny, data=request.data)
         if serializer.is_valid():
             serializer.save(admin=request.user, admin_timestamp=datetime.now())
             if shopping_cart_type == "approved":
@@ -58,16 +60,16 @@ class CancelShoppingCart(APIView):
         if modify_shopping_cart_logic.can_approve_deny_cancel_shopping_cart(shopping_cart_to_cancel, "cancelled"):
             shopping_cart_to_cancel.status = "cancelled"
             #reason is guaranteed to not be null since it is required in a request
-            if (request.data.get('reason') is not None):
-                request.data['reason'] = shopping_cart_to_cancel.reason + " cancellation reason is : " + request.data.get('reason')
-            else:
-                request.data['reason'] = shopping_cart_to_cancel.reason
-            serializer = CancelSerializer.CancelSerializer(shopping_cart_to_cancel, data=request.data)
+            if request.data.get('comment') is not None:
+                shopping_cart_to_cancel.reason = shopping_cart_to_cancel.reason + " cancellation reason is : " + request.data.get('comment')
+            serializer = CancelSerializer(shopping_cart_to_cancel, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CANCELLED,
                                   affected_user=request.user, carts_affected=[shopping_cart_to_cancel])
-                return Response(serializer.data)
+                updated_cart = ShoppingCart.objects.get(pk=shopping_cart_to_cancel.id)
+                serializer_cart = ShoppingCartSerializer(updated_cart)
+                return Response(serializer_cart.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             raise MethodNotAllowed(self.patch, detail="Cannot cancel request")
@@ -75,5 +77,6 @@ class CancelShoppingCart(APIView):
 
 class DenyShoppingCart(APIView):
     permission_classes = [IsStaffUser]
+
     def patch(self, request, pk, format=None):
         return approve_deny_shopping_cart(self, request, pk, "denied")

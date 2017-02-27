@@ -27,24 +27,26 @@ class ViewDetailedShoppingCart(APIView):
 class ActiveShoppingCart(APIView):
     permission_classes = [IsAuthenticated]
     def get_active(self):
+        user = self.request.user
         try:
-            user = self.request.user
             return ShoppingCart.objects.filter(owner=user).get(status='active')
         except ShoppingCart.DoesNotExist:
-            new_shopping_cart = ShoppingCart.objects.create(owner=user, status='active', reason='This is the cart for ' + user.username)
+            new_shopping_cart = ShoppingCart.objects.create(owner=user, status='active')
             return new_shopping_cart
 
     def get(self, request, format=None):
         shopping_cart = self.get_active()
         serializer = ShoppingCartSerializer(shopping_cart)
         return Response(serializer.data)
+
+
 class SendCart(APIView):
     permission_classes = [IsAuthenticated]
+
     def patch(self, request, pk, format=None):
         shopping_cart = get_shopping_cart(pk)
-        if (shopping_cart.status=="active"):
+        if shopping_cart.status=="active":
             shopping_cart.status = "outstanding"
-            #request.data should only contain reason
             serializer = ShoppingCartSerializer(shopping_cart, data=request.data)
             if serializer.is_valid():
                 serializer.save()
