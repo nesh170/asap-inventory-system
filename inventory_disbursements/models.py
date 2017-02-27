@@ -19,7 +19,7 @@ class Cart(models.Model):
 
 class Disbursement(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='disbursements')
-    item = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, related_name='disbursed')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='disbursed')
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
