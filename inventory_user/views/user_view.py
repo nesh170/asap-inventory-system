@@ -6,7 +6,7 @@ from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import ParseError, MethodNotAllowed, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -19,13 +19,13 @@ from items.custom_pagination import LargeResultsSetPagination
 
 class InventoryUserList(generics.ListCreateAPIView):
     permission_classes = [IsSuperUser]
-    queryset = User.objects.all()
+    queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
 
 
 class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsSuperUser, IsSuperUserDelete]
-    queryset = User.objects.all()
+    queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
 
     def perform_update(self, serializer):
