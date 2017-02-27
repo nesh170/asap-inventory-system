@@ -33,7 +33,6 @@ def equal_item(test_client, item_json, item_id):
 class GetItemTestCase(APITestCase):
     fixtures = ['item_action.json']
 
-
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
         self.application = Application(
@@ -104,7 +103,6 @@ class PostItemTestCase(APITestCase):
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
 
-
     def test_post_items_with_tags(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('item-list')
@@ -137,7 +135,6 @@ class PostItemTestCase(APITestCase):
 
 class UpdateItemTestCase(APITestCase):
     fixtures = ['item_action.json']
-
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -172,7 +169,6 @@ class UpdateItemTestCase(APITestCase):
         )
         oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
 
-
     def test_update_quantity_using_staff(self):
         self.client.force_authenticate(user=self.staff, token=self.staff_tok)
         item = Item.objects.get(pk=self.item_id)
@@ -185,7 +181,6 @@ class UpdateItemTestCase(APITestCase):
         item_updated = Item.objects.get(pk=self.item_id)
         self.assertEqual(item.name, item_updated.name)
         self.assertEqual(item.quantity, item_updated.quantity)
-
 
     def test_update_all_using_staff(self):
         self.client.force_authenticate(user=self.staff, token=self.staff_tok)

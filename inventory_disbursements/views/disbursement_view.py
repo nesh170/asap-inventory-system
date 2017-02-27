@@ -2,12 +2,13 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
 from rest_framework.exceptions import MethodNotAllowed, NotFound, ParseError
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from inventoryProject.permissions import IsStaffUser
+from inventoryProject.permissions import IsStaffOrReadOnly, IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_none
+from inventory_disbursements.business_logic.quantity_logic import quantity_logic
 from inventory_disbursements.models import Cart, Disbursement
 from inventory_disbursements.serializers.disbursement_serializer import CartSerializer, DisbursementSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
@@ -41,8 +42,7 @@ class DisbursementCreation(generics.CreateAPIView):
             raise MethodNotAllowed(detail="The cart needs to be active", method=self.perform_create)
         if cart.disbursements.filter(item=item).exists():
             raise MethodNotAllowed(detail="Item is already in cart", method=self.perform_create)
-        if item.quantity < quantity:
-            raise MethodNotAllowed(detail="Quantity to be disbursed is more than item value", method=self.perform_create)
+        quantity_logic(quantity=quantity, item_quantity=item.quantity, method=self.perform_create)
         serializer.save()
 
 
@@ -66,11 +66,7 @@ class DisbursementUpdateDeletion(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         disbursement = self.get_object()
         quantity = serializer.validated_data.get('quantity')
-        if quantity is None:
-            raise ParseError("Only quantity can be edited")
-        if disbursement.item.quantity < quantity:
-            raise MethodNotAllowed(detail="Quantity to be disbursed is more than item quantity",
-                                   method=self.perform_update)
+        quantity_logic(quantity=quantity, item_quantity=disbursement.item.quantity, method=self.perform_update)
         serializer.save()
 
 
@@ -100,10 +96,13 @@ def precheck_item_quantity(disbursement):
                                                 disburse_quantity=disbursement.quantity), method=precheck_item_quantity)
 
 
-class CartSubmission(generics.UpdateAPIView):
-    permission_classes = [IsStaffUser]
+class CartSubmission(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsStaffOrReadOnly]
     serializer_class = CartSerializer
-    queryset = Cart.objects.all()
+
+    def get_queryset(self):
+        return Cart.objects.all() if self.request.user.is_staff else \
+            Cart.objects.filter(receiver=self.request.user)
 
     def perform_update(self, serializer):
         if serializer.validated_data.get('receiver_id') is None:
