@@ -32,14 +32,14 @@ PASSWORD = 'testPassword'
 #this function tests if the JSON representation of a request (either returned from a get request
 def equal_shopping_cart(test_client, shopping_cart_json, shopping_cart_id):
     shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_id)
-    test_client.assertEqual(shopping_cart_json.get('owner'), shopping_cart.owner.id) if type(shopping_cart_json.get('owner')) is int \
-        else test_client.assertEqual(shopping_cart_json.get('owner').get('id'), shopping_cart.owner.id)
+    test_client.assertEqual(shopping_cart_json.get('owner'), shopping_cart.owner.username) if type(shopping_cart_json.get('owner')) is int \
+        else test_client.assertEqual(shopping_cart_json.get('owner'), shopping_cart.owner.username)
     test_client.assertEqual(shopping_cart_json.get('status'), shopping_cart.status)
     test_client.assertEqual(shopping_cart_json.get('reason'), shopping_cart.reason)
     test_client.assertEqual(shopping_cart_json.get('admin_comment'), shopping_cart.admin_comment)
     if shopping_cart_json.get('admin') is not None:
-        test_client.assertEqual(shopping_cart_json.get('admin'), shopping_cart.admin.id) if type(shopping_cart_json.get('admin')) is int \
-            else test_client.assertEqual(shopping_cart_json.get('admin').get('id'), shopping_cart.admin.id)
+        test_client.assertEqual(shopping_cart_json.get('admin'), shopping_cart.admin.username) if type(shopping_cart_json.get('admin')) is int \
+            else test_client.assertEqual(shopping_cart_json.get('admin'), shopping_cart.admin.username)
     requestsJSON = shopping_cart_json.get('requests')
     requestsDatabase = shopping_cart.requests.all()
     for x in range(0, len(requestsDatabase)):
