@@ -9,13 +9,13 @@ from items.serializers.field_serializer import FieldSerializer, IntFieldSerializ
     ShortTextFieldSerializer, LongTextFieldSerializer
 
 
-def update_helper(client, serializer, serializer_type):
+def update_helper(client, serializer, serializer_type, title):
     field = client.get_object()
     old_serializer = serializer_type(field)
     serializer.save()
     item = client.get_object().item
     comment = serializer_compare_pretty_print(old_serializer=old_serializer, new_serializer=serializer,
-                                              title="INT CUSTOM FIELD MODIFIED") + "item name : " + item.name
+                                              title=title) + "item name : " + item.name
     LoggerUtility.log(initiating_user=client.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_VALUE_MODIFIED,
                       comment=comment, items_affected=[item])
 
@@ -52,7 +52,7 @@ class IntFieldUpdate(generics.UpdateAPIView):
     serializer_class = IntFieldSerializer
 
     def perform_update(self, serializer):
-        update_helper(self, serializer, IntFieldSerializer)
+        update_helper(self, serializer, IntFieldSerializer, "Int Custom Field Changed")
 
 
 class FloatFieldUpdate(generics.UpdateAPIView):
@@ -61,7 +61,7 @@ class FloatFieldUpdate(generics.UpdateAPIView):
     serializer_class = FloatFieldSerializer
 
     def perform_update(self, serializer):
-        update_helper(self, serializer, FloatFieldSerializer)
+        update_helper(self, serializer, FloatFieldSerializer, "Float Custom Field Changed")
 
 
 class ShortTextFieldUpdate(generics.UpdateAPIView):
@@ -70,7 +70,7 @@ class ShortTextFieldUpdate(generics.UpdateAPIView):
     serializer_class = ShortTextFieldSerializer
 
     def perform_update(self, serializer):
-        update_helper(self, serializer, ShortTextFieldSerializer)
+        update_helper(self, serializer, ShortTextFieldSerializer, "Short Text Custom Field Changed")
 
 
 class LongTextFieldUpdate(generics.UpdateAPIView):
@@ -79,4 +79,4 @@ class LongTextFieldUpdate(generics.UpdateAPIView):
     serializer_class = LongTextFieldSerializer
 
     def perform_update(self, serializer):
-        update_helper(self, serializer, LongTextFieldSerializer)
+        update_helper(self, serializer, LongTextFieldSerializer, "Long Text Custom Field Changed")

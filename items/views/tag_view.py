@@ -3,10 +3,11 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from inventoryProject.permissions import IsStaffUser
+from inventoryProject.utility.print_functions import serializer_pretty_print
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
-from items.models import Tag, Item
+from items.models import Tag
 from items.serializers.tag_serializer import TagSerializer, TagSingleSerializer
 
 
@@ -16,24 +17,28 @@ class TagList(generics.CreateAPIView):
     serializer_class = TagSerializer
 
     def perform_create(self, serializer):
-        data = serializer.validated_data
-        item = data.get('item')
-        comment_string = "Tag with name {name} belonging to item with name {item_name} created".format
-        comment = comment_string(name=data.get('tag'), item_name=item.name)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.TAG_CREATED, comment=comment, items_affected=[item])
         serializer.save()
+        item= serializer.instance.item
+        comment = serializer_pretty_print(serializer=serializer, title=ActionEnum.TAG_CREATED.value) + \
+            "Item name: {item}\n".format(item=item.name)
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.TAG_CREATED, comment=comment,
+                          items_affected=[item])
+
 
 class TagDeletion(generics.DestroyAPIView):
     permission_classes = [IsStaffUser]
     queryset = Tag.objects.all()
 
-
     def perform_destroy(self, instance):
-        item = self.get_object().item
-        comment_string = "Tag with name {name} belonging to item with name {item_name} deleted".format
-        comment = comment_string(name=instance.tag, item_name=item.name)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.TAG_DELETED, comment=comment, items_affected=[item])
+        tag = self.get_object()
+        item = tag.item
+        serializer = TagSerializer(tag)
+        comment = serializer_pretty_print(serializer=serializer, title=ActionEnum.TAG_DELETED.value,
+                                          validated=False) + "Item name: {item}\n".format(item=item.name)
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.TAG_DELETED, comment=comment,
+                          items_affected=[item])
         instance.delete()
+
 
 class UniqueTagList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]

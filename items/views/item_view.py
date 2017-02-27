@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from inventoryProject.permissions import IsStaffOrReadOnly, IsSuperUserDelete, IsStaffUser
+from inventoryProject.utility.print_functions import serializer_pretty_print, serializer_compare_pretty_print
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
@@ -31,6 +32,12 @@ class ItemList(generics.ListCreateAPIView):
                 return filter_item_logic.filter_logic(tag_included, tag_excluded, operation)
         return Item.objects.all()
 
+    def perform_create(self, serializer):
+        serializer.save()
+        comment = serializer_pretty_print(serializer=serializer, title=ActionEnum.ITEM_CREATED.value)
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.ITEM_CREATED,
+                          comment=comment, items_affected=[serializer.instance])
+
 
 class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsStaffOrReadOnly, IsSuperUserDelete]
@@ -39,13 +46,22 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         item = self.get_object()
-        item_name = self.get_object().name
-        comment_string = "Item name: {name}".format
-        comment = comment_string(name=item_name)
+        comment = serializer_pretty_print(serializer=ItemSerializer(item),
+                                          title=ActionEnum.ITEM_DELETED.value, validated=False)
         LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.ITEM_DELETED, comment=comment,
                           items_affected=[item])
         return_value = self.destroy(request, *args, **kwargs)
         return return_value
+
+    def perform_update(self, serializer):
+        old_serializer = ItemSerializer(self.get_object())
+        serializer.save()
+        updated_item = self.get_object()
+        updated_serializer = ItemSerializer(updated_item)
+        comment = serializer_compare_pretty_print(old_serializer=old_serializer, new_serializer=updated_serializer,
+                                                  validated=False, title=ActionEnum.ITEM_MODIFIED.value)
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.ITEM_MODIFIED,
+                          comment=comment, items_affected=[updated_item])
 
     def patch(self, request, *args, **kwargs):
         if request.user.is_staff and not request.user.is_superuser and request.data.get('quantity') is not None:
