@@ -6,7 +6,7 @@ class ShoppingCart(models.Model):
     status = models.CharField(max_length=16, choices=[
         ('outstanding', 'outstanding'), ('approved', 'approved'),
         ('cancelled', 'cancelled'), ('denied', 'denied'), ('active', 'active')], default='active')
-    reason = models.TextField()
+    reason = models.TextField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now=True)
     admin_timestamp = models.DateTimeField(null=True)
     admin_comment = models.TextField(null=True, blank=True)
