@@ -1,11 +1,23 @@
 from rest_framework import generics
 
 from inventoryProject.permissions import IsSuperUser, IsStaffUser
+from inventoryProject.utility.print_functions import serializer_pretty_print, serializer_compare_pretty_print
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from inventory_transaction_logger.action_enum import ActionEnum
 from items.models import Field, IntField, FloatField, ShortTextField, LongTextField
 from items.serializers.field_serializer import FieldSerializer, IntFieldSerializer, FloatFieldSerializer, \
     ShortTextFieldSerializer, LongTextFieldSerializer
+
+
+def update_helper(client, serializer, serializer_type):
+    field = client.get_object()
+    old_serializer = serializer_type(field)
+    serializer.save()
+    item = client.get_object().item
+    comment = serializer_compare_pretty_print(old_serializer=old_serializer, new_serializer=serializer,
+                                              title="INT CUSTOM FIELD MODIFIED") + "item name : " + item.name
+    LoggerUtility.log(initiating_user=client.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_VALUE_MODIFIED,
+                      comment=comment, items_affected=[item])
 
 
 class FieldList(generics.ListCreateAPIView):
@@ -14,12 +26,10 @@ class FieldList(generics.ListCreateAPIView):
     serializer_class = FieldSerializer
 
     def perform_create(self, serializer):
-        data = serializer.validated_data
-        private = data.get('private', False)
-        comment_string = "Custom Field created with the following parameters: Name {name}; Type: {type}; Private: {private}".format
-        comment = comment_string(name=data.get('name'), type=data.get('type'), private=private)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_CREATED, comment=comment)
         serializer.save()
+        comment = serializer_pretty_print(serializer=serializer, title=ActionEnum.CUSTOM_FIELD_CREATED.value)
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_CREATED,
+                          comment=comment)
 
 
 class FieldDeletion(generics.DestroyAPIView):
@@ -28,9 +38,11 @@ class FieldDeletion(generics.DestroyAPIView):
     serializer_class = FieldSerializer
 
     def perform_destroy(self, instance):
-        comment_string = "Custom Field deleted that had the following parameters: Name {name}; Type: {type}; Private: {private}".format
-        comment = comment_string(name=instance.name, type=instance.type, private=instance.private)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_DELETED, comment=comment)
+        field_serializer = FieldSerializer(instance=instance)
+        comment = serializer_pretty_print(serializer=field_serializer, title=ActionEnum.CUSTOM_FIELD_DELETED.value,
+                                          validated=False)
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_DELETED,
+                          comment=comment)
         instance.delete()
 
 
@@ -40,13 +52,7 @@ class IntFieldUpdate(generics.UpdateAPIView):
     serializer_class = IntFieldSerializer
 
     def perform_update(self, serializer):
-        item = self.get_object().item
-        field_name = self.get_object().field.name
-        data = serializer.validated_data
-        comment_string = "Int Custom Field with name {name} has an updated value of {value} for item {item_name}".format
-        comment = comment_string(name=field_name, value=data.get('value'), item_name=item.name)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_VALUE_MODIFIED, comment=comment, items_affected=[item])
-        serializer.save()
+        update_helper(self, serializer, IntFieldSerializer)
 
 
 class FloatFieldUpdate(generics.UpdateAPIView):
@@ -55,14 +61,7 @@ class FloatFieldUpdate(generics.UpdateAPIView):
     serializer_class = FloatFieldSerializer
 
     def perform_update(self, serializer):
-        #updated value in value field in serializer
-        item = self.get_object().item
-        field_name = self.get_object().field.name
-        data = serializer.validated_data
-        comment_string = "Float Custom Field with name {name} has an updated value of {value} for item {item_name}".format
-        comment = comment_string(name=field_name, value=data.get('value'), item_name=item.name)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_VALUE_MODIFIED, comment=comment, items_affected=[item])
-        serializer.save()
+        update_helper(self, serializer, FloatFieldSerializer)
 
 
 class ShortTextFieldUpdate(generics.UpdateAPIView):
@@ -71,14 +70,7 @@ class ShortTextFieldUpdate(generics.UpdateAPIView):
     serializer_class = ShortTextFieldSerializer
 
     def perform_update(self, serializer):
-        item = self.get_object().item
-        field_name = self.get_object().field.name
-        data = serializer.validated_data
-        comment_string = "Short Text Custom Field with name {name} has an updated value of {value} for item {item_name}".format
-        comment = comment_string(name=field_name, value=data.get('value'), item_name=item.name)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_VALUE_MODIFIED, comment=comment, items_affected=[item])
-        serializer.save()
-
+        update_helper(self, serializer, ShortTextFieldSerializer)
 
 
 class LongTextFieldUpdate(generics.UpdateAPIView):
@@ -87,10 +79,4 @@ class LongTextFieldUpdate(generics.UpdateAPIView):
     serializer_class = LongTextFieldSerializer
 
     def perform_update(self, serializer):
-        item = self.get_object().item
-        field_name = self.get_object().field.name
-        data = serializer.validated_data
-        comment_string = "Long Text Custom Field with name {name} has an updated value of {value} for item {item_name}".format
-        comment = comment_string(name=field_name, value=data.get('value'), item_name=item.name)
-        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.CUSTOM_FIELD_VALUE_MODIFIED, comment=comment, items_affected=[item])
-        serializer.save()
+        update_helper(self, serializer, LongTextFieldSerializer)
