@@ -42,6 +42,10 @@ class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
                                        method=self.patch)
             serializer.save()
 
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save()
+
 
 class InventoryCurrentUser(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]

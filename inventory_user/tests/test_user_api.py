@@ -86,12 +86,7 @@ class UserAPITest(APITestCase):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        success_delete = False
-        try:
-            User.objects.get(pk=user.id)
-        except ObjectDoesNotExist:
-            success_delete = True
-        self.assertEqual(success_delete, True)
+        self.assertEqual(User.objects.get(pk=user.id).is_active, False)
 
     def test_get_current_user(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
