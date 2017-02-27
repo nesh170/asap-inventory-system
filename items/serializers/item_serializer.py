@@ -46,7 +46,7 @@ class ItemSerializer(serializers.ModelSerializer):
         comment = comment_string(name=item.name, quantity=item.quantity,
                                  model_number=item.model_number,
                                  description=item.description)
-        LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.ITEM_MODIFIED,
+        LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.ITEM_CREATED,
                           comment=comment, items_affected=[item])
         return item
 
@@ -63,10 +63,11 @@ class ItemQuantitySerializer(serializers.Serializer):
         except ObjectDoesNotExist:
             raise NotFound(detail="Item is not found in Database")
         quantity = validated_data.get('quantity', 0)
+        adjusted_quantity = -1*quantity
         comment = validated_data.get('comment', "No Comment")
         if quantity < 0:
             comment_string = "{number} instances of item with name {name} were lost/destroyed. Comment: {comment}".format
-            comment = comment_string(number=quantity, name=item.name, comment=comment)
+            comment = comment_string(number=adjusted_quantity, name=item.name, comment=comment)
             LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.DESTRUCTION_ITEM_INSTANCES,
                               comment=comment, items_affected=[item])
         elif quantity > 0:
