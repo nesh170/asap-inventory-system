@@ -1,13 +1,12 @@
 from rest_framework import serializers
 
 from inventory_shopping_cart.models import ShoppingCart
-from inventory_user.serializers.user_serializer import UserSerializer
 from inventory_shopping_cart_request.serializers.ShoppingCartRequestSerializer import ShoppingCartRequestSerializer
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    admin = UserSerializer(read_only=True, many=False)
-    owner = UserSerializer(read_only=True, many=False)
+    admin = serializers.SlugRelatedField(read_only=True, many=False, slug_field='username')
+    owner = serializers.SlugRelatedField(read_only=True, many=False, slug_field='username')
     requests = ShoppingCartRequestSerializer(read_only=True, many=True)
     reason = serializers.CharField(required=True)
 
