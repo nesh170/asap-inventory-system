@@ -29,7 +29,6 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags')
 
     def create(self, validated_data):
-        item = None
         try:
             tags_data = validated_data.pop('tags')
             item = Item.objects.create(**validated_data)
@@ -39,15 +38,6 @@ class ItemSerializer(serializers.ModelSerializer):
         except KeyError:
             item = Item.objects.create(**validated_data)
         create_fields(item)
-        username = self.context['request'].user.username
-        comment_string = "Item with name {name} was created with fields:" \
-                         " quantity: {quantity}; model_number: {model_number};" \
-                         " description: {description}".format
-        comment = comment_string(name=item.name, quantity=item.quantity,
-                                 model_number=item.model_number,
-                                 description=item.description)
-        LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.ITEM_MODIFIED,
-                          comment=comment, items_affected=[item])
         return item
 
 
@@ -67,7 +57,7 @@ class ItemQuantitySerializer(serializers.Serializer):
         if quantity < 0:
             comment_string = "{number} instances of item with name {name} were lost/destroyed. Comment: {comment}".format
             comment = comment_string(number=quantity, name=item.name, comment=comment)
-            LoggerUtility.log(initiating_user=self.context['request'].user, nature_enum=ActionEnum.DESTRUCTION_ITEM_INSTANCES,
+            LoggerUtility.log(initiating_user=user, nature_enum=ActionEnum.DESTRUCTION_ITEM_INSTANCES,
                               comment=comment, items_affected=[item])
         elif quantity > 0:
             comment_string = "{number} instances of item with name {name} were acquired. Comment: {comment}".format
