@@ -392,6 +392,40 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(updated_shopping_cart.status, "outstanding")
         equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), shopping_cart_to_send.id)
 
+
+    def test_send_cart(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope")
+        item_with_one_tag.tags.create(tag="test")
+        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
+        shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
+                                                               admin_comment="this is an admin comment", admin=self.admin)
+        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_send)
+        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_send)
+        data = {'id': shopping_cart_to_send.id, 'reason': "testing send cart"}
+        url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
+        response = self.client.patch(url, data, format='json')
+        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_send.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(updated_shopping_cart.status, "outstanding")
+        equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), shopping_cart_to_send.id)
+
+    def test_send_cart_empty(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope")
+        item_with_one_tag.tags.create(tag="test")
+        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
+        shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
+                                                               admin_comment="this is an admin comment", admin=self.admin)
+        data = {'id': shopping_cart_to_send.id, 'reason': "testing send empty cart should not work"}
+        url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
+        response = self.client.patch(url, data, format='json')
+        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_send.id)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(updated_shopping_cart.status, "active")
+
     def test_send_cart_fail_status(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
