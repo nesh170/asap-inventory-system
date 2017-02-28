@@ -2,7 +2,7 @@ from django.db import models
 
 class RequestTable(models.Model):
     item = models.ForeignKey('items.Item', null=True, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=0)
+    quantity = models.PositiveIntegerField(default=1)
     #TODO: THE ON_DELETE HAS TO BE POTENTIALLY FIXED
     shopping_cart = models.ForeignKey('inventory_shopping_cart.ShoppingCart', on_delete=models.CASCADE, related_name='requests')
 

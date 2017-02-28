@@ -14,10 +14,11 @@ class NestedItemSerializer(serializers.ModelSerializer):
 class ShoppingCartRequestSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(many=False, allow_null=False, read_only=True)
     item_id = serializers.IntegerField(required=True, write_only=True)
-    quantity = serializers.IntegerField(required=True)
+
     class Meta:
         model = RequestTable
         fields = ('id', 'item_id', 'item', 'quantity', 'shopping_cart_id')
+        extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):
         item_id = validated_data.pop('item_id')
@@ -26,7 +27,6 @@ class ShoppingCartRequestSerializer(serializers.ModelSerializer):
             shopping_cart_id = ShoppingCart.objects.filter(owner=self.context['request'].user).get(status='active').id
             item = Item.objects.get(pk=item_id)
             shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_id)
-            print(validated_data)
             if shopping_cart.requests.filter(item=item).exists():
                 raise MethodNotAllowed(self.create, "Item already exists in cart - cannot be added")
             else:
