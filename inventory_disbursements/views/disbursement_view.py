@@ -112,10 +112,11 @@ class CartSubmission(generics.RetrieveUpdateAPIView):
             raise NotFound("User is not found in database")
         if serializer.instance.receiver is not None:
             raise MethodNotAllowed(detail="This cart has been disbursed", method=self.perform_update)
-        [precheck_item_quantity(disbursement) for disbursement in
-                                 Disbursement.objects.filter(cart_id=serializer.instance.id)]
-        [subtract_item_quantity(disbursement) for disbursement in
-         Disbursement.objects.filter(cart_id=serializer.instance.id)]
+        disbursements = Disbursement.objects.filter(cart_id=serializer.instance.id)
+        if disbursements.count() == 0:
+            raise MethodNotAllowed(detail="This cart is empty so it cannot be submitted", method=self.perform_update)
+        [precheck_item_quantity(disbursement) for disbursement in disbursements]
+        [subtract_item_quantity(disbursement) for disbursement in disbursements]
         serializer.save()
         comment_string = "Disbursed {number} items".format
         comment = comment_string(number=Disbursement.objects.filter(cart_id=serializer.instance.id).count())
