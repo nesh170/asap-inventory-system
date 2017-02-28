@@ -143,6 +143,20 @@ class DisbursementAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         disbursement.delete()
 
+    def test_cart_submission_empty_cart(self):
+        self.cart.receiver = self.receiver
+        self.cart.save()
+        cart = Cart.objects.create(disburser=self.admin)
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        data = {'receiver_id': self.receiver.id, 'comment': 'lit'}
+        url = reverse(viewname='cart-submission', kwargs={'pk': cart.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         'This cart is empty so it cannot be submitted')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.cart.receiver = None
+        self.cart.save()
+
     def test_cart_submission_successful(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         data = {'receiver_id': self.receiver.id, 'comment': 'lit'}
