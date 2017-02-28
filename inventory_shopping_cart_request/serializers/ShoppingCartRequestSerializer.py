@@ -18,6 +18,7 @@ class ShoppingCartRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestTable
         fields = ('id', 'item_id', 'item', 'quantity', 'shopping_cart_id')
+        extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):
         item_id = validated_data.pop('item_id')
