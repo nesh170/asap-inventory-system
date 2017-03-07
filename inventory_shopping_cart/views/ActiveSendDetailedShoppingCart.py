@@ -45,7 +45,9 @@ class SendCart(APIView):
 
     def patch(self, request, pk, format=None):
         shopping_cart = get_shopping_cart(pk)
-        if shopping_cart.status=="active":
+        if shopping_cart.requests.count() == 0:
+            raise MethodNotAllowed(detail="Cannot submit empty shopping cart", method=self.patch)
+        if shopping_cart.status == "active":
             shopping_cart.status = "outstanding"
             serializer = ShoppingCartSerializer(shopping_cart, data=request.data)
             if serializer.is_valid():
