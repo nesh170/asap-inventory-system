@@ -1,4 +1,5 @@
 from rest_framework import generics
+from rest_framework.exceptions import ParseError
 
 from inventoryProject.permissions import IsSuperUser, IsStaffUser
 from inventoryProject.utility.print_functions import serializer_pretty_print, serializer_compare_pretty_print
@@ -32,10 +33,15 @@ class FieldList(generics.ListCreateAPIView):
                           comment=comment)
 
 
-class FieldDeletion(generics.DestroyAPIView):
+class FieldDetailed(generics.RetrieveUpdateDestroyAPIView):
     queryset = Field.objects.all()
     permission_classes = [IsSuperUser]
     serializer_class = FieldSerializer
+
+    def perform_update(self, serializer):
+        if serializer.validated_data.get('type') is not None:
+            raise ParseError(detail='You cannot change the type of a field')
+        serializer.save()
 
     def perform_destroy(self, instance):
         field_serializer = FieldSerializer(instance=instance)
