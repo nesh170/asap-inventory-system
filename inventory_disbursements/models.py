@@ -26,3 +26,6 @@ class Disbursement(models.Model):
         disbursement_string = "{admin} gave {quantity} {item} to {receiver} on {timestamp}".format
         return disbursement_string(quantity=self.quantity, item=self.item, admin=self.cart.disburser,
                                    receiver=self.cart.receiver, timestamp=self.cart.timestamp)
+
+    class Meta:
+        unique_together = ('cart', 'item',)
