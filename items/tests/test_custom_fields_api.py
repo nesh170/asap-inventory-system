@@ -80,6 +80,29 @@ class FieldsAPI(APITestCase):
         self.assertEqual(data.get('private'), field_created.private)
         self.assertEqual(field_created.floats.get(item=self.item), self.item.float_fields.get(field=field_created))
 
+    def test_patch_field_unsuccessful_type_change(self):
+        field = Field.objects.create(name='lol', type='float', private=False)
+        url = reverse('field-detail', kwargs={'pk': str(field.id)})
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        data = {"name": "lolz_fire", "type": "int", "private": True}
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        error_json = json.loads(str(response.content, 'utf-8'))
+        print(error_json)
+        self.assertEqual(error_json.get('detail'), "You cannot change the type of a field")
+
+    def test_patch_fields(self):
+        field = Field.objects.create(name='lol', type='float', private=False)
+        url = reverse('field-detail', kwargs={'pk': str(field.id)})
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        data = {"name": "lolz_fire", "private": True}
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_field = json.loads(str(response.content, 'utf-8'))
+        field_created = Field.objects.get(pk=json_field.get('id'))
+        self.assertEqual(data.get('name'), field_created.name)
+        self.assertEqual(data.get('private'), field_created.private)
+
     def test_patch_long_text_field(self):
         long_field_id = self.item.long_text_fields.first().id
         url = reverse(viewname='long-text-field-update', kwargs={'pk': str(long_field_id)})
@@ -119,7 +142,7 @@ class FieldsAPI(APITestCase):
     def test_delete_field(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         field_id = self.item.float_fields.first().field.id
-        url = reverse(viewname='field-deletion', kwargs={'pk': str(field_id)})
+        url = reverse(viewname='field-detail', kwargs={'pk': str(field_id)})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         delete_success = False
