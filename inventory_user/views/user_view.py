@@ -12,13 +12,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from inventoryProject.permissions import IsStaffUser, IsSuperUser, IsSuperUserDelete
+from inventoryProject.permissions import IsStaffUser, IsSuperUser, IsSuperUserDelete, IsSuperUserOrStaffReadOnly
 from inventory_user.serializers.user_serializer import UserSerializer, LargeUserSerializer
 from items.custom_pagination import LargeResultsSetPagination
 
 
 class InventoryUserList(generics.ListCreateAPIView):
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrStaffReadOnly]
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
 

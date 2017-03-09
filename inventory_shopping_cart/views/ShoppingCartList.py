@@ -15,5 +15,5 @@ class ShoppingCartList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return ShoppingCart.objects.exclude(status="cancelled") if user.is_staff \
-            else ShoppingCart.objects.filter(owner=user).exclude(status="cancelled")
+        return ShoppingCart.objects.exclude(status="cancelled").exclude(status="active") if user.is_staff \
+            else ShoppingCart.objects.filter(owner=user).exclude(status="cancelled").exclude(status="active")
