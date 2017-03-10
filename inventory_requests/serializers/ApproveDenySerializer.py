@@ -7,4 +7,4 @@ class StatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RequestCart
-        fields = ('id', 'staff_comment', 'staff_timestamp', 'staff')
+        fields = ('id', 'status', 'staff_comment', 'staff_timestamp', 'staff')

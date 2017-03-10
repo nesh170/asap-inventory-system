@@ -7,4 +7,4 @@ class CancelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RequestCart
-        fields = ('id', 'comment')
+        fields = ('id', 'status', 'comment')
