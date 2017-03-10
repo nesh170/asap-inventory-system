@@ -32,5 +32,6 @@ urlpatterns = [
     url(r'^auth/', include('rest_framework_social_oauth2.urls')),
     url(r'^api/logger/', include('inventory_transaction_logger.urls')),
     url(r'^api/docs/', include('rest_framework_docs.urls')),
+    url(r'^api/request/', include('inventory_requests.urls')),
 
 ]
