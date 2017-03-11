@@ -1,9 +1,9 @@
 from rest_framework_csv.renderers import CSVRenderer
 
-from items.models import Field
+from items.models import Field, ITEM_HEADERS
 
 
 class ItemRendererCSV(CSVRenderer):
     custom_fields_header = Field.objects.values_list('name', flat=True)[::1]
-    header = ['name', 'quantity', 'description', 'model_number', 'tags'] + custom_fields_header
+    header = ITEM_HEADERS + custom_fields_header
 
