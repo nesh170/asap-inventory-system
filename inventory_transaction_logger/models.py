@@ -3,6 +3,7 @@ from django.db import models
 
 from items.models import Item
 from inventory_shopping_cart.models import ShoppingCart
+from inventory_requests.models import RequestCart
 from inventory_disbursements.models import Cart
 
 
@@ -44,6 +45,15 @@ class ShoppingCartLog(models.Model):
     def __str__(self):
         item_log_string = "{log} : {cart}".format
         return item_log_string(log=self.log.nature.tag, cart=self.shopping_cart)
+
+
+class RequestCartLog(models.Model):
+    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='request_cart_log')
+    request_cart = models.ForeignKey(RequestCart, on_delete=models.CASCADE, related_name='request_cart')
+
+    def __str__(self):
+        item_log_string = "{log} : {cart}".format
+        return item_log_string(log=self.log.nature.tag, cart=self.request_cart)
 
 
 class DisbursementCartLog(models.Model):
