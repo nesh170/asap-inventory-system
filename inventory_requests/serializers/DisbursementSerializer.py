@@ -26,7 +26,7 @@ class DisbursementSerializer(serializers.ModelSerializer):
         if RequestCart.objects.filter(owner=user, status='active').exists():
             request_cart = RequestCart.objects.filter(owner=user).get(status='active')
             item = Item.objects.get(pk=item_id)
-            if request_cart.requests.filter(item=item).exists():
+            if request_cart.cart_disbursements.filter(item=item).exists():
                 raise MethodNotAllowed(self.create, "Item already exists in cart - cannot be added")
             else:
                 disbursement = Disbursement.objects.create(item=item, cart=request_cart, **validated_data)
