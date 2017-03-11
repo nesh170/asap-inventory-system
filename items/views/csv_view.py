@@ -36,6 +36,15 @@ def export_item_view(request):
     return response
 
 
+@api_view(['GET'])
+@renderer_classes((ItemRendererCSV,))
+@permission_classes((IsStaffUser,))
+def export_example_item_view(request):
+    response = Response(data=[], status=status.HTTP_200_OK, content_type='text/csv')
+    response['content-disposition'] = 'attachment; filename="field.csv"'
+    return response
+
+
 class ItemCsvImport(APIView):
     parser_classes = (MultiPartParser, FormParser,)
 

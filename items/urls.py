@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from items.views.csv_view import export_item_view, ItemCsvImport
+from items.views.csv_view import export_item_view, ItemCsvImport, export_example_item_view
 from items.views.field_view import FieldList, IntFieldUpdate, FloatFieldUpdate, ShortTextFieldUpdate, \
     LongTextFieldUpdate, FieldDetailed
 from items.views.item_view import ItemList, ItemDetail, UniqueItemList, ItemQuantityModification
@@ -21,5 +21,6 @@ urlpatterns = [
     url(r'^field/long_text/(?P<pk>[0-9]+)$', LongTextFieldUpdate.as_view(), name='long-text-field-update'),
     url(r'^quantity$', ItemQuantityModification.as_view(), name='item-quantity-modification'),
     url(r'^csv/export$', export_item_view, name='export-item'),
+    url(r'^csv/export/example$', export_example_item_view, name='export-example-item-csv'),
     url(r'^csv/import$', ItemCsvImport.as_view(), name='import-item')
 ]
