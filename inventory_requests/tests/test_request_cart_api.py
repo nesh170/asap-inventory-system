@@ -2,6 +2,7 @@ import json
 from datetime import timedelta, timezone, datetime
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from oauth2_provider.admin import Application
 from oauth2_provider.models import AccessToken
@@ -9,12 +10,8 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_transaction_logger.action_enum import ActionEnum
-from inventory_transaction_logger.models import Action
-from inventory_shopping_cart.models import ShoppingCart
-from inventory_shopping_cart_request.models import RequestTable
+from inventory_requests.models import RequestCart, Disbursement
 from items.models import Item
-from django.core.exceptions import ObjectDoesNotExist
 
 # username and password to create superuser for testing
 USERNAME = 'test'
@@ -29,34 +26,31 @@ PASSWORD = 'testPassword'
 '''
 
 
-#this function tests if the JSON representation of a request (either returned from a get request
-def equal_shopping_cart(test_client, shopping_cart_json, shopping_cart_id):
-    shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_id)
-    test_client.assertEqual(shopping_cart_json.get('owner'), shopping_cart.owner.username) if type(shopping_cart_json.get('owner')) is int \
-        else test_client.assertEqual(shopping_cart_json.get('owner'), shopping_cart.owner.username)
-    test_client.assertEqual(shopping_cart_json.get('status'), shopping_cart.status)
-    test_client.assertEqual(shopping_cart_json.get('reason'), shopping_cart.reason)
-    test_client.assertEqual(shopping_cart_json.get('admin_comment'), shopping_cart.admin_comment)
-    if shopping_cart_json.get('admin') is not None:
-        test_client.assertEqual(shopping_cart_json.get('admin'), shopping_cart.admin.username) if type(shopping_cart_json.get('admin')) is int \
-            else test_client.assertEqual(shopping_cart_json.get('admin'), shopping_cart.admin.username)
-    requestsJSON = shopping_cart_json.get('requests')
-    requestsDatabase = shopping_cart.requests.all()
-    for x in range(0, len(requestsDatabase)):
-        requestDB = requestsDatabase[x]
-        requestJSON = requestsJSON[x]
-        test_client.assertEqual(requestJSON.get('id'), requestDB.id)
-        test_client.assertEqual(requestJSON.get('quantity'), requestDB.quantity)
-        test_client.assertEqual(requestJSON.get('item').get('id'), requestDB.item.id)
-        test_client.assertEqual(requestJSON.get('item').get('name'), requestDB.item.name)
-        test_client.assertEqual(requestJSON.get('item').get('quantity'), requestDB.item.quantity)
+# this function tests if the JSON representation of a request (either returned from a get request
+def equal_request_cart(test_client, request_cart_json, request_cart_id):
+    request_cart = RequestCart.objects.get(pk=request_cart_id)
+    test_client.assertEqual(request_cart.get('owner'), request_cart.owner.username) \
+        if type(request_cart_json.get('owner')) is int else \
+        test_client.assertEqual(request_cart_json.get('owner'), request_cart.owner.username)
+    test_client.assertEqual(request_cart_json.get('status'), request_cart.status)
+    test_client.assertEqual(request_cart_json.get('reason'), request_cart.reason)
+    test_client.assertEqual(request_cart_json.get('staff_comment'), request_cart.staff_comment)
+    if request_cart_json.get('staff') is not None:
+        test_client.assertEqual(request_cart_json.get('staff'), request_cart.staff.username) \
+            if type(request_cart_json.get('staff')) is int else \
+            test_client.assertEqual(request_cart_json.get('staff'), request_cart.staff.username)
+    requests_json = request_cart_json.get('cart_disbursements')
+    test_client.assertEqual(len(requests_json), Disbursement.objects.filter(cart=request_cart).count())
+    [equal_disbursement(test_client, request_json, request_json.get('id')) for request_json in requests_json]
 
-def equal_shopping_cart_request(test_client, shopping_cart_request_json, shopping_cart_request_id):
-    shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request_id)
-    test_client.assertEqual(shopping_cart_request_json.get('quantity'), shopping_cart_request.quantity)
-    test_client.assertEqual(shopping_cart_request_json.get('item').get('id'), shopping_cart_request.item.id)
-    test_client.assertEqual(shopping_cart_request_json.get('item').get('quantity'), shopping_cart_request.item.quantity)
-    test_client.assertEqual(shopping_cart_request_json.get('item').get('name'), shopping_cart_request.item.name)
+
+def equal_disbursement(test_client, disbursement_json, disbursement_id):
+    disbursement = Disbursement.objects.get(pk=disbursement_id)
+    test_client.assertEqual(disbursement_json.get('quantity'), disbursement.quantity)
+    test_client.assertEqual(disbursement_json.get('item').get('id'), disbursement.item.id)
+    test_client.assertEqual(disbursement_json.get('item').get('quantity'), disbursement.item.quantity)
+    test_client.assertEqual(disbursement_json.get('item').get('name'), disbursement.item.name)
+
 
 class GetRequestTestCases(APITestCase):
     fixtures = ['disbursement_action.json']
@@ -80,43 +74,45 @@ class GetRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=5, model_number="48979",
                                                 description="Jameco")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
-                                                    admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart)
+        request_cart = RequestCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
+                                                  staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_cart)
 
-    def test_get_shopping_carts(self):
-        url = reverse('shopping-cart-list')
+    def test_get_all_requests(self):
+        url = reverse('request-cart-list')
         self.client.force_authenticate(user=self.admin, token=self.tok)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # converts response to a string and then to a JSON dictionary, and then gets results attribute of it
         json_request_list = json.loads(str(response.content, 'utf-8'))['results']
-        #verifies the number of requests returned by the GET request is the same as the number of requests in the database
-        #self.assertEqual(json.loads(str(response.content, 'utf-8'))['count'], Request.objects.count())
+        # verifies the number of requests returned by the GET request
+        # is the same as the number of requests in the database
+        # self.assertEqual(json.loads(str(response.content, 'utf-8'))['count'], Request.objects.count())
         # for each request returned by GET request, all equal_request on each one to verify the JSON representation
         # contains the same information as the information in the database
-        [equal_shopping_cart(self, json_request, json_request.get('id')) for json_request in json_request_list]
+        [equal_request_cart(self, json_request, json_request.get('id')) for json_request in json_request_list]
 
-    def test_get_detailed_shopping_cart(self):
+    def test_get_detailed_request(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        for shopping_cart_id in ShoppingCart.objects.values_list('id', flat=True):
-            url = reverse('detailed-shopping-cart', kwargs={'pk': str(shopping_cart_id)})
-            #make the get request
+        for request_cart_id in RequestCart.objects.values_list('id', flat=True):
+            url = reverse('detailed-request-cart', kwargs={'pk': str(request_cart_id)})
+            # make the get request
             response = self.client.get(url)
-            #compare the JSON response received from the GET request to what is in database
-            equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), shopping_cart_id)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            # compare the JSON response received from the GET request to what is in database
+            equal_request_cart(self, json.loads(str(response.content, 'utf-8')), request_cart_id)
 
-
-    #this tests the case where an active shopping cart already exists
-    def test_get_active_shopping_cart_already_exists(self):
+    # this tests the case where an active request already exists
+    def test_get_active_request_already_exists(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('active-cart')
         response = self.client.get(url)
-        active_shopping_cart = ShoppingCart.objects.get(status="active")
-        equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), active_shopping_cart.id)
+        active_request = RequestCart.objects.get(status="active")
+        equal_request_cart(self, json.loads(str(response.content, 'utf-8')), active_request.id)
+
 
 class ActiveCartTestCase(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -133,23 +129,24 @@ class ActiveCartTestCase(APITestCase):
             application=self.application, scope='read write',
             expires=datetime.now(timezone.utc) + timedelta(days=30)
         )
-        oauth2_settings._DEFAULT_SCOPES = ['read','write','groups']
+        oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=5, model_number="48979",
                                                 description="Jameco")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                    admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart)
+        request_cart = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
+                                                  staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_cart)
 
-    def test_get_active_shopping_cart_not_exists(self):
+    def test_get_active_request_not_exists(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('active-cart')
         response = self.client.get(url)
-        active_shopping_cart = ShoppingCart.objects.get(status="active")
-        equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), active_shopping_cart.id)
+        active_request = RequestCart.objects.get(status="active")
+        equal_request_cart(self, json.loads(str(response.content, 'utf-8')), active_request.id)
+
 
 class PostRequestTestCases(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -175,20 +172,21 @@ class PostRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789",
                                                   description="resistor")
-        shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="active",
-                                                            reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
+        request_to_add_to = RequestCart.objects.create(owner=self.admin, status="active",
+                                                       reason="test shopping cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_add_to)
         url = reverse('add-to-cart')
         data = {'item_id': item_with_zero_tags.id, 'quantity': 2}
         response = self.client.post(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
+        updated_request_cart = RequestCart.objects.get(pk=request_to_add_to.id)
         json_response = json.loads(str(response.content, 'utf-8'))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        equal_shopping_cart_request(self, json_response, json_response.get('id'))
-        updated_shopping_cart_requests = updated_shopping_cart.requests.all()
-        #tests if new item exists in shopping cart
+        equal_disbursement(self, json_response, json_response.get('id'))
+        updated_disbursement = updated_request_cart.cart_disbursements.all()
+        # tests if new item exists in shopping cart
         add_success = False
-        if (updated_shopping_cart_requests.filter(item=item_with_zero_tags).exists()):
+        if updated_disbursement.filter(item=item_with_zero_tags).exists():
             add_success = True
         self.assertEqual(add_success, True)
 
@@ -198,16 +196,16 @@ class PostRequestTestCases(APITestCase):
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
 
-        shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="active",
-                                                            reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
+        request_cart_to_add_to = RequestCart.objects.create(owner=self.admin, status="active",
+                                                            reason="test shopping cart",
+                                                            staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_cart_to_add_to)
         url = reverse('add-to-cart')
         data = {'item_id': item_with_one_tag.id, 'quantity': 2}
         response = self.client.post(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
-        updated_requests_cart = updated_shopping_cart.requests.all()
+        updated_disbursements = RequestCart.objects.get(pk=request_cart_to_add_to.id).cart_disbursements.all()
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(updated_requests_cart.count(), 1)
+        self.assertEqual(updated_disbursements.count(), 1)
 
     def test_add_item_fail_quantity_negative(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -216,45 +214,46 @@ class PostRequestTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789",
                                                   description="resistor")
-        shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="active",
-                                                            reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
+        request_to_add_to = RequestCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_add_to)
         url = reverse('add-to-cart')
         data = {'item_id': item_with_zero_tags.id, 'quantity': -2}
         response = self.client.post(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
-        updated_requests_cart = updated_shopping_cart.requests.all()
+        updated_disbursements = RequestCart.objects.get(pk=request_to_add_to.id).cart_disbursements.all()
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        addFail = False
+        add_fail = False
         try:
-            updated_requests_cart.get(item=item_with_zero_tags)
+            updated_disbursements.get(item=item_with_zero_tags)
         except ObjectDoesNotExist:
-            addFail = True
-        self.assertEqual(addFail, True)
+            add_fail = True
+        self.assertEqual(add_fail, True)
 
     def test_add_item_fail_not_active_shopping_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
-        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979", description="oscilloscope")
+        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
+                                                description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
-        shopping_cart_to_add_to = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                              admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_add_to)
+        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789",
+                                                  description="resistor")
+        request_to_add_to = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_add_to)
         url = reverse('add-to-cart')
         data = {'item_id': item_with_zero_tags.id, 'quantity': 2}
         response = self.client.post(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_add_to.id)
-        updated_requests_cart = updated_shopping_cart.requests.all()
+        updated_disbursements = RequestCart.objects.get(pk=request_to_add_to.id).cart_disbursements.all()
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        addFail = False
+        add_fail = False
         try:
-            updated_requests_cart.get(item=item_with_zero_tags)
+            updated_disbursements.get(item=item_with_zero_tags)
         except ObjectDoesNotExist:
-            addFail = True
-        self.assertEqual(addFail, True)
+            add_fail = True
+        self.assertEqual(add_fail, True)
+
 
 class DeleteItemTestCases(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -280,30 +279,21 @@ class DeleteItemTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789",
                                                   description="resistor")
-        shopping_cart_to_delete_from = ShoppingCart.objects.create(owner=self.admin, status="active",
-                                                            reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_delete_from)
-        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_delete_from)
-        url = reverse('delete-from-cart', kwargs={'pk': str(shopping_cart_request_second_item.id)})
+        request_to_delete_from = RequestCart.objects.create(owner=self.admin, status="active", reason="test cart",
+                                                            staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_delete_from)
+        second_disbursement = Disbursement.objects.create(item=item_with_zero_tags, quantity=2,
+                                                          cart=request_to_delete_from)
+        url = reverse('delete-from-cart', kwargs={'pk': str(second_disbursement.id)})
         response = self.client.delete(url)
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_delete_from.id)
-        updated_requests_cart = updated_shopping_cart.requests.all()
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         delete_success = False
-        #request no longer in request table
+        # request no longer in request table
         try:
-            RequestTable.objects.get(pk=shopping_cart_request_second_item.id)
+            Disbursement.objects.get(pk=second_disbursement.id)
         except ObjectDoesNotExist:
             delete_success = True
         self.assertEqual(delete_success, True)
-        #request no longer in the shopping cart
-        delete_success_cart = False
-        try:
-            updated_requests_cart.get(pk=shopping_cart_request_second_item.id)
-        except ObjectDoesNotExist:
-            delete_success_cart = True
-        self.assertEqual(delete_success_cart, True)
-
 
     def test_delete_item_fail_not_active_shopping_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -312,20 +302,19 @@ class DeleteItemTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789",
                                                   description="resistor")
-        shopping_cart_to_delete_from = ShoppingCart.objects.create(owner=self.admin, status="outstanding",
-                                                            reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_delete_from)
-        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_delete_from)
-        url = reverse('delete-from-cart', kwargs={'pk': str(shopping_cart_request_second_item.id)})
+        request_to_delete_from = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test  cart",
+                                                            staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_delete_from)
+        second_disbursement = Disbursement.objects.create(item=item_with_zero_tags, quantity=2,
+                                                          cart=request_to_delete_from)
+        url = reverse('delete-from-cart', kwargs={'pk': str(second_disbursement.id)})
         response = self.client.delete(url)
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_delete_from.id)
-        updated_requests_cart = updated_shopping_cart.requests.all()
+        updated_disbursements = RequestCart.objects.get(pk=request_to_delete_from.id).cart_disbursements.all()
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         delete_fail = False
-        if (updated_requests_cart.filter(pk=shopping_cart_request_second_item.id).exists()):
+        if updated_disbursements.filter(pk=second_disbursement.id).exists():
             delete_fail = True
         self.assertEqual(delete_fail, True)
-
 
     def test_delete_item_fail_not_exists(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
@@ -334,28 +323,27 @@ class DeleteItemTestCases(APITestCase):
         item_with_one_tag.tags.create(tag="test")
         item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789",
                                                   description="resistor")
-        shopping_cart_to_delete_from = ShoppingCart.objects.create(owner=self.admin, status="active",
-                                                            reason="test shopping cart", admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_delete_from)
-        another_shopping_cart = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                                   admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request_second_item = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=another_shopping_cart)
-        #shoppping_cart_request_second_item doesn't exist in active shopping cart
-        url = reverse('delete-from-cart', kwargs={'pk': str(shopping_cart_request_second_item.id)})
+        request_to_delete_from = RequestCart.objects.create(owner=self.admin, status="active", reason="test cart",
+                                                            staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_delete_from)
+        second_request = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
+                                                     staff_comment="this is an admin comment", staff=self.admin)
+        disbursement = Disbursement.objects.create(item=item_with_zero_tags, quantity=2, cart=second_request)
+        # shoppping_cart_request_second_item doesn't exist in active shopping cart
+        url = reverse('delete-from-cart', kwargs={'pk': str(disbursement.id)})
         response = self.client.delete(url)
-        #should still be in another shopping cart
-        updated_shopping_cart = ShoppingCart.objects.get(pk=another_shopping_cart.id)
-        updated_requests_cart = updated_shopping_cart.requests.all()
+        # should still be in another shopping
+        disbursements = RequestCart.objects.get(pk=second_request.id).cart_disbursements.all()
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        #shopping cart request for second item should still be in another_shopping_cart
+        # shopping cart request for second item should still be in another_shopping_cart
         delete_fail = False
-        if (updated_requests_cart.filter(pk=shopping_cart_request_second_item.id).exists()):
+        if disbursements.filter(pk=disbursement.id).exists():
             delete_fail = True
         self.assertEqual(delete_fail, True)
 
 
 class PatchRequestTestCases(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -379,145 +367,125 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
-        shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_send)
-        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_send)
-        data = {'id': shopping_cart_to_send.id, 'reason': "testing send cart"}
-        url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
+        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789")
+        request_to_send = RequestCart.objects.create(owner=self.admin, status="active", reason="test cart",
+                                                     staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_send)
+        Disbursement.objects.create(item=item_with_zero_tags, quantity=2, cart=request_to_send)
+        data = {'id': request_to_send.id, 'reason': "testing send cart"}
+        url = reverse('send-cart', kwargs={'pk': str(request_to_send.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_send.id)
+        updated_request = RequestCart.objects.get(pk=request_to_send.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(updated_shopping_cart.status, "outstanding")
-        equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), shopping_cart_to_send.id)
-
-
-    def test_send_cart(self):
-        self.client.force_authenticate(user=self.admin, token=self.tok)
-        item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
-                                                description="oscilloscope")
-        item_with_one_tag.tags.create(tag="test")
-        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
-        shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_send)
-        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_send)
-        data = {'id': shopping_cart_to_send.id, 'reason': "testing send cart"}
-        url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
-        response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_send.id)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(updated_shopping_cart.status, "outstanding")
-        equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), shopping_cart_to_send.id)
+        self.assertEqual(updated_request.status, "outstanding")
+        equal_request_cart(self, json.loads(str(response.content, 'utf-8')), request_to_send.id)
 
     def test_send_cart_empty(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
-        shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        data = {'id': shopping_cart_to_send.id, 'reason': "testing send empty cart should not work"}
-        url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
+        Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
+        request_to_send = RequestCart.objects.create(owner=self.admin, status="active", reason="test cart",
+                                                            staff_comment="this is an admin comment", staff=self.admin)
+        data = {'id': request_to_send.id, 'reason': "testing send empty cart should not work"}
+        url = reverse('send-cart', kwargs={'pk': str(request_to_send.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_send.id)
+        updated_request = RequestCart.objects.get(pk=request_to_send.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(updated_shopping_cart.status, "active")
+        self.assertEqual(updated_request.status, "active")
 
     def test_send_cart_fail_status(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="resistor")
-        shopping_cart_to_send = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_send)
-        shopping_cart_request_item_two = RequestTable.objects.create(item=item_with_zero_tags, quantity=2, shopping_cart=shopping_cart_to_send)
-        data = {'id': shopping_cart_to_send.id, 'reason': "testing send cart"}
-        url = reverse('send-cart', kwargs={'pk': str(shopping_cart_to_send.id)})
+        item_with_zero_tags = Item.objects.create(name="resistor", quantity=5, model_number="456789", description="a")
+        request_to_add = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
+                                                    staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_add)
+        Disbursement.objects.create(item=item_with_zero_tags, quantity=2, cart=request_to_add)
+        data = {'id': request_to_add.id, 'reason': "testing send cart"}
+        url = reverse('send-cart', kwargs={'pk': str(request_to_add.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_send.id)
+        updated_request = RequestCart.objects.get(pk=request_to_add.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(updated_shopping_cart.status, shopping_cart_to_send.status)
-        self.assertEqual(updated_shopping_cart.reason, shopping_cart_to_send.reason)
-
+        self.assertEqual(updated_request.status, request_to_add.status)
+        self.assertEqual(updated_request.reason, request_to_add.reason)
 
     def test_modify_quantity(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_modify = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_modify)
+        request_to_modify = RequestCart.objects.create(owner=self.admin, status="active", reason="test cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
         data = {'item_id': item_with_one_tag.id, 'quantity': 2}
-        url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
+        url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
+        updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(updated_shopping_cart_request.quantity, data.get('quantity'))
+        self.assertEqual(updated_disbursement.quantity, data.get('quantity'))
 
     def test_modify_quantity_fail_status(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_modify = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_modify)
+        request_to_modify = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="lol_cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
         data = {'item_id': item_with_one_tag.id, 'quantity': 2}
-        url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
+        url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
+        updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(updated_shopping_cart_request.quantity, shopping_cart_request.quantity)
+        self.assertEqual(updated_disbursement.quantity, disbursement.quantity)
 
     def test_modify_quantity_fail_negative_quantity(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_modify = ShoppingCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=1, shopping_cart=shopping_cart_to_modify)
+        request_to_modify = RequestCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
         data = {'item_id': item_with_one_tag.id, 'quantity': -5}
-        url = reverse('modify-quantity-requested', kwargs={'pk': str(shopping_cart_request.id)})
+        url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart_request = RequestTable.objects.get(pk=shopping_cart_request.id)
+        updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(updated_shopping_cart_request.quantity, shopping_cart_request.quantity)
+        self.assertEqual(updated_disbursement.quantity, disbursement.quantity)
 
     def test_approve_shopping_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_approve = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                    admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart_to_approve)
-        data = {'id': shopping_cart_to_approve.id, 'admin_comment': 'testing approve request'}
-        url = reverse('approve-shopping-cart', kwargs={'pk': str(shopping_cart_to_approve.id)})
+        request_to_approve = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart",
+                                                        staff_comment="this is an admin comment", staff=self.admin)
+        disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_approve)
+        data = {'id': request_to_approve.id, 'staff_comment': 'testing approve request'}
+        url = reverse('approve-request-cart', kwargs={'pk': str(request_to_approve.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_approve.id)
+        updated_request = RequestCart.objects.get(pk=request_to_approve.id)
         updated_item = Item.objects.get(pk=item_with_one_tag.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(updated_shopping_cart.status, "approved")
-        self.assertEqual(updated_item.quantity, item_with_one_tag.quantity - shopping_cart_request.quantity)
-        self.assertEqual(updated_shopping_cart.admin_comment, "testing approve request")
+        self.assertEqual(updated_request.status, "approved")
+        self.assertEqual(updated_item.quantity, item_with_one_tag.quantity - disbursement.quantity)
+        self.assertEqual(updated_request.staff_comment, "testing approve request")
 
     def test_approve_shopping_cart_fail_quantity(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_approve = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=4, shopping_cart=shopping_cart_to_approve)
-        data = {'id': shopping_cart_to_approve.id, 'admin_comment': 'testing approve request'}
-        url = reverse('approve-shopping-cart', kwargs={'pk': str(shopping_cart_to_approve.id)})
+        request_to_approve = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
+                                                        staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=4, cart=request_to_approve)
+        data = {'id': request_to_approve.id, 'staff_comment': 'testing approve request'}
+        url = reverse('approve-request-cart', kwargs={'pk': str(request_to_approve.id)})
         response = self.client.patch(url, data, format='json')
         updated_item = Item.objects.get(pk=item_with_one_tag.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -528,11 +496,11 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_approve = ShoppingCart.objects.create(owner=self.admin, status="denied", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=4, shopping_cart=shopping_cart_to_approve)
-        data = {'id': shopping_cart_to_approve.id, 'admin_comment': 'testing approve request'}
-        url = reverse('approve-shopping-cart', kwargs={'pk': str(shopping_cart_to_approve.id)})
+        request_to_approve = RequestCart.objects.create(owner=self.admin, status="denied", reason="test cart",
+                                                        staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=4, cart=request_to_approve)
+        data = {'id': request_to_approve.id, 'admin_comment': 'testing approve request'}
+        url = reverse('approve-request-cart', kwargs={'pk': str(request_to_approve.id)})
         response = self.client.patch(url, data, format='json')
         updated_item = Item.objects.get(pk=item_with_one_tag.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -543,68 +511,64 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_deny = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=4,
-                                                            shopping_cart=shopping_cart_to_deny)
-        data = {'id': shopping_cart_to_deny.id, 'admin_comment': 'testing deny request'}
-        url = reverse('deny-shopping-cart', kwargs={'pk': str(shopping_cart_to_deny.id)})
+        request_to_deny = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
+                                                     staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=4, cart=request_to_deny)
+        data = {'id': request_to_deny.id, 'staff_comment': 'testing deny request'}
+        url = reverse('deny-request-cart', kwargs={'pk': str(request_to_deny.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_deny.id)
+        updated_request = RequestCart.objects.get(pk=request_to_deny.id)
         updated_item = Item.objects.get(pk=item_with_one_tag.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(updated_shopping_cart.status, "denied")
+        self.assertEqual(updated_request.status, "denied")
         self.assertEqual(updated_item.quantity, item_with_one_tag.quantity)
-        self.assertEqual(updated_shopping_cart.admin_comment, "testing deny request")
+        self.assertEqual(updated_request.staff_comment, "testing deny request")
 
     def test_deny_shopping_cart_fail(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_deny = ShoppingCart.objects.create(owner=self.admin, status="cancelled", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2,
-                                                            shopping_cart=shopping_cart_to_deny)
-        data = {'id': shopping_cart_to_deny.id, 'admin_comment': 'testing deny request'}
-        url = reverse('deny-shopping-cart', kwargs={'pk': str(shopping_cart_to_deny.id)})
+        request_to_deny = RequestCart.objects.create(owner=self.admin, status="cancelled", reason="test cart",
+                                                     staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_deny)
+        data = {'id': request_to_deny.id, 'admin_comment': 'testing deny request'}
+        url = reverse('deny-request-cart', kwargs={'pk': str(request_to_deny.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_deny.id)
+        updated_request = RequestCart.objects.get(pk=request_to_deny.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(shopping_cart_to_deny.admin_comment, updated_shopping_cart.admin_comment)
-        self.assertEqual(shopping_cart_to_deny.status, updated_shopping_cart.status)
+        self.assertEqual(request_to_deny.staff_comment, updated_request.staff_comment)
+        self.assertEqual(request_to_deny.status, updated_request.status)
 
     def test_cancel_shopping_cart_fail(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_cancel = ShoppingCart.objects.create(owner=self.admin, status="approved", reason="test shopping cart",
-                                                               admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2,
-                                                            shopping_cart=shopping_cart_to_cancel)
-        data = {'id': shopping_cart_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
-        url = reverse('cancel-shopping-cart', kwargs={'pk': str(shopping_cart_to_cancel.id)})
+        request_to_cancel = RequestCart.objects.create(owner=self.admin, status="approved", reason="test shopping cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_cancel)
+        data = {'id': request_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
+        url = reverse('cancel-request-cart', kwargs={'pk': str(request_to_cancel.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_cancel.id)
+        updated_request = RequestCart.objects.get(pk=request_to_cancel.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(shopping_cart_to_cancel.reason, updated_shopping_cart.reason)
-        self.assertEqual(shopping_cart_to_cancel.status, updated_shopping_cart.status)
-
+        self.assertEqual(request_to_cancel.reason, updated_request.reason)
+        self.assertEqual(request_to_cancel.status, updated_request.status)
 
     def test_cancel_shopping_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        shopping_cart_to_cancel = ShoppingCart.objects.create(owner=self.admin, status="outstanding", reason="test shopping cart",
-                                                              admin_comment="this is an admin comment", admin=self.admin)
-        shopping_cart_request = RequestTable.objects.create(item=item_with_one_tag, quantity=2, shopping_cart=shopping_cart_to_cancel)
-        data = {'id': shopping_cart_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
-        url = reverse('cancel-shopping-cart', kwargs={'pk': str(shopping_cart_to_cancel.id)})
+        request_to_cancel = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
+                                                       staff_comment="this is an admin comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_cancel)
+        data = {'id': request_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
+        url = reverse('cancel-request-cart', kwargs={'pk': str(request_to_cancel.id)})
         response = self.client.patch(url, data, format='json')
-        updated_shopping_cart = ShoppingCart.objects.get(pk=shopping_cart_to_cancel.id)
+        updated_request= RequestCart.objects.get(pk=request_to_cancel.id)
         updated_item = Item.objects.get(pk=item_with_one_tag.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(item_with_one_tag.quantity, updated_item.quantity)
-        self.assertEqual(updated_shopping_cart.status, "cancelled")
+        self.assertEqual(updated_request.status, "cancelled")

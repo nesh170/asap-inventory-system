@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -15,5 +16,5 @@ class RequestCartList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return RequestCart.objects.exclude(status="cancelled").exclude(status="active") if user.is_staff \
-            else RequestCart.objects.filter(owner=user).exclude(status="cancelled").exclude(status="active")
+        base_queryset = RequestCart.objects.exclude(Q(status="cancelled") & Q(status="active"))
+        return base_queryset if user.is_staff else base_queryset.filter(owner=user)

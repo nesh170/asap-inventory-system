@@ -116,7 +116,7 @@ class GetRequestTestCases(APITestCase):
         equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), active_shopping_cart.id)
 
 class ActiveCartTestCase(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -149,7 +149,7 @@ class ActiveCartTestCase(APITestCase):
         equal_shopping_cart(self, json.loads(str(response.content, 'utf-8')), active_shopping_cart.id)
 
 class PostRequestTestCases(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -254,7 +254,7 @@ class PostRequestTestCases(APITestCase):
         self.assertEqual(addFail, True)
 
 class DeleteItemTestCases(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -355,7 +355,7 @@ class DeleteItemTestCases(APITestCase):
 
 
 class PatchRequestTestCases(APITestCase):
-    fixtures = ['shopping_cart_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
