@@ -1,5 +1,6 @@
 from django.db import models
 
+ITEM_HEADERS = ['name', 'quantity', 'description', 'model_number', 'tags']
 
 class Item(models.Model):
     name = models.CharField(max_length=100, unique=True)
