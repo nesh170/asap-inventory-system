@@ -88,7 +88,6 @@ class FieldsAPI(APITestCase):
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         error_json = json.loads(str(response.content, 'utf-8'))
-        print(error_json)
         self.assertEqual(error_json.get('detail'), "You cannot change the type of a field")
 
     def test_patch_fields(self):

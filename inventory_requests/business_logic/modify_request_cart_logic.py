@@ -2,10 +2,11 @@ from inventoryProject.utility.queryset_functions import get_or_not_found
 from items.models import Item
 
 
-def can_approve_deny_cancel_request_cart(request_cart_to_modify, modification_type):
+def can_approve_deny_cancel_disburse_request_cart(request_cart_to_modify, modification_type):
     for request in request_cart_to_modify.cart_disbursements.all():
         item = get_or_not_found(Item, pk=request.item.id)
-        if item.quantity - request.quantity < 0 and modification_type == "approved":
+        if item.quantity - request.quantity < 0 and (modification_type == "approved"
+                                                     or modification_type == "disburse"):
             return False
     return request_cart_to_modify.status == "outstanding"
 

@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser, IsSuperUser, IsSuperUserDelete, IsSuperUserOrStaffReadOnly
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_user.serializers.user_serializer import UserSerializer, LargeUserSerializer
 from items.custom_pagination import LargeResultsSetPagination
 
@@ -95,10 +96,7 @@ class ApiToken(APIView):
         return Response(data={'token': token.key}, status=status.HTTP_200_OK)
 
     def delete(self, request):
-        try:
-            token = Token.objects.get(user=request.user)
-        except ObjectDoesNotExist:
-            raise NotFound(detail="User does not have a token")
+        token = get_or_not_found(Token, user=request.user)
         token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

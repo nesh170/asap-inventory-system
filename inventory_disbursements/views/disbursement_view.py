@@ -121,4 +121,4 @@ class CartSubmission(generics.RetrieveUpdateAPIView):
         comment_string = "Disbursed {number} items".format
         comment = comment_string(number=Disbursement.objects.filter(cart_id=serializer.instance.id).count())
         LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.ITEMS_DISBURSED,
-                          comment=comment, affected_user=user, disbursement_affected=[self.get_object()])
+                          comment=comment, affected_user=user)
