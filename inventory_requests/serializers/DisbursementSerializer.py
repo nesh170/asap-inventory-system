@@ -1,4 +1,7 @@
+from django.db.models import Q
 from rest_framework import serializers
+
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.models import Disbursement
 from items.models import Item
 from inventory_requests.models import RequestCart
@@ -23,9 +26,10 @@ class DisbursementSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         item_id = validated_data.pop('item_id')
         user = self.context['request'].user
-        if RequestCart.objects.filter(owner=user, status='active').exists():
-            request_cart = RequestCart.objects.filter(owner=user).get(status='active')
-            item = Item.objects.get(pk=item_id)
+        condition = (Q(owner=user) | Q(staff=user)) & Q(status='active')
+        if RequestCart.objects.filter(condition).exists():
+            request_cart = RequestCart.objects.get(condition)
+            item = get_or_not_found(Item, pk=item_id)
             if request_cart.cart_disbursements.filter(item=item).exists():
                 raise MethodNotAllowed(self.create, "Item already exists in cart - cannot be added")
             else:

@@ -16,6 +16,8 @@ from items.models import Item
 # username and password to create superuser for testing
 USERNAME = 'test'
 PASSWORD = 'testPassword'
+TEST_USERNAME = 'ankit'
+TEST_PASSWORD = 'lol'
 '''
     This Function tests is the JSON representation of a request (either returned from a GET request or posted using a
     POST request) is equivalent to the information that is stored in the database. In the case of a GET request, the JSON
@@ -29,9 +31,10 @@ PASSWORD = 'testPassword'
 # this function tests if the JSON representation of a request (either returned from a get request
 def equal_request_cart(test_client, request_cart_json, request_cart_id):
     request_cart = RequestCart.objects.get(pk=request_cart_id)
-    test_client.assertEqual(request_cart.get('owner'), request_cart.owner.username) \
-        if type(request_cart_json.get('owner')) is int else \
-        test_client.assertEqual(request_cart_json.get('owner'), request_cart.owner.username)
+    if request_cart_json.get('owner') is not  None:
+        test_client.assertEqual(request_cart_json.get('owner'), request_cart.owner.username) \
+            if type(request_cart_json.get('owner')) is int else \
+            test_client.assertEqual(request_cart_json.get('owner'), request_cart.owner.username)
     test_client.assertEqual(request_cart_json.get('status'), request_cart.status)
     test_client.assertEqual(request_cart_json.get('reason'), request_cart.reason)
     test_client.assertEqual(request_cart_json.get('staff_comment'), request_cart.staff_comment)
@@ -53,7 +56,7 @@ def equal_disbursement(test_client, disbursement_json, disbursement_id):
 
 
 class GetRequestTestCases(APITestCase):
-    fixtures = ['disbursement_action.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -334,7 +337,7 @@ class DeleteItemTestCases(APITestCase):
         response = self.client.delete(url)
         # should still be in another shopping
         disbursements = RequestCart.objects.get(pk=second_request.id).cart_disbursements.all()
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         # shopping cart request for second item should still be in another_shopping_cart
         delete_fail = False
         if disbursements.filter(pk=disbursement.id).exists():
@@ -347,6 +350,7 @@ class PatchRequestTestCases(APITestCase):
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.receiver = User.objects.create_user(TEST_USERNAME, 'test@test.com', TEST_PASSWORD)
         self.application = Application(
             name="Test Application",
             redirect_uris="http://localhost",
@@ -572,3 +576,78 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(item_with_one_tag.quantity, updated_item.quantity)
         self.assertEqual(updated_request.status, "cancelled")
+
+    def test_fulfil_shopping_cart_failed(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="test1", quantity=3, model_number="48979",
+                                                description="test2")
+        item_with_one_tag.tags.create(tag="try")
+        request_to_fulfil = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart",
+                                                       staff_comment="this is comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_fulfil)
+        url = reverse('fulfil-request-cart', kwargs={'pk': str(request_to_fulfil.id)})
+        response = self.client.patch(url, format='json')
+        updated_request = RequestCart.objects.get(pk=request_to_fulfil.id)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(updated_request.status, request_to_fulfil.status)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
+                         , "Request must be approved but is currently outstanding")
+
+    def test_fulfil_shopping_cart(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item_with_one_tag = Item.objects.create(name="oscillosasdcope", quantity=3, model_number="48979",
+                                                description="oscsdilloscope")
+        item_with_one_tag.tags.create(tag="taest")
+        request_to_fulfil = RequestCart.objects.create(owner=self.admin, status="approved", reason="test_cart",
+                                                       staff_comment="this is comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_fulfil)
+        url = reverse('fulfil-request-cart', kwargs={'pk': str(request_to_fulfil.id)})
+        response = self.client.patch(url, format='json')
+        updated_request = RequestCart.objects.get(pk=request_to_fulfil.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(updated_request.status, 'fulfilled')
+
+    def test_admin_disburse(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item", quantity=3)
+        request_cart = RequestCart.objects.create(owner=self.admin, status="active", reason="test_cart",
+                                                  staff_comment="this is comment", staff=self.admin)
+        disbursement = Disbursement.objects.create(cart=request_cart, item=item, quantity=1)
+        url = reverse('dispense-request-cart', kwargs={'pk': str(request_cart.id)})
+        data = {'owner_id': self.receiver.id, 'staff_comment': 'lit'}
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_item = Item.objects.get(pk=item.id)
+        self.assertEqual(updated_item.quantity, item.quantity - disbursement.quantity)
+        updated_request = RequestCart.objects.get(pk=request_cart.id)
+        self.assertEqual(updated_request.status, 'fulfilled')
+        self.assertEqual(updated_request.owner, self.receiver)
+        self.assertEqual(updated_request.staff, self.admin)
+        self.assertEqual(updated_request.staff_comment, data.get('staff_comment'))
+
+    def test_admin_disburse_inactive_cart(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item_2", quantity=3)
+        request_cart = RequestCart.objects.create(owner=self.admin, status="approved", reason="test_cart",
+                                                  staff_comment="this is comment", staff=self.admin)
+        Disbursement.objects.create(cart=request_cart, item=item, quantity=1)
+        url = reverse('dispense-request-cart', kwargs={'pk': str(request_cart.id)})
+        data = {'owner_id': self.receiver.id, 'staff_comment': 'lit'}
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
+                         , "Cart needs to be active")
+
+    def test_admin_disburse_insufficient_item(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item_3", quantity=3)
+        request_cart = RequestCart.objects.create(owner=self.admin, status="active", reason="test_cart",
+                                                  staff_comment="this is comment", staff=self.admin)
+        Disbursement.objects.create(cart=request_cart, item=item, quantity=100)
+        url = reverse('dispense-request-cart', kwargs={'pk': str(request_cart.id)})
+        data = {'owner_id': self.receiver.id, 'staff_comment': 'lit'}
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
+                         , "Cannot disburse due to insufficient items")
+

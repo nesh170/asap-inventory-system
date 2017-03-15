@@ -25,7 +25,6 @@ urlpatterns = [
     url(r'^api/accounts/$', RedirectView.as_view(url='/')),
     url(r'^api/item/', include('items.urls')),
     url(r'^api/user/', include('inventory_user.urls')),
-    url(r'^api/disburse/', include('inventory_disbursements.urls')),
     url(r'^api/o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^auth/', include('rest_framework_social_oauth2.urls')),
     url(r'^api/logger/', include('inventory_transaction_logger.urls')),

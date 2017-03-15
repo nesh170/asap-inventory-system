@@ -18,5 +18,6 @@ class RequestCartSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context['request'].user
-        request_cart = RequestCart.objects.create(owner=user, **validated_data)
+        request_cart = RequestCart.objects.create(staff=user, **validated_data) if user.is_staff else \
+            RequestCart.objects.create(owner=user, **validated_data)
         return request_cart

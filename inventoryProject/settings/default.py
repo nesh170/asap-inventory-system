@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'items.apps.ItemsConfig',
     'rest_framework',
     'inventory_user.apps.InventoryUserConfig',
-    'inventory_disbursements.apps.InventoryDisbursementsConfig',
     'items.fixtures',
     'oauth2_provider',
     'social_django',

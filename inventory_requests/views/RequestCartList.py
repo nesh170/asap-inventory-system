@@ -7,7 +7,7 @@ from inventory_requests.serializers.RequestCartSerializer import RequestCartSeri
 from rest_framework import filters
 
 
-class RequestCartList(generics.ListCreateAPIView):
+class RequestCartList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = RequestCartSerializer
     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)

@@ -8,10 +8,11 @@ def can_approve_deny_cancel_disburse_request_cart(request_cart_to_modify, modifi
         if item.quantity - request.quantity < 0 and (modification_type == "approved"
                                                      or modification_type == "disburse"):
             return False
-    return request_cart_to_modify.status == "outstanding"
+    return request_cart_to_modify.status == "outstanding" or \
+           (request_cart_to_modify.staff is not None and request_cart_to_modify.status == "active")
 
 
-def approve_request_cart(request_cart_to_modify):
+def subtract_item_in_cart(request_cart_to_modify):
     for request in request_cart_to_modify.cart_disbursements.all():
         item = get_or_not_found(Item, pk=request.item.id)  # get item object based on item ID
         item.quantity = item.quantity - request.quantity
