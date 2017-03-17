@@ -11,11 +11,16 @@ from rest_framework.views import APIView
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.business_logic import modify_request_cart_logic
-from inventory_requests.models import RequestCart
-from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
+from inventory_requests.business_logic.modify_request_cart_logic import start_loan
+from inventory_requests.models import RequestCart, Disbursement, Loan
+from inventory_requests.serializers.DisbursementSerializer import LoanSerializer, DisbursementSerializer
+from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer, QuantitySerializer
 from inventory_requests.serializers.RequestStatusSerializer import ApproveDenySerializer, StaffDisburseSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
+
+TYPE_MAP = {'loan': Loan, 'disbursement': Disbursement}
+SERIALIZER_MAP = {'loan': LoanSerializer, 'disbursement': DisbursementSerializer}
 
 
 def approve_deny_request_cart(self, request, pk, request_cart_type):
@@ -29,6 +34,7 @@ def approve_deny_request_cart(self, request, pk, request_cart_type):
             serializer.save(staff=request.user, staff_timestamp=datetime.now())
             if request_cart_type == "approved":
                 modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve_deny)
+                start_loan(request_cart_to_approve_deny)
             comment = "{action}: {item_count} items".format(action=log_action.value,
                                                             item_count=serializer.instance.cart_disbursements.count())
             LoggerUtility.log(initiating_user=request.user, nature_enum=log_action,
@@ -114,10 +120,23 @@ class DispenseRequestCart(generics.UpdateAPIView):
                 'Cart needs to be active'
             raise MethodNotAllowed(method=self.patch, detail=detail_str)
         modify_request_cart_logic.subtract_item_in_cart(request_cart)
+        start_loan(request_cart)
         serializer.save(staff_timestamp=datetime.now())
 
 
+class ModifyQuantityRequested(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def patch(self, request, pk):
+        serializer = QuantitySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        type_request_to_change = get_or_not_found(TYPE_MAP.get(serializer.validated_data['type']), pk=pk)
+        if type_request_to_change.cart.status != 'active':
+            raise MethodNotAllowed(self.patch, "Item with quantity to modify must be part of active cart")
+        type_request_to_change.quantity = serializer.validated_data['quantity']
+        type_request_to_change.save()
+        return Response(data=SERIALIZER_MAP.get(serializer.validated_data['type'])(type_request_to_change).data,
+                        status=status.HTTP_200_OK)
 
 
 

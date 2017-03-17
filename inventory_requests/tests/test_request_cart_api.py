@@ -425,7 +425,7 @@ class PatchRequestTestCases(APITestCase):
         request_to_modify = RequestCart.objects.create(owner=self.admin, status="active", reason="test cart",
                                                        staff_comment="this is an admin comment", staff=self.admin)
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity': 2}
+        data = {'type': 'disbursement', 'quantity': 2}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
         updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
@@ -440,7 +440,7 @@ class PatchRequestTestCases(APITestCase):
         request_to_modify = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="lol_cart",
                                                        staff_comment="this is an admin comment", staff=self.admin)
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity': 2}
+        data = {'type': 'disbursement', 'quantity': 2}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
         updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
@@ -455,7 +455,7 @@ class PatchRequestTestCases(APITestCase):
         request_to_modify = RequestCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
                                                        staff_comment="this is an admin comment", staff=self.admin)
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity': -5}
+        data = {'type': 'disbursement', 'quantity': -5}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
         updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
