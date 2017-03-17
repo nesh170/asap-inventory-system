@@ -577,33 +577,33 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(item_with_one_tag.quantity, updated_item.quantity)
         self.assertEqual(updated_request.status, "cancelled")
 
-    def test_fulfil_shopping_cart_failed(self):
+    def test_fulfill_shopping_cart_failed(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="test1", quantity=3, model_number="48979",
                                                 description="test2")
         item_with_one_tag.tags.create(tag="try")
-        request_to_fulfil = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart",
-                                                       staff_comment="this is comment", staff=self.admin)
-        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_fulfil)
-        url = reverse('fulfil-request-cart', kwargs={'pk': str(request_to_fulfil.id)})
+        request_to_fulfill = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart",
+                                                        staff_comment="this is comment", staff=self.admin)
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_fulfill)
+        url = reverse('fulfill-request-cart', kwargs={'pk': str(request_to_fulfill.id)})
         response = self.client.patch(url, format='json')
-        updated_request = RequestCart.objects.get(pk=request_to_fulfil.id)
+        updated_request = RequestCart.objects.get(pk=request_to_fulfill.id)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(updated_request.status, request_to_fulfil.status)
+        self.assertEqual(updated_request.status, request_to_fulfill.status)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
                          , "Request must be approved but is currently outstanding")
 
-    def test_fulfil_shopping_cart(self):
+    def test_fulfill_shopping_cart(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         item_with_one_tag = Item.objects.create(name="oscillosasdcope", quantity=3, model_number="48979",
                                                 description="oscsdilloscope")
         item_with_one_tag.tags.create(tag="taest")
-        request_to_fulfil = RequestCart.objects.create(owner=self.admin, status="approved", reason="test_cart",
+        request_to_fulfill = RequestCart.objects.create(owner=self.admin, status="approved", reason="test_cart",
                                                        staff_comment="this is comment", staff=self.admin)
-        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_fulfil)
-        url = reverse('fulfil-request-cart', kwargs={'pk': str(request_to_fulfil.id)})
+        Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_fulfill)
+        url = reverse('fulfill-request-cart', kwargs={'pk': str(request_to_fulfill.id)})
         response = self.client.patch(url, format='json')
-        updated_request = RequestCart.objects.get(pk=request_to_fulfil.id)
+        updated_request = RequestCart.objects.get(pk=request_to_fulfill.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(updated_request.status, 'fulfilled')
 

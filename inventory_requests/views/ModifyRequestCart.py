@@ -75,7 +75,7 @@ class DenyRequestCart(APIView):
         return approve_deny_request_cart(self, request, pk, "denied")
 
 
-class FulfilRequestCart(APIView):
+class FulfillRequestCart(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, pk):

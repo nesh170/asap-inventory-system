@@ -4,7 +4,7 @@ from inventory_requests.views.RequestCartList import RequestCartList
 from inventory_requests.views.ActiveSendDetailedRequestCart import ViewDetailedRequestCart, ActiveRequestCart, SendCart
 from inventory_requests.views.CreateDeleteModifyDisbursement import CreateDisbursement, DeleteDisbursement, ModifyQuantityRequested
 from inventory_requests.views.ModifyRequestCart import ApproveRequestCart, DenyRequestCart, CancelRequestCart, \
-    FulfilRequestCart, DispenseRequestCart
+    FulfillRequestCart, DispenseRequestCart
 
 urlpatterns = [
     url(r'^$', RequestCartList.as_view(), name='request-cart-list'),
@@ -19,5 +19,5 @@ urlpatterns = [
     url(r'^cancel/(?P<pk>[0-9]+)/$', CancelRequestCart.as_view(), name='cancel-request-cart'),
     url(r'^deny/(?P<pk>[0-9]+)/$', DenyRequestCart.as_view(), name='deny-request-cart'),
     url(r'^dispense/(?P<pk>[0-9]+)/$', DispenseRequestCart.as_view(), name='dispense-request-cart'),
-    url(r'^fulfil/(?P<pk>[0-9]+)/$', FulfilRequestCart.as_view(), name='fulfil-request-cart'),
+    url(r'^fulfill/(?P<pk>[0-9]+)/$', FulfillRequestCart.as_view(), name='fulfill-request-cart'),
 ]
