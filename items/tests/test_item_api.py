@@ -10,7 +10,6 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_transaction_logger.models import Action
 from items.models import Item
 
 USERNAME = 'test'

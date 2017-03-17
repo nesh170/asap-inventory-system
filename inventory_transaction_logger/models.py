@@ -2,9 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 
 from items.models import Item
-from inventory_shopping_cart.models import ShoppingCart
-from inventory_disbursements.models import Cart
-
+from inventory_requests.models import RequestCart
 
 class Action(models.Model):
     color = models.CharField(max_length=9, unique=True)
@@ -37,21 +35,12 @@ class ItemLog(models.Model):
         return item_log_string(log=self.log.nature.tag, item=self.item.name)
 
 
-class ShoppingCartLog(models.Model):
-    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='shopping_cart_log')
-    shopping_cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE, related_name='cart')
+class RequestCartLog(models.Model):
+    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='request_cart_log')
+    request_cart = models.ForeignKey(RequestCart, on_delete=models.CASCADE, related_name='request_cart')
 
     def __str__(self):
         item_log_string = "{log} : {cart}".format
-        return item_log_string(log=self.log.nature.tag, cart=self.shopping_cart)
-
-
-class DisbursementCartLog(models.Model):
-    log = models.ForeignKey(Log, on_delete=models.CASCADE, related_name='disbursement_log')
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='disbursement_cart')
-
-    def __str__(self):
-        item_log_string = "{log} : {cart}".format
-        return item_log_string(log=self.log.nature.tag, cart=self.cart)
+        return item_log_string(log=self.log.nature.tag, cart=self.request_cart)
 
 

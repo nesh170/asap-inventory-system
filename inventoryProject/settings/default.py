@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'items.apps.ItemsConfig',
     'rest_framework',
     'inventory_user.apps.InventoryUserConfig',
-    'inventory_disbursements.apps.InventoryDisbursementsConfig',
     'items.fixtures',
     'oauth2_provider',
     'social_django',
@@ -53,8 +52,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_docs',
     'corsheaders',
-    'inventory_shopping_cart.apps.InventoryShoppingCartConfig',
-    'inventory_shopping_cart_request.apps.InventoryShoppingCartRequestConfig',
     'inventory_transaction_logger.apps.InventoryTransactionLoggerConfig',
     'inventory_requests.apps.InventoryRequestsConfig'
 ]
