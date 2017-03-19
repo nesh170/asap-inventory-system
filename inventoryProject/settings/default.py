@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'rest_framework_docs',
     'corsheaders',
     'inventory_transaction_logger.apps.InventoryTransactionLoggerConfig',
-    'inventory_requests.apps.InventoryRequestsConfig'
+    'inventory_requests.apps.InventoryRequestsConfig',
+    'post_office',
 ]
 
 # SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}
@@ -63,7 +64,13 @@ SOCIAL_AUTH_DUKE_SCOPE = ['basic', 'identity:netid:read']
 
 DRFSO2_PROPRIETARY_BACKEND_NAME = 'duke'
 
-
+EMAIL_BACKEND = 'post_office.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = "ankitkayastha@gmail.com"
+EMAIL_HOST_PASSWORD = "ilovetennis"
+EMAIL_PORT = 465
+DEFAULT_FROM_EMAIL = "ankitkayastha@gmail.com"
+EMAIL_USE_TLS = True
 
 AUTHENTICATION_BACKENDS = (
     'inventoryProject.dukeAuth.DukeOAuth2',
@@ -151,7 +158,6 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
 
