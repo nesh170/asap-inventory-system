@@ -11,7 +11,8 @@ def precheck_item(request, modification_type):
 
 
 def can_modify_cart_status(request):
-    return request.status == "outstanding" or (request.staff is not None and request.status == "active")
+    return (request.status == "outstanding" and request.staff is None) or (request.staff is not None
+                                                                           and request.status == "active")
 
 
 def can_approve_disburse_request_cart(request_cart_to_modify, modification_type):

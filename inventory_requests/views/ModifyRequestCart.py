@@ -17,7 +17,8 @@ from inventory_requests.models import RequestCart, Disbursement, Loan
 from inventory_requests.serializers.DisbursementSerializer import LoanSerializer, DisbursementSerializer
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer, QuantitySerializer, \
     RequestTypeSerializer
-from inventory_requests.serializers.RequestStatusSerializer import ApproveDenySerializer, StaffDisburseSerializer
+from inventory_requests.serializers.RequestStatusSerializer import ApproveDenySerializer, StaffDisburseSerializer, \
+    CancelSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 
@@ -25,60 +26,77 @@ TYPE_MAP = {'loan': Loan, 'disbursement': Disbursement}
 SERIALIZER_MAP = {'loan': LoanSerializer, 'disbursement': DisbursementSerializer}
 
 
-def approve_deny_request_cart(self, request, pk, request_cart_type):
-    request_cart_to_approve_deny = get_or_not_found(RequestCart,pk=pk)
-    log_action = ActionEnum.REQUEST_APPROVED if request_cart_type == "approved" else ActionEnum.REQUEST_DENIED
-    if modify_request_cart_logic.can_approve_disburse_request_cart(request_cart_to_approve_deny,
-                                                                   request_cart_type):
-        request_cart_to_approve_deny.status = request_cart_type
-        serializer = ApproveDenySerializer(request_cart_to_approve_deny, data=request.data)
-        if serializer.is_valid():
-            serializer.save(staff=request.user, staff_timestamp=datetime.now())
-            if request_cart_type == "approved":
-                modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve_deny)
-            comment = "{action}: {item_count} items".format(action=log_action.value,
-                                                            item_count=serializer.instance.cart_disbursements.count())
-            LoggerUtility.log(initiating_user=request.user, nature_enum=log_action,
-                              affected_user=request_cart_to_approve_deny.owner,
-                              carts_affected=[request_cart_to_approve_deny], comment=comment)
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        raise MethodNotAllowed(self.patch, detail="Request cannot be " + request_cart_type)
-
-
 class ApproveRequestCart(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, pk, format=None):
-        return approve_deny_request_cart(self, request, pk, "approved")
-
-
-class CancelRequestCart(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def patch(self, request, pk, format=None):
-        request_cart_to_cancel = get_or_not_found(RequestCart, pk=pk)
-        if modify_request_cart_logic.can_modify_cart_status(request_cart_to_cancel):
-            request_cart_to_cancel.status = "cancelled"
-            # reason is guaranteed to not be null since it is required in a request
-            if request.data.get('comment') is not None:
-                request_cart_to_cancel.reason = "{old_reason} cancellation reason is : {new_reason}"\
-                    .format(old_reason=request_cart_to_cancel.reason, new_reason=request.data.get('comment'))
-            request_cart_to_cancel.save()
-            LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CANCELLED,
-                              affected_user=request.user, carts_affected=[request_cart_to_cancel])
-            updated_cart = RequestCart.objects.get(pk=request_cart_to_cancel.id)
-            return Response(data=RequestCartSerializer(updated_cart).data, status=status.HTTP_200_OK)
+        request_cart_to_approve = get_or_not_found(RequestCart, pk=pk)
+        cart_status = "approved"
+        if modify_request_cart_logic.can_approve_disburse_request_cart(request_cart_to_approve, cart_status):
+            request_cart_to_approve.status = cart_status
+            serializer = ApproveDenySerializer(request_cart_to_approve, data=request.data)
+            if serializer.is_valid():
+                serializer.save(staff=request.user, staff_timestamp=datetime.now())
+                modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve)
+                comment = "Request Approved: {item_count} items"\
+                    .format(item_count=serializer.instance.cart_disbursements.count())
+                LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_APPROVED,
+                                  affected_user=request_cart_to_approve.owner,
+                                  carts_affected=[request_cart_to_approve], comment=comment)
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            raise MethodNotAllowed(self.patch, detail="Cannot cancel request")
+            raise MethodNotAllowed(self.patch, detail="Request cannot be Approved")
 
 
-class DenyRequestCart(APIView):
+class CancelRequestCart(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CancelSerializer
+
+    def get_queryset(self):
+        return RequestCart.objects.filter(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        request_cart = self.get_object()
+        if modify_request_cart_logic.can_modify_cart_status(request_cart):
+            if serializer.validated_data.get('comment') is not None:
+                comment_str = "{old_reason} cancellation reason is : {new_reason}"\
+                    .format(old_reason=request_cart.reason, new_reason=serializer.validated_data.get('comment'))
+            else:
+                comment_str = request_cart.reason
+            serializer.save(status='cancelled', reason=comment_str)
+            LoggerUtility.log(initiating_user=request_cart.owner, nature_enum=ActionEnum.REQUEST_CANCELLED,
+                              affected_user=request_cart.owner, carts_affected=[request_cart])
+        else:
+            raise MethodNotAllowed(method=self.patch, detail="Cart status does not allow cancellation")
+
+    def patch(self, request, *args, **kwargs):
+        self.partial_update(request, *args, **kwargs)
+        return Response(data=RequestCartSerializer(self.get_object()).data, status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        raise MethodNotAllowed(method=self.put, detail="Only Patch is allowed")
+
+
+class DenyRequestCart(generics.UpdateAPIView):
     permission_classes = [IsStaffUser]
+    serializer_class = ApproveDenySerializer
+    queryset = RequestCart.objects.all()
 
-    def patch(self, request, pk, format=None):
-        return approve_deny_request_cart(self, request, pk, "denied")
+    def perform_update(self, serializer):
+        request_cart = self.get_object()
+        if modify_request_cart_logic.can_modify_cart_status(request_cart):
+            comment = "Request Denied: {item_count} items"\
+                .format(item_count=serializer.instance.cart_disbursements.count())
+            LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.REQUEST_DENIED,
+                              affected_user=request_cart.owner,
+                              carts_affected=[request_cart], comment=comment)
+            serializer.save(staff=self.request.user, staff_timestamp=datetime.now(), status="denied")
+        else:
+            raise MethodNotAllowed(method=self.patch, detail="Cart status does not allow denying")
+
+    def put(self, request, *args, **kwargs):
+        raise MethodNotAllowed(method=self.put, detail="Only Patch is allowed")
 
 
 class FulfillRequestCart(APIView):

@@ -467,8 +467,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_approve = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart",
-                                                        staff_comment="this is an admin comment", staff=self.admin)
+        request_to_approve = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart")
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_approve)
         data = {'id': request_to_approve.id, 'staff_comment': 'testing approve request'}
         url = reverse('approve-request-cart', kwargs={'pk': str(request_to_approve.id)})
@@ -515,8 +514,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_deny = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
-                                                     staff_comment="this is an admin comment", staff=self.admin)
+        request_to_deny = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart")
         Disbursement.objects.create(item=item_with_one_tag, quantity=4, cart=request_to_deny)
         data = {'id': request_to_deny.id, 'staff_comment': 'testing deny request'}
         url = reverse('deny-request-cart', kwargs={'pk': str(request_to_deny.id)})
@@ -533,8 +531,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_deny = RequestCart.objects.create(owner=self.admin, status="cancelled", reason="test cart",
-                                                     staff_comment="this is an admin comment", staff=self.admin)
+        request_to_deny = RequestCart.objects.create(owner=self.admin, status="cancelled", reason="test cart")
         Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_deny)
         data = {'id': request_to_deny.id, 'admin_comment': 'testing deny request'}
         url = reverse('deny-request-cart', kwargs={'pk': str(request_to_deny.id)})
@@ -565,8 +562,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_cancel = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
-                                                       staff_comment="this is an admin comment", staff=self.admin)
+        request_to_cancel = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart")
         Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_cancel)
         data = {'id': request_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
         url = reverse('cancel-request-cart', kwargs={'pk': str(request_to_cancel.id)})

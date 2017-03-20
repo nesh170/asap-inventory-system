@@ -15,7 +15,7 @@ class CreateDisbursement(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = DisbursementSerializer
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
-    filter_fields = ('cart__status',)
+    filter_fields = ('cart__status', 'item__name', 'cart__owner__username')
 
     def get_queryset(self):
         user = self.request.user
