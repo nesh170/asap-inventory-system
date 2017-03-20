@@ -26,15 +26,14 @@ SERIALIZER_MAP = {'loan': LoanSerializer, 'disbursement': DisbursementSerializer
 def approve_deny_request_cart(self, request, pk, request_cart_type):
     request_cart_to_approve_deny = get_or_not_found(RequestCart,pk=pk)
     log_action = ActionEnum.REQUEST_APPROVED if request_cart_type == "approved" else ActionEnum.REQUEST_DENIED
-    if modify_request_cart_logic.can_approve_deny_cancel_disburse_request_cart(request_cart_to_approve_deny,
-                                                                               request_cart_type):
+    if modify_request_cart_logic.can_approve_disburse_request_cart(request_cart_to_approve_deny,
+                                                                   request_cart_type):
         request_cart_to_approve_deny.status = request_cart_type
         serializer = ApproveDenySerializer(request_cart_to_approve_deny, data=request.data)
         if serializer.is_valid():
             serializer.save(staff=request.user, staff_timestamp=datetime.now())
             if request_cart_type == "approved":
                 modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve_deny)
-                start_loan(request_cart_to_approve_deny)
             comment = "{action}: {item_count} items".format(action=log_action.value,
                                                             item_count=serializer.instance.cart_disbursements.count())
             LoggerUtility.log(initiating_user=request.user, nature_enum=log_action,
@@ -58,7 +57,7 @@ class CancelRequestCart(APIView):
 
     def patch(self, request, pk, format=None):
         request_cart_to_cancel = get_or_not_found(RequestCart, pk=pk)
-        if modify_request_cart_logic.can_approve_deny_cancel_disburse_request_cart(request_cart_to_cancel, "cancelled"):
+        if modify_request_cart_logic.can_modify_cart_status(request_cart_to_cancel):
             request_cart_to_cancel.status = "cancelled"
             # reason is guaranteed to not be null since it is required in a request
             if request.data.get('comment') is not None:
@@ -68,8 +67,7 @@ class CancelRequestCart(APIView):
             LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CANCELLED,
                               affected_user=request.user, carts_affected=[request_cart_to_cancel])
             updated_cart = RequestCart.objects.get(pk=request_cart_to_cancel.id)
-            serializer_cart = RequestCartSerializer(updated_cart)
-            return Response(data=serializer_cart.data, status=status.HTTP_200_OK)
+            return Response(data=RequestCartSerializer(updated_cart).data, status=status.HTTP_200_OK)
         else:
             raise MethodNotAllowed(self.patch, detail="Cannot cancel request")
 
@@ -88,6 +86,7 @@ class FulfillRequestCart(APIView):
         request_cart = get_or_not_found(RequestCart, pk=pk)
         if request_cart.status == 'approved':
             request_cart.status = 'fulfilled'
+            start_loan(request_cart)
             request_cart.save()
             LoggerUtility.log(initiating_user=request_cart.staff, nature_enum=ActionEnum.REQUEST_FULFILLED,
                               affected_user=request_cart.owner, carts_affected=[request_cart])
@@ -115,7 +114,7 @@ class DispenseRequestCart(generics.UpdateAPIView):
     def perform_update(self, serializer):
         request_cart = self.get_object()
         get_or_not_found(User, pk=serializer.validated_data.get('owner_id'))
-        if not modify_request_cart_logic.can_approve_deny_cancel_disburse_request_cart(request_cart, 'disburse'):
+        if not modify_request_cart_logic.can_approve_disburse_request_cart(request_cart, 'disburse'):
             detail_str = 'Cannot disburse due to insufficient items' if request_cart.status == 'active' else \
                 'Cart needs to be active'
             raise MethodNotAllowed(method=self.patch, detail=detail_str)

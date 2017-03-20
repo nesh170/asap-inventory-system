@@ -48,7 +48,12 @@ class ReturnLoan(APIView):
 
     def patch(self, request, pk):
         loan = get_or_not_found(Loan, pk=pk)
-        if loan.cart.status == 'fulfilled' and return_loan_logic(loan):
+        quantity = request.data.get('quantity')
+        if quantity is not None and (quantity < 1 or quantity > loan.quantity):
+            detail_str = "Quantity {quantity} cannot be greater than loan quantity({loan_q}) or less than 1"\
+                .format(quantity=quantity, loan_q=loan.quantity)
+            raise MethodNotAllowed(self.patch, detail=detail_str)
+        if loan.cart.status == 'fulfilled' and return_loan_logic(loan=loan, quantity=quantity):
             return Response(data=LoanSerializer(loan).data, status=status.HTTP_200_OK)
         detail_str = "Request needs to be fulfilled but is {status} and {item_name} cannot be " \
                      "returned already by {user_name}".format(status=loan.cart.status, item_name=loan.item.name,

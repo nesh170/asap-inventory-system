@@ -10,13 +10,15 @@ def precheck_item(request, modification_type):
                 (modification_type == "approved" or modification_type == "disburse"))
 
 
-def can_approve_deny_cancel_disburse_request_cart(request_cart_to_modify, modification_type):
+def can_modify_cart_status(request):
+    return request.status == "outstanding" or (request.staff is not None and request.status == "active")
+
+
+def can_approve_disburse_request_cart(request_cart_to_modify, modification_type):
     disbursements = [precheck_item(request, modification_type) for
                      request in request_cart_to_modify.cart_disbursements.all()]
     loans = [precheck_item(request, modification_type) for request in request_cart_to_modify.cart_loans.all()]
-    return not(False in disbursements or False in loans) and \
-        (request_cart_to_modify.status == "outstanding" or
-        (request_cart_to_modify.staff is not None and request_cart_to_modify.status == "active"))
+    return not(False in disbursements or False in loans) and can_modify_cart_status(request_cart_to_modify)
 
 
 def subtract_item(request):
