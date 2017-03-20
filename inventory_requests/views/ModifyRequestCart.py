@@ -31,9 +31,8 @@ class ApproveRequestCart(APIView):
 
     def patch(self, request, pk, format=None):
         request_cart_to_approve = get_or_not_found(RequestCart, pk=pk)
-        cart_status = "approved"
-        if modify_request_cart_logic.can_approve_disburse_request_cart(request_cart_to_approve, cart_status):
-            request_cart_to_approve.status = cart_status
+        if modify_request_cart_logic.can_approve_disburse_request_cart(request_cart_to_approve):
+            request_cart_to_approve.status = "approved"
             serializer = ApproveDenySerializer(request_cart_to_approve, data=request.data)
             if serializer.is_valid():
                 serializer.save(staff=request.user, staff_timestamp=datetime.now())
@@ -134,8 +133,8 @@ class DispenseRequestCart(generics.UpdateAPIView):
     def perform_update(self, serializer):
         request_cart = self.get_object()
         get_or_not_found(User, pk=serializer.validated_data.get('owner_id'))
-        if not modify_request_cart_logic.can_approve_disburse_request_cart(request_cart, 'disburse'):
-            detail_str = 'Cannot disburse due to insufficient items' if request_cart.status == 'active' else \
+        if not modify_request_cart_logic.can_approve_disburse_request_cart(request_cart):
+            detail_str = 'Cannot dispense due to insufficient items' if request_cart.status == 'active' else \
                 'Cart needs to be active'
             raise MethodNotAllowed(method=self.patch, detail=detail_str)
         modify_request_cart_logic.subtract_item_in_cart(request_cart)

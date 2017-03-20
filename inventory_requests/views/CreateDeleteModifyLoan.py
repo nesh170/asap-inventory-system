@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import django_filters
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed
@@ -25,7 +26,10 @@ class CreateLoan(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Loan.objects.all() if user.is_staff else Loan.objects.filter(cart__owner=user)
+        returned = self.request.query_params.get('returned', None)
+        q_func = ~Q(pk=None) & Q(returned_timestamp__isnull=not (returned == 'true')) if returned else ~Q(pk=None)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
+        return Loan.objects.filter(q_func)
 
 
 class DeleteLoan(generics.DestroyAPIView):

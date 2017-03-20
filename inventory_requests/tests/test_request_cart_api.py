@@ -645,7 +645,7 @@ class PatchRequestTestCases(APITestCase):
         response = self.client.patch(path=url, data=data)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
-                         , "Cannot disburse due to insufficient items")
+                         , "Cannot dispense due to insufficient items")
 
 
 class ConvertRequestTypeTestCase(APITestCase):
