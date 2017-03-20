@@ -36,3 +36,7 @@ def start_loan(request):
     for loan in request.cart_loans.all():
         loan.loaned_timestamp = datetime.now()
         loan.save()
+
+
+def can_convert_request_type(cart, user):
+    return cart.status in ('fulfilled', 'outstanding', 'approved') and user.is_staff

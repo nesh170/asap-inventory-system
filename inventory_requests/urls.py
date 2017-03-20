@@ -5,7 +5,7 @@ from inventory_requests.views.RequestCartList import RequestCartList
 from inventory_requests.views.ActiveSendDetailedRequestCart import ViewDetailedRequestCart, ActiveRequestCart, SendCart
 from inventory_requests.views.CreateDeleteModifyDisbursement import CreateDisbursement, DeleteDisbursement
 from inventory_requests.views.ModifyRequestCart import ApproveRequestCart, DenyRequestCart, CancelRequestCart, \
-    FulfillRequestCart, DispenseRequestCart, ModifyQuantityRequested
+    FulfillRequestCart, DispenseRequestCart, ModifyQuantityRequested, ConvertRequestType
 
 urlpatterns = [
     url(r'^$', RequestCartList.as_view(), name='request-cart-list'),
@@ -25,4 +25,5 @@ urlpatterns = [
     url(r'^loan/deleteItem/(?P<pk>[0-9]+)/$', DeleteLoan.as_view(), name='delete-loan-from-cart'),
     url(r'^loan/returnItem/(?P<pk>[0-9]+)/$', ReturnLoan.as_view(), name='return-loan-from-cart'),
     url(r'^returnAllLoans/(?P<pk>[0-9]+)/$', ReturnAllLoans.as_view(), name='return-all-loans-from-cart'),
+    url(r'^convertRequestType/$', ConvertRequestType.as_view(), name='convert-request-type')
 ]

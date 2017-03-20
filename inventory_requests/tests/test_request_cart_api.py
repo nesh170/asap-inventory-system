@@ -10,7 +10,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_requests.models import RequestCart, Disbursement
+from inventory_requests.models import RequestCart, Disbursement, Loan
 from items.models import Item
 
 # username and password to create superuser for testing
@@ -650,4 +650,70 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
                          , "Cannot disburse due to insufficient items")
+
+
+class ConvertRequestTypeTestCase(APITestCase):
+    fixtures = ['requests_action.json']
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.receiver = User.objects.create_user(TEST_USERNAME, 'test@test.com', TEST_PASSWORD)
+        self.application = Application(
+            name="Test Application",
+            redirect_uris="http://localhost",
+            user=self.admin,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+        )
+        self.application.save()
+        self.tok = AccessToken.objects.create(
+            user=self.admin, token='1234567890',
+            application=self.application, scope='read write',
+            expires=datetime.now(timezone.utc) + timedelta(days=30)
+        )
+        oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
+
+    def test_fulfilled_cart_and_converting_to_loan(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item", quantity=10)
+        cart = RequestCart.objects.create(owner=self.receiver, status="fulfilled", reason="lit", staff=self.admin,
+                                          staff_timestamp=datetime.now())
+        disbursement = Disbursement.objects.create(item=item, cart=cart, quantity=10)
+        data = {'current_type': 'disbursement', 'pk': disbursement.id}
+        url = reverse('convert-request-type')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_json = json.loads(str(response.content, 'utf-8'))
+        self.assertEqual(response_json.get('item')['name'], disbursement.item.name)
+        self.assertEqual(response_json.get('cart_owner'), disbursement.cart.owner.username)
+        self.assertEqual(response_json.get('quantity'), disbursement.quantity)
+        self.assertTrue(response_json.get('loaned_timestamp') is not None)
+
+    def test_fulfilled_cart_and_converting_to_disbursement(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item", quantity=10)
+        cart = RequestCart.objects.create(owner=self.receiver, status="fulfilled", reason="lit", staff=self.admin,
+                                          staff_timestamp=datetime.now())
+        loan = Loan.objects.create(item=item, cart=cart, quantity=10, loaned_timestamp=datetime.now())
+        data = {'current_type': 'loan', 'pk': loan.id}
+        url = reverse('convert-request-type')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_json = json.loads(str(response.content, 'utf-8'))
+        self.assertEqual(response_json.get('item')['name'], loan.item.name)
+        self.assertEqual(response_json.get('quantity'), loan.quantity)
+        self.assertEqual(response_json.get('cart_owner'), loan.cart.owner.username)
+
+    def test_denied_cart_and_converting_to_loan_fail(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item", quantity=10)
+        cart = RequestCart.objects.create(owner=self.receiver, status="denied", reason="lit", staff=self.admin,
+                                          staff_timestamp=datetime.now())
+        loan = Loan.objects.create(item=item, cart=cart, quantity=10, loaned_timestamp=datetime.now())
+        data = {'current_type': 'loan', 'pk': loan.id}
+        url = reverse('convert-request-type')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "Cannot change request_type due to cart_status denied")
 

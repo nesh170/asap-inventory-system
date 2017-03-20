@@ -26,3 +26,9 @@ class RequestCartSerializer(serializers.ModelSerializer):
 class QuantitySerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=['loan','disbursement'], required=True)
     quantity = serializers.IntegerField(min_value=1, required=True)
+
+
+class RequestTypeSerializer(serializers.Serializer):
+    current_type = serializers.ChoiceField(choices=['loan', 'disbursement'], required=True)
+    pk = serializers.IntegerField(min_value=1, required=True)
+

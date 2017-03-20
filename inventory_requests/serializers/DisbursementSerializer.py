@@ -17,10 +17,11 @@ class NestedItemSerializer(serializers.ModelSerializer):
 class DisbursementSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(many=False, allow_null=False, read_only=True)
     item_id = serializers.IntegerField(required=True, write_only=True)
+    cart_owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Disbursement
-        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id')
+        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner')
         extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):
@@ -38,14 +39,18 @@ class DisbursementSerializer(serializers.ModelSerializer):
         else:
             raise MethodNotAllowed(self.create, "Item must be added to active cart")
 
+    def get_cart_owner(self, obj):
+        return obj.cart.owner.username
+
 
 class LoanSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(many=False, allow_null=False, read_only=True)
     item_id = serializers.IntegerField(required=True, write_only=True)
+    cart_owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Loan
-        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'loaned_timestamp', 'returned_timestamp')
+        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'loaned_timestamp', 'returned_timestamp')
         extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):
@@ -62,3 +67,6 @@ class LoanSerializer(serializers.ModelSerializer):
                 return loan
         else:
             raise MethodNotAllowed(self.create, "Item must be added to active cart")
+
+    def get_cart_owner(self, obj):
+        return obj.cart.owner.username
