@@ -10,6 +10,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from inventory_requests.models import RequestCart, Loan, Disbursement
 from items.models import Item
 
 USERNAME = 'test'
@@ -52,7 +53,7 @@ class GetItemTestCase(APITestCase):
         item_with_one_tag = Item.objects.create(name="quad 2-input NAND gate", quantity=0, model_number="48979",
                                                 description="Jameco")
         item_with_one_tag.tags.create(tag="test")
-        basic_item = Item.objects.create(name="Oscilloscope", quantity=3)
+        Item.objects.create(name="Oscilloscope", quantity=3)
 
     def test_get_items(self):
         url = reverse('item-list')
@@ -282,3 +283,43 @@ class DeleteItemTestCase(APITestCase):
         except ObjectDoesNotExist:
             delete_success = True
         self.assertEqual(delete_success, True)
+
+
+class GetDetailedItemStacks(APITestCase):
+
+    def setUp(self):
+            self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+            self.test_user = User.objects.create_user('test_31', 'test@test', 'pass')
+            basic_item = Item.objects.create(name="Cryogenic", quantity=9000)
+            self.item_id = basic_item.id
+            self.application = Application(
+                name="Test Application",
+                redirect_uris="http://localhost",
+                user=self.admin,
+                client_type=Application.CLIENT_CONFIDENTIAL,
+                authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+            )
+            self.application.save()
+            self.tok = AccessToken.objects.create(
+                user=self.admin, token='1234567890',
+                application=self.application, scope='read write',
+                expires=datetime.now(timezone.utc) + timedelta(days=30)
+            )
+            oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
+            cart = RequestCart.objects.create(owner=self.test_user, status="outstanding", reason="return loan cart")
+            self.outstanding_loan = Loan.objects.create(cart=cart, item=basic_item, quantity=1)
+            self.disbursement = Disbursement.objects.create(cart=cart, item=basic_item, quantity=1)
+            cart_fulfilled = RequestCart.objects.create(owner=self.test_user,
+                                                        status="fulfilled", reason="return loan cart")
+            self.current_loan = Loan.objects.create(cart=cart_fulfilled, item=basic_item, quantity=5,
+                                                    loaned_timestamp=datetime.now())
+
+    def test_get_detailed_item(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='item-detail', kwargs={'pk': self.item_id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        item_json = json.loads(str(response.content, 'utf-8'))
+        self.assertEqual(item_json['outstanding_disbursements'][0]['id'], self.disbursement.id)
+        self.assertEqual(item_json['outstanding_loans'][0]['id'], self.outstanding_loan.id)
+        self.assertEqual(item_json['current_loans'][0]['id'], self.current_loan.id)
