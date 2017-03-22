@@ -40,7 +40,7 @@ class DisbursementSerializer(serializers.ModelSerializer):
             raise MethodNotAllowed(self.create, "Item must be added to active cart")
 
     def get_cart_owner(self, obj):
-        return obj.cart.owner.username
+        return obj.cart.owner.username if obj.cart.owner is not None else None
 
 
 class LoanSerializer(serializers.ModelSerializer):
@@ -69,4 +69,4 @@ class LoanSerializer(serializers.ModelSerializer):
             raise MethodNotAllowed(self.create, "Item must be added to active cart")
 
     def get_cart_owner(self, obj):
-        return obj.cart.owner.username
+        return obj.cart.owner.username if obj.cart.owner is not None else None
