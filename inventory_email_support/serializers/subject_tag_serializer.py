@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from inventory_email.models import SubjectTag
+from inventory_email_support.models import SubjectTag
 
 
 class SubjectTagSerializer(serializers.ModelSerializer):

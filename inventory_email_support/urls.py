@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from inventory_email.views.email_view import Subscribe, Unsubscribe, EditSubjectTag
+from inventory_email_support.views.email_view import Subscribe, Unsubscribe, EditSubjectTag
 
 urlpatterns = [
     url(r'^subscribe/$', Subscribe.as_view(), name='subscribe'),

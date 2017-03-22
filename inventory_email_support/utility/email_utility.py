@@ -1,4 +1,4 @@
-from inventory_email.models import SubscribedManagers, SubjectTag
+from inventory_email_support.models import SubscribedManagers, SubjectTag
 from post_office import mail
 from post_office.models import EmailTemplate
 
@@ -15,6 +15,7 @@ from post_office.models import EmailTemplate
 
 class EmailUtility:
     # TODO add the email templates to a fixutres and load it in the database
+    # TODO check if referencing things by pk=1 is okay
     #CreateEmailTemplate.create()
     @staticmethod
     def get_subject(subject=None):

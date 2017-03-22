@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_email_support.utility.email_utility import EmailUtility
 from inventory_requests.business_logic import modify_request_cart_logic
 from inventory_requests.business_logic.modify_request_cart_logic import start_loan
 from inventory_requests.models import RequestCart, Disbursement, Loan
@@ -66,6 +67,8 @@ class CancelRequestCart(generics.UpdateAPIView):
             serializer.save(status='cancelled', reason=comment_str)
             LoggerUtility.log(initiating_user=request_cart.owner, nature_enum=ActionEnum.REQUEST_CANCELLED,
                               affected_user=request_cart.owner, carts_affected=[request_cart])
+            EmailUtility.email(template='request_cancelled', context={'name': request_cart.owner.username},
+                               subject="Request Submitted Successfully!")
         else:
             raise MethodNotAllowed(method=self.patch, detail="Cart status does not allow cancellation")
 

@@ -1,12 +1,11 @@
-from rest_framework import generics
 from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser, IsSuperUser
-from inventory_email.models import SubscribedManagers, SubjectTag
+from inventory_email_support.models import SubscribedManagers, SubjectTag
 from rest_framework.response import Response
-from inventory_email.serializers.subject_tag_serializer import SubjectTagSerializer
+from inventory_email_support.serializers.subject_tag_serializer import SubjectTagSerializer
 from post_office.models import EmailTemplate
 
 

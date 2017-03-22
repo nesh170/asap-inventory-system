@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     'inventory_requests.apps.InventoryRequestsConfig',
     'post_office',
     'django_ses',
-    'inventory_email.apps.InventoryEmail',
+    'inventory_email_support.apps.InventoryEmailSupportConfig'
 ]
 
 # SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}
