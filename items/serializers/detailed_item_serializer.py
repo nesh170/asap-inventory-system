@@ -1,7 +1,8 @@
+from django.db.models import Q
 from rest_framework import serializers
 
-from inventory_transaction_logger.action_enum import ActionEnum
-from inventory_transaction_logger.utility.logger import LoggerUtility
+from inventory_requests.models import Disbursement, Loan
+from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
 from items.models import Item, IntField, FloatField, ShortTextField, LongTextField
 from items.serializers.field_serializer import IntFieldSerializer, FloatFieldSerializer, ShortTextFieldSerializer, \
     LongTextFieldSerializer
@@ -21,6 +22,9 @@ class DetailedItemSerializer(serializers.ModelSerializer):
     float_fields = serializers.SerializerMethodField()
     short_text_fields = serializers.SerializerMethodField()
     long_text_fields = serializers.SerializerMethodField()
+    outstanding_disbursements = serializers.SerializerMethodField()
+    outstanding_loans = serializers.SerializerMethodField()
+    current_loans = serializers.SerializerMethodField()
 
     def get_int_fields(self, obj):
         return get_values(IntField, self.context['request'].user.is_staff, obj, IntFieldSerializer)
@@ -34,10 +38,29 @@ class DetailedItemSerializer(serializers.ModelSerializer):
     def get_long_text_fields(self, obj):
         return get_values(LongTextField, self.context['request'].user.is_staff, obj, LongTextFieldSerializer)
 
+    def get_outstanding_disbursements(self, obj):
+        user = self.context['request'].user
+        q_func = Q(cart__status='outstanding') & Q(item=obj)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
+        return DisbursementSerializer(Disbursement.objects.filter(q_func), many=True).data
+
+    def get_outstanding_loans(self, obj):
+        user = self.context['request'].user
+        q_func = Q(cart__status='outstanding') & Q(item=obj)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
+        return LoanSerializer(Loan.objects.filter(q_func), many=True).data
+
+    def get_current_loans(self, obj):
+        user = self.context['request'].user
+        q_func = Q(cart__status='fulfilled') & Q(item=obj) & Q(returned_timestamp__isnull=True)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
+        return LoanSerializer(Loan.objects.filter(q_func), many=True).data
+
     class Meta:
         model = Item
         fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags', 'int_fields', 'float_fields',
-                  'short_text_fields', 'long_text_fields')
+                  'short_text_fields', 'long_text_fields', 'outstanding_disbursements', 'outstanding_loans',
+                  'current_loans')
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)

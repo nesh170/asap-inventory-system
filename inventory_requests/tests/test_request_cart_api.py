@@ -10,7 +10,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_requests.models import RequestCart, Disbursement
+from inventory_requests.models import RequestCart, Disbursement, Loan
 from items.models import Item
 
 # username and password to create superuser for testing
@@ -425,7 +425,7 @@ class PatchRequestTestCases(APITestCase):
         request_to_modify = RequestCart.objects.create(owner=self.admin, status="active", reason="test cart",
                                                        staff_comment="this is an admin comment", staff=self.admin)
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity': 2}
+        data = {'type': 'disbursement', 'quantity': 2}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
         updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
@@ -440,7 +440,7 @@ class PatchRequestTestCases(APITestCase):
         request_to_modify = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="lol_cart",
                                                        staff_comment="this is an admin comment", staff=self.admin)
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity': 2}
+        data = {'type': 'disbursement', 'quantity': 2}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
         updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
@@ -455,7 +455,7 @@ class PatchRequestTestCases(APITestCase):
         request_to_modify = RequestCart.objects.create(owner=self.admin, status="active", reason="test shopping cart",
                                                        staff_comment="this is an admin comment", staff=self.admin)
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=1, cart=request_to_modify)
-        data = {'item_id': item_with_one_tag.id, 'quantity': -5}
+        data = {'type': 'disbursement', 'quantity': -5}
         url = reverse('modify-quantity-requested', kwargs={'pk': str(disbursement.id)})
         response = self.client.patch(url, data, format='json')
         updated_disbursement = Disbursement.objects.get(pk=disbursement.id)
@@ -467,8 +467,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_approve = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart",
-                                                        staff_comment="this is an admin comment", staff=self.admin)
+        request_to_approve = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test_cart")
         disbursement = Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_approve)
         data = {'id': request_to_approve.id, 'staff_comment': 'testing approve request'}
         url = reverse('approve-request-cart', kwargs={'pk': str(request_to_approve.id)})
@@ -515,8 +514,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_deny = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
-                                                     staff_comment="this is an admin comment", staff=self.admin)
+        request_to_deny = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart")
         Disbursement.objects.create(item=item_with_one_tag, quantity=4, cart=request_to_deny)
         data = {'id': request_to_deny.id, 'staff_comment': 'testing deny request'}
         url = reverse('deny-request-cart', kwargs={'pk': str(request_to_deny.id)})
@@ -533,8 +531,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_deny = RequestCart.objects.create(owner=self.admin, status="cancelled", reason="test cart",
-                                                     staff_comment="this is an admin comment", staff=self.admin)
+        request_to_deny = RequestCart.objects.create(owner=self.admin, status="cancelled", reason="test cart")
         Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_deny)
         data = {'id': request_to_deny.id, 'admin_comment': 'testing deny request'}
         url = reverse('deny-request-cart', kwargs={'pk': str(request_to_deny.id)})
@@ -565,8 +562,7 @@ class PatchRequestTestCases(APITestCase):
         item_with_one_tag = Item.objects.create(name="oscilloscope", quantity=3, model_number="48979",
                                                 description="oscilloscope")
         item_with_one_tag.tags.create(tag="test")
-        request_to_cancel = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart",
-                                                       staff_comment="this is an admin comment", staff=self.admin)
+        request_to_cancel = RequestCart.objects.create(owner=self.admin, status="outstanding", reason="test cart")
         Disbursement.objects.create(item=item_with_one_tag, quantity=2, cart=request_to_cancel)
         data = {'id': request_to_cancel.id, 'comment': 'testing cancellation of request, should not work'}
         url = reverse('cancel-request-cart', kwargs={'pk': str(request_to_cancel.id)})
@@ -649,5 +645,71 @@ class PatchRequestTestCases(APITestCase):
         response = self.client.patch(path=url, data=data)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
-                         , "Cannot disburse due to insufficient items")
+                         , "Cannot dispense due to insufficient items")
+
+
+class ConvertRequestTypeTestCase(APITestCase):
+    fixtures = ['requests_action.json']
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.receiver = User.objects.create_user(TEST_USERNAME, 'test@test.com', TEST_PASSWORD)
+        self.application = Application(
+            name="Test Application",
+            redirect_uris="http://localhost",
+            user=self.admin,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+        )
+        self.application.save()
+        self.tok = AccessToken.objects.create(
+            user=self.admin, token='1234567890',
+            application=self.application, scope='read write',
+            expires=datetime.now(timezone.utc) + timedelta(days=30)
+        )
+        oauth2_settings._DEFAULT_SCOPES = ['read', 'write', 'groups']
+
+    def test_fulfilled_cart_and_converting_to_loan(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item", quantity=10)
+        cart = RequestCart.objects.create(owner=self.receiver, status="fulfilled", reason="lit", staff=self.admin,
+                                          staff_timestamp=datetime.now())
+        disbursement = Disbursement.objects.create(item=item, cart=cart, quantity=10)
+        data = {'current_type': 'disbursement', 'pk': disbursement.id}
+        url = reverse('convert-request-type')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_json = json.loads(str(response.content, 'utf-8'))
+        self.assertEqual(response_json.get('item')['name'], disbursement.item.name)
+        self.assertEqual(response_json.get('cart_owner'), disbursement.cart.owner.username)
+        self.assertEqual(response_json.get('quantity'), disbursement.quantity)
+        self.assertTrue(response_json.get('loaned_timestamp') is not None)
+
+    def test_fulfilled_cart_and_converting_to_disbursement(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item", quantity=10)
+        cart = RequestCart.objects.create(owner=self.receiver, status="fulfilled", reason="lit", staff=self.admin,
+                                          staff_timestamp=datetime.now())
+        loan = Loan.objects.create(item=item, cart=cart, quantity=10, loaned_timestamp=datetime.now())
+        data = {'current_type': 'loan', 'pk': loan.id}
+        url = reverse('convert-request-type')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_json = json.loads(str(response.content, 'utf-8'))
+        self.assertEqual(response_json.get('item')['name'], loan.item.name)
+        self.assertEqual(response_json.get('quantity'), loan.quantity)
+        self.assertEqual(response_json.get('cart_owner'), loan.cart.owner.username)
+
+    def test_denied_cart_and_converting_to_loan_fail(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item", quantity=10)
+        cart = RequestCart.objects.create(owner=self.receiver, status="denied", reason="lit", staff=self.admin,
+                                          staff_timestamp=datetime.now())
+        loan = Loan.objects.create(item=item, cart=cart, quantity=10, loaned_timestamp=datetime.now())
+        data = {'current_type': 'loan', 'pk': loan.id}
+        url = reverse('convert-request-type')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "Cannot change request_type due to cart_status denied")
 

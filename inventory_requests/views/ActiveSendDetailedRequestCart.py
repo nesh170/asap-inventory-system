@@ -50,7 +50,7 @@ class SendCart(APIView):
         request_cart = get_or_not_found(RequestCart, pk=pk)
         if request_cart.owner is None and request_cart.staff is not None:
             raise MethodNotAllowed(detail="This is a Staff Cart, please use the dispense method", method=self.patch)
-        if request_cart.cart_disbursements.count() == 0:
+        if request_cart.cart_disbursements.count() == 0 and request_cart.cart_loans.count() == 0:
             raise MethodNotAllowed(detail="Cannot submit empty request cart", method=self.patch)
         if request_cart.status == "active":
             request_cart.status = "outstanding"
