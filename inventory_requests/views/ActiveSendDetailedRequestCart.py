@@ -28,8 +28,8 @@ class ActiveRequestCart(APIView):
     def get_active(self):
         print("About to send email")
         user = self.request.user
-        EmailUtility.email(template='request_created', context={'name': user.username},
-                           subject="Request Submitted Successfully!")
+        #EmailUtility.email(template='request_created', context={'name': user.username},
+         #                  subject="Request Submitted Successfully!")
         try:
             return RequestCart.objects.filter(Q(owner=user) | Q(staff=user)).get(status='active')
         except RequestCart.DoesNotExist:
