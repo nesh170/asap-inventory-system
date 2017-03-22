@@ -10,6 +10,7 @@ from inventory_requests.models import RequestCart
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
+from inventory_email.utility.email_utility import EmailUtility
 
 
 class ViewDetailedRequestCart(APIView):
@@ -25,7 +26,10 @@ class ActiveRequestCart(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_active(self):
+        print("About to send email")
         user = self.request.user
+        #EmailUtility.email(template='request_created', context={'name': user.username},
+         #                  subject="Request Submitted Successfully!")
         try:
             return RequestCart.objects.filter(Q(owner=user) | Q(staff=user)).get(status='active')
         except RequestCart.DoesNotExist:
@@ -55,6 +59,8 @@ class SendCart(APIView):
                 serializer.save()
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CREATED,
                                   carts_affected=[request_cart])
+                EmailUtility.email(template='request_created', context={'name': request_cart.owner.username},
+                                   subject="Request Submitted Successfully!")
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
