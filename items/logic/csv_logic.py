@@ -63,13 +63,13 @@ def create_and_validate_data(data, headers):
     try:
         item = create_item(data['name'], data['quantity'], data['model_number'], data['description'], data['tags'])
     except ValidationError as e:
-        return [e.detail]
+        return [{key: e.detail[key][0]} for key in e.detail]
     custom_field_headers = set(headers).difference(set(ITEM_HEADERS))
     for header in custom_field_headers:
         try:
             add_custom_fields(item, header, data[header])
         except ValidationError as e:
-            error.append(e.detail)
+            error.append({header: e.detail['value'][0]})
     return error
 
 
