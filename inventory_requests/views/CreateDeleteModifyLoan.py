@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_email_support.utility.email_utility import EmailUtility
 from inventory_requests.business_logic.loan_logic import return_loan_logic
 from inventory_requests.models import Loan, RequestCart
 from inventory_requests.serializers.DisbursementSerializer import LoanSerializer
@@ -58,6 +59,11 @@ class ReturnLoan(APIView):
                 .format(quantity=quantity, loan_q=loan.quantity)
             raise MethodNotAllowed(self.patch, detail=detail_str)
         if loan.cart.status == 'fulfilled' and return_loan_logic(loan=loan, quantity=quantity):
+            EmailUtility.email(recipient=loan.cart.owner.email, template='return_loan',
+                               context={'name': loan.cart.owner.username,
+                                        'item_name': loan.item.name,
+                                        'quantity': quantity},
+                               subject="Loaned Item Returned")
             return Response(data=LoanSerializer(loan).data, status=status.HTTP_200_OK)
         detail_str = "Request needs to be fulfilled but is {status} and {item_name} cannot be " \
                      "returned already by {user_name}".format(status=loan.cart.status, item_name=loan.item.name,
