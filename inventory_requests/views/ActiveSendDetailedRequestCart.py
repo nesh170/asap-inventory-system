@@ -28,8 +28,6 @@ class ActiveRequestCart(APIView):
     def get_active(self):
         print("About to send email")
         user = self.request.user
-        #EmailUtility.email(template='request_created', context={'name': user.username},
-         #                  subject="Request Submitted Successfully!")
         try:
             return RequestCart.objects.filter(Q(owner=user) | Q(staff=user)).get(status='active')
         except RequestCart.DoesNotExist:
@@ -59,8 +57,12 @@ class SendCart(APIView):
                 serializer.save()
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CREATED,
                                   carts_affected=[request_cart])
-                EmailUtility.email(template='request_created', context={'name': request_cart.owner.username},
-                                   subject="Request Submitted Successfully!")
+                EmailUtility.email(recipient=request_cart.owner.email, template='request_action',
+                                   context={'name': request_cart.owner.username,
+                                            'loan_list': request_cart.cart_loans.all(),
+                                            'disbursement_list': request_cart.cart_disbursements.all(),
+                                            'request_state': 'created'},
+                                   subject="Request Created")
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

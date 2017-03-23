@@ -19,15 +19,6 @@ class Subscribe(APIView):
         SubscribedManagers.objects.create(member=user)
         return Response(status=status.HTTP_200_OK)
 
-class CreateEmailTemplate(APIView):
-    def post(self, request, format=None):
-        EmailTemplate.objects.create(
-            name='request_created',
-            subject='{{ subject }}',
-            html_content='<p> Hi {{ name }}, </p> <p> Your request was successfully submitted! A staff member will take a '
-                 'look at it as soon as possible. </p> <p> Best Regards, <br /> ECE Inventory System Staff </p>'
-        )
-
 
 class Unsubscribe(APIView):
     permission_classes = [IsStaffUser]

@@ -15,7 +15,6 @@ from post_office.models import EmailTemplate
 
 class EmailUtility:
     # TODO add the email templates to a fixutres and load it in the database
-    # TODO check if referencing things by pk=1 is okay
     #CreateEmailTemplate.create()
     @staticmethod
     def get_subject(subject=None):
@@ -37,13 +36,13 @@ class EmailUtility:
         return subject_to_return
 
     @staticmethod
-    def email(template, context, subject=None):
+    def email(recipient, template, context, subject=None):
         # TODO add null check for email addresses (email not strictly required)
         subject_to_use = EmailUtility.get_subject(subject)
         context['subject'] = subject_to_use
         bcc_addresses = SubscribedManagers.objects.values_list('member__email', flat=True)[::1]
         print("About to send email wee")
-        mail.send(recipients=['ak308@duke.edu'], sender='asap-inventory-system@kipcoonley.com',
+        mail.send(recipients=[recipient], sender='asap-inventory-system@kipcoonley.com',
                   priority='now', bcc=bcc_addresses, template=template, context=context)
         print("Email sent successfully")
 
