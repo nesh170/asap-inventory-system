@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import django_filters
 from django.db.models import Q
 from rest_framework import generics
@@ -15,7 +13,6 @@ from inventory_requests.business_logic.loan_logic import return_loan_logic
 from inventory_requests.models import Loan, RequestCart
 from inventory_requests.serializers.DisbursementSerializer import LoanSerializer
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
-from items.models import Item
 
 
 class CreateLoan(generics.ListCreateAPIView):
@@ -27,8 +24,8 @@ class CreateLoan(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         returned = self.request.query_params.get('returned', None)
-        q_func = ~Q(pk=None) & Q(returned_timestamp__isnull=not (returned == 'true')) if returned else ~Q(pk=None)
-        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
+        q_func = ~Q(pk=None) and Q(returned_timestamp__isnull=not (returned == 'true')) if returned else ~Q(pk=None)
+        q_func = q_func if user.is_staff else q_func and Q(cart__owner=user)
         return Loan.objects.filter(q_func)
 
 
@@ -52,16 +49,19 @@ class ReturnLoan(APIView):
 
     def patch(self, request, pk):
         loan = get_or_not_found(Loan, pk=pk)
-        quantity = request.data.get('quantity')
+        quantity = int(request.data.get('quantity')) if request.data.get('quantity') else None
         if quantity is not None and (quantity < 1 or quantity > loan.quantity):
             detail_str = "Quantity {quantity} cannot be greater than loan quantity({loan_q}) or less than 1"\
                 .format(quantity=quantity, loan_q=loan.quantity)
             raise MethodNotAllowed(self.patch, detail=detail_str)
         if loan.cart.status == 'fulfilled' and return_loan_logic(loan=loan, quantity=quantity):
-            return Response(data=LoanSerializer(loan).data, status=status.HTTP_200_OK)
+            updated_loan = Loan.objects.get(pk=loan.id)
+            return Response(data=LoanSerializer(updated_loan).data, status=status.HTTP_200_OK)
         detail_str = "Request needs to be fulfilled but is {status} and {item_name} cannot be " \
-                     "returned already by {user_name}".format(status=loan.cart.status, item_name=loan.item.name,
-                                                              user_name=loan.cart.owner.username)
+                     "returned already by {user_name} and returned loan quantity is {returned_quantity} " \
+                     "and quantity is {quantity}"\
+            .format(status=loan.cart.status, item_name=loan.item.name, user_name=loan.cart.owner.username,
+                    returned_quantity=loan.returned_quantity, quantity=loan.quantity)
         raise MethodNotAllowed(method=self.patch, detail=detail_str)
 
 

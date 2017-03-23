@@ -140,4 +140,4 @@ fabric.properties
 templates/
 
 # CSV files
-items.csv
+/items.csv

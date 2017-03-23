@@ -35,6 +35,7 @@ class Loan(models.Model):
     cart = models.ForeignKey(RequestCart, related_name='cart_loans', on_delete=models.CASCADE)
     item = models.ForeignKey(Item, related_name='loan_items', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
+    returned_quantity = models.PositiveIntegerField(default=0)
     loaned_timestamp = models.DateTimeField(null=True, blank=True)
     returned_timestamp = models.DateTimeField(null=True, blank=True)
 
