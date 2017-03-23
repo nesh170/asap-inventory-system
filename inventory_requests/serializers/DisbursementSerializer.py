@@ -50,7 +50,8 @@ class LoanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Loan
-        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'loaned_timestamp', 'returned_timestamp')
+        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'loaned_timestamp',
+                  'returned_timestamp', 'returned_quantity')
         extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):

@@ -16,5 +16,5 @@ class RequestCartList(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        base_queryset = RequestCart.objects.exclude(Q(status="cancelled") & Q(status="active"))
+        base_queryset = RequestCart.objects.exclude(Q(status="cancelled") and Q(status="active"))
         return base_queryset if user.is_staff else base_queryset.filter(owner=user)
