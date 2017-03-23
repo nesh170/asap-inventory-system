@@ -52,7 +52,9 @@ class ItemCsvImport(APIView):
     def post(self, request, format=None):
         sid = transaction.savepoint()
         error = {}
-        my_file = request.FILES['csv_file']
+        my_file = request.FILES['csv_file'] if 'csv_file' in request.FILES else None
+        if my_file is None:
+            raise ParseError(detail="You need to add a CSV file")
         filename = 'items.csv'
         with open(filename, 'wb+') as temp_file:
             for chunk in my_file.chunks():
@@ -67,10 +69,12 @@ class ItemCsvImport(APIView):
                 raise ParseError(detail='This is not a valid CSV file, sorry')
             except csv.Error:
                 raise ParseError(detail="This csv file is not valid")
+            current_row_index = 1
             for row in reader:
                 error_list = create_and_validate_data(row, reader.fieldnames)
                 if error_list:
-                    error[row['name']] = error_list
+                    error[current_row_index] = error_list
+                current_row_index += 1
         if error == {}:
             transaction.savepoint_commit(sid=sid)
             return Response(status=status.HTTP_201_CREATED)
