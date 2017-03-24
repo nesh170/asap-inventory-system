@@ -28,6 +28,7 @@ class PrependedBody(models.Model):
         prepended_body_string = "Prepended Body : {tag}".format
         return prepended_body_string(tag=self.prepended_body)
 
+
 class LoanReminderSchedule(models.Model):
     date = models.DateField()
     executed = models.BooleanField(default=False)

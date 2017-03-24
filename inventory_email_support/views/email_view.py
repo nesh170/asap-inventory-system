@@ -3,11 +3,11 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser, IsSuperUser
-from inventory_email_support.models import SubscribedManagers, SubjectTag, PrependedBody
+from inventory_email_support.models import SubscribedManagers, SubjectTag, PrependedBody, LoanReminderSchedule
 from rest_framework.response import Response
 from inventory_email_support.serializers.email_serializer import SubjectTagSerializer, PrependedBodySerializer
 from post_office.models import Email
-from datetime import datetime
+from datetime import datetime, date
 
 class Subscribe(APIView):
     permission_classes = [IsStaffUser]
@@ -73,6 +73,30 @@ class EditSubjectTag(APIView):
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LoanReminderDates(APIView):
+    permission_classes = [IsStaffUser]
+
+    def patch(self, request, format=None):
+        date_array = request.data
+        for date_obj in date_array:
+            time_string = date_obj.get('date')
+            date_scheduled = datetime.strptime(time_string, "%Y-%m-%d").date()
+            if date_scheduled < date.today():
+                raise MethodNotAllowed(self.patch, detail="Cannot send an email on a date that has already passed")
+            # TODO fix the logic below
+            elif LoanReminderSchedule.objects.filter(date=date_scheduled, executed=True).exists():
+                raise MethodNotAllowed(self.patch, detail="Loan reminder emails have already been sent out on one of theThis date has already been configu")
+
+        # TODO check if the above is the right way of doing this.
+        # this extra for loop is here, because i wanted to avoid the case where some of the dates are saved to the
+        # database, and then there is a discovery one violates it. theoretically, those previous dates that were valid
+        # should not be saved to the database. so doing the initial check first.
+        for date_obj in date_array:
+            time_string = date_obj.get('date')
+            date_scheduled = datetime.strptime(time_string, "%Y-%m-%d").date()
+
+
 
 
 class EditPrependedBody(APIView):
