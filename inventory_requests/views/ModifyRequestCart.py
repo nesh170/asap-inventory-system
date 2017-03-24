@@ -158,27 +158,33 @@ class ModifyQuantityRequested(APIView):
 
 
 class ConvertRequestType(APIView):
-    permission_classes = [IsStaffUser]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
         serializer = RequestTypeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         old_type = serializer.validated_data['current_type']
         request_type = get_or_not_found(TYPE_MAP.get(old_type), pk=serializer.validated_data['pk'])
-        if modify_request_cart_logic.can_convert_request_type(request_type.cart, request.user):
+        if request_type.cart.owner != request.user and not request.user.is_staff:
+            raise MethodNotAllowed(method=self.post, detail="This request type does not belong to {user}"
+                                   .format(user=request_type.cart.owner.username))
+        if modify_request_cart_logic.can_convert_request_type(request_type.cart, request.user.is_staff, old_type):
             args = {'item': request_type.item, 'cart': request_type.cart}
             new_type = 'loan' if old_type != 'loan' else 'disbursement'
+            quantity, delete_request_type = modify_request_cart_logic\
+                .validate_quantity(request_type, serializer.validated_data.get('quantity'), old_type)
             try:
                 # this case is when there is a request_type for that item already, just add quantity
                 new_request_type = TYPE_MAP.get(new_type).objects.get(**args)
-                new_request_type.quantity = new_request_type.quantity + request_type.quantity
+                new_request_type.quantity = new_request_type.quantity + quantity
             except ObjectDoesNotExist:
-                new_request_type = TYPE_MAP.get(new_type).objects.create(quantity=request_type.quantity, **args)
+                new_request_type = TYPE_MAP.get(new_type).objects.create(quantity=quantity, **args)
                 # this case is when it is already disbursed out and the manager wants to convert it to a loan
                 if new_request_type.cart.status == 'fulfilled' and new_type == 'loan':
                     new_request_type.loaned_timestamp = request_type.cart.staff_timestamp
             new_request_type.save()
-            request_type.delete()
+            modify_request_cart_logic.delete_or_update_request_logic(delete_request_type, old_type,
+                                                                     request_type, quantity)
             return Response(data=SERIALIZER_MAP.get(new_type)(new_request_type).data, status=status.HTTP_201_CREATED)
         raise MethodNotAllowed(method=self.post, detail="Cannot change request_type due to cart_status {status}"
                                .format(status=request_type.cart.status))
