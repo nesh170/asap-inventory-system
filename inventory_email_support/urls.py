@@ -6,5 +6,6 @@ urlpatterns = [
     url(r'^subscribe/$', Subscribe.as_view(), name='subscribe'),
     url(r'^unsubscribe/$', Unsubscribe.as_view(), name='unsubscribe'),
     url(r'^subjectTag/$', EditSubjectTag.as_view(), name='edit-subject-tag'),
+    #url(r'^datesBody/$', ConfigureDatesBody.as_view(), name='configure-dates-body'),
 
 ]

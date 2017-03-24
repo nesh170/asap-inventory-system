@@ -205,6 +205,10 @@ class ConvertRequestType(APIView):
                     new_request_type.loaned_timestamp = request_type.cart.staff_timestamp
             new_request_type.save()
             request_type.delete()
+            EmailUtility.email(recipient=request_type.cart.owner.email, template='convert_loan_to_disbursement',
+                               context={'name': request_type.cart.owner.username, 'item_name': request_type.item.name,
+                                        'quantity': request_type.quantity}, subject="Loan Conversion to Disbursement")
+
             return Response(data=SERIALIZER_MAP.get(new_type)(new_request_type).data, status=status.HTTP_201_CREATED)
         raise MethodNotAllowed(method=self.post, detail="Cannot change request_type due to cart_status {status}"
                                .format(status=request_type.cart.status))

@@ -79,6 +79,10 @@ class ReturnAllLoans(APIView):
         if cart.status == 'fulfilled' and cart.cart_loans.filter(returned_timestamp__isnull=True).exists():
             [return_loan_logic(loan=loan) for loan in cart.cart_loans.all()]
             updated_cart = get_or_not_found(RequestCart, pk=pk)
+            EmailUtility.email(recipient=cart.owner.email, template='return_all_loans',
+                               context={'name': cart.owner.username,
+                                        'loan_list': cart.cart_loans.all()},
+                               subject="Loaned Items Returned")
             return Response(data=RequestCartSerializer(updated_cart).data, status=status.HTTP_200_OK)
         detail_str = "Request needs to be fulfilled but is {status} or Cart has been fully returned"\
             .format(status=cart.status)

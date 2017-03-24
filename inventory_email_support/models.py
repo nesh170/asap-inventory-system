@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 from django.contrib.auth.models import User
 from django.db import models
-
+from post_office.models import Email
 
 class SubscribedManagers(models.Model):
     member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribed_managers')
@@ -19,3 +19,8 @@ class SubjectTag(models.Model):
     def __str__(self):
         subject_tag_string = "Subject Tag : {tag}".format
         return subject_tag_string(tag=self.subject_tag)
+
+
+class LoanReminderSchedule(models.Model):
+    date = models.DateField()
+    executed = models.BooleanField(default=False)

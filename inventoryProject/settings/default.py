@@ -57,7 +57,8 @@ INSTALLED_APPS = [
     'inventory_requests.apps.InventoryRequestsConfig',
     'post_office',
     'django_ses',
-    'inventory_email_support.apps.InventoryEmailSupportConfig'
+    'inventory_email_support.apps.InventoryEmailSupportConfig',
+    'django_cron',
 ]
 
 # SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}
@@ -74,7 +75,10 @@ POST_OFFICE = {
         'default': 'django_ses.SESBackend',
     }
 }
-#TODO put these in a text file so it does not remain in the project
+
+CRON_CLASSES = [
+    "inventoryProject.cron_job.EmailCronJob"
+]
 #ses access key id
 try:
     with open(os.path.join(__location__, 'ses_access_key_id.txt')) as f:

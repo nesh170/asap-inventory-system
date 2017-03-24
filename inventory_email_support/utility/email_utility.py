@@ -1,16 +1,6 @@
 from inventory_email_support.models import SubscribedManagers, SubjectTag
 from post_office import mail
-from post_office.models import EmailTemplate
 
-# class CreateEmailTemplate:
-#     @staticmethod
-#     def create():
-#         EmailTemplate.objects.create(
-#             name='request_created',
-#             subject='{{ subject }}',
-#             html_content='<p> Hi {{ name }}, </p> <p> Your request was successfully submitted! A staff member will take a '
-#                  'look at it as soon as possible. </p> <p> Best Regards, <br /> ECE Inventory System Staff </p>'
-#         )
 
 
 class EmailUtility:
@@ -41,7 +31,13 @@ class EmailUtility:
         subject_to_use = EmailUtility.get_subject(subject)
         context['subject'] = subject_to_use
         bcc_addresses = SubscribedManagers.objects.values_list('member__email', flat=True)[::1]
+        # send_args = {'recipients': [recipient], 'sender': 'asap-inventory-system@kipcoonley.com', 'bcc': bcc_addresses,
+        #              'template': template, 'context': context}
+        # if priority is not None:
+        #     send_args['priority'] = priority
+
         print("About to send email wee")
+        #email_sent = mail.send(**send_args)
         mail.send(recipients=[recipient], sender='asap-inventory-system@kipcoonley.com',
                   priority='now', bcc=bcc_addresses, template=template, context=context)
         print("Email sent successfully")
