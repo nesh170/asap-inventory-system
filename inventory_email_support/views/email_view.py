@@ -3,9 +3,9 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser, IsSuperUser
-from inventory_email_support.models import SubscribedManagers, SubjectTag
+from inventory_email_support.models import SubscribedManagers, SubjectTag, PrependedBody
 from rest_framework.response import Response
-from inventory_email_support.serializers.subject_tag_serializer import SubjectTagSerializer
+from inventory_email_support.serializers.email_serializer import SubjectTagSerializer, PrependedBodySerializer
 from post_office.models import Email
 from datetime import datetime
 
@@ -61,11 +61,33 @@ class EditSubjectTag(APIView):
 
     def patch(self, request, format=None):
         if SubjectTag.objects.count() == 0:
-            SubjectTag.objects.create(subject_tag=request.data)
-            return Response(status=status.HTTP_200_OK)
+            serializer = SubjectTagSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            subjectTag = SubjectTag.objects.get(pk=1)
-            serializer = SubjectTagSerializer(subjectTag, data=request.data)
+            subject_tag = SubjectTag.objects.first()
+            serializer = SubjectTagSerializer(subject_tag, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EditPrependedBody(APIView):
+    permission_classes = [IsStaffUser]
+
+    def patch(self, request, format=None):
+        if PrependedBody.objects.count() == 0:
+            serializer = PrependedBodySerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            prepended_body = PrependedBody.objects.first()
+            serializer = PrependedBodySerializer(prepended_body, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

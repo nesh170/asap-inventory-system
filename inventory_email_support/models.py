@@ -21,6 +21,14 @@ class SubjectTag(models.Model):
         return subject_tag_string(tag=self.subject_tag)
 
 
+class PrependedBody(models.Model):
+    prepended_body = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        prepended_body_string = "Prepended Body : {tag}".format
+        return prepended_body_string(tag=self.prepended_body)
+
 class LoanReminderSchedule(models.Model):
     date = models.DateField()
     executed = models.BooleanField(default=False)
+
