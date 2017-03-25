@@ -13,6 +13,8 @@ from inventory_requests.business_logic.loan_logic import return_loan_logic
 from inventory_requests.models import Loan, RequestCart
 from inventory_requests.serializers.DisbursementSerializer import LoanSerializer
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 
 
 class CreateLoan(generics.ListCreateAPIView):
@@ -56,6 +58,11 @@ class ReturnLoan(APIView):
             raise MethodNotAllowed(self.patch, detail=detail_str)
         if loan.cart.status == 'fulfilled' and return_loan_logic(loan=loan, quantity=quantity):
             updated_loan = Loan.objects.get(pk=loan.id)
+            comment_str = "{quantity} out of {quantity_loaned} lent has been returned of {item}"\
+                .format(quantity=updated_loan.returned_quantity, quantity_loaned=updated_loan.quantity,
+                        item=updated_loan.item.name)
+            LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.LOAN_RETURNED, comment=comment_str,
+                              affected_user=updated_loan.cart.owner, carts_affected=[updated_loan.cart])
             return Response(data=LoanSerializer(updated_loan).data, status=status.HTTP_200_OK)
         detail_str = "Request needs to be fulfilled but is {status} and {item_name} cannot be " \
                      "returned already by {user_name} and returned loan quantity is {returned_quantity} " \
@@ -73,6 +80,8 @@ class ReturnAllLoans(APIView):
         if cart.status == 'fulfilled' and cart.cart_loans.filter(returned_timestamp__isnull=True).exists():
             [return_loan_logic(loan=loan) for loan in cart.cart_loans.all()]
             updated_cart = get_or_not_found(RequestCart, pk=pk)
+            LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.LOAN_RETURNED,
+                              affected_user=cart.owner, carts_affected=[cart])
             return Response(data=RequestCartSerializer(updated_cart).data, status=status.HTTP_200_OK)
         detail_str = "Request needs to be fulfilled but is {status} or Cart has been fully returned"\
             .format(status=cart.status)
