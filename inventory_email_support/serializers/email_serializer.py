@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 class SubjectTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubjectTag
-        fields = ('subject_tag', )
+        fields = ('id', 'subject_tag')
         extra_kwargs = {'subject_tag': {'required': True}}
 
 
@@ -27,7 +27,7 @@ class SubscribedManagerSerializer(serializers.ModelSerializer):
 class PrependedBodySerializer(serializers.ModelSerializer):
     class Meta:
         model = PrependedBody
-        fields = ('prepended_body', )
+        fields = ('id', 'prepended_body')
         extra_kwargs = {'prepended_body': {'required': True}}
 
 

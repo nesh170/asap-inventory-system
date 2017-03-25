@@ -34,6 +34,6 @@ class Unsubscribe(APIView):
         user = self.request.user
         if SubscribedManagers.objects.filter(member=user).exists():
             SubscribedManagers.objects.get(member=user).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_200_OK)
         else:
             raise MethodNotAllowed(self.post, detail="User is not currently subscribed to the manager list")
