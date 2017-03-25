@@ -35,9 +35,8 @@ class EmailUtility:
 
         print("About to send email wee")
         #email_sent = mail.send(**send_args)
-        email_sent = mail.send(recipients=[recipient], sender='asap-inventory-system@kipcoonley.com',
+        mail.send(recipients=[recipient], sender='asap-inventory-system@kipcoonley.com',
                   priority='now', bcc=bcc_addresses, template=template, context=context)
         print("Email sent successfully")
-        return email_sent
 
 

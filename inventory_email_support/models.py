@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from post_office.models import Email
 
+
 class SubscribedManagers(models.Model):
     member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribed_managers')
 
@@ -30,6 +31,6 @@ class PrependedBody(models.Model):
 
 
 class LoanReminderSchedule(models.Model):
-    date = models.DateField()
+    date = models.DateField(unique=True)
     executed = models.BooleanField(default=False)
 
