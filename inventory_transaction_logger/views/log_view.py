@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_transaction_logger.models import Log
 from inventory_transaction_logger.serializers.log_serializer import LogSerializer
 
@@ -38,17 +39,10 @@ class LogList(generics.ListAPIView):
         return Log.objects.all()
 
 
-def get_log(pk):
-    try:
-        return Log.objects.get(pk=pk)
-    except Log.DoesNotExist:
-        raise NotFound(detail="Log not found")
-
-
 class ViewDetailedLog(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk, format=None):
-        log = get_log(pk)
+        log = get_or_not_found(Log, pk=pk)
         serializer = LogSerializer(log)
         return Response(serializer.data)
