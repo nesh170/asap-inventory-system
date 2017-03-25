@@ -8,15 +8,16 @@ from inventory_email_support.serializers.email_serializer import PrependedBodySe
 from rest_framework.response import Response
 
 
-class GetPrependedBody(generics.ListAPIView):
+class GetPrependedBody(APIView):
     permission_classes = [IsStaffUser]
-    serializer_class = PrependedBodySerializer
-    pagination_class = None
-    #TODO fix the call to .all() below (same thing as SubjectTag)
-    queryset = PrependedBody.objects.all()
+
+    def get(self, request, format=None):
+        prepended_body = PrependedBody.objects.first()
+        serializer = PrependedBodySerializer(prepended_body, many=False)
+        return Response(serializer.data)
 
 
-class EditPrependedBody(APIView):
+class ModifyPrependedBody(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, format=None):

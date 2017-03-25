@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 
 
 class EmailCronJob(CronJobBase):
-    RUN_AT_TIMES = ['1:55']
+    RUN_AT_TIMES = ['17:00']
 
     schedule = Schedule(run_at_times=RUN_AT_TIMES)
     code = 'inventoryProject.email_cron_job'    # a unique code
