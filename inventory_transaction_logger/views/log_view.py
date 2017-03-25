@@ -31,8 +31,8 @@ class LogList(generics.ListAPIView):
     def get_queryset(self):
         item_name = self.request.GET.get('item_name')
         if item_name is not None and item_name != "":
-            filter_condition = Q(disbursement_log__cart__disbursements__item__name=item_name) \
-                     | Q(shopping_cart_log__shopping_cart__requests__item__name=item_name) \
+            filter_condition = Q(request_cart_log__request_cart__cart_disbursements__item__name=item_name) \
+                     | Q(request_cart_log__request_cart__cart_loans__item__name=item_name) \
                      | Q(item_log__item__name=item_name)
             return Log.objects.filter(filter_condition)
         return Log.objects.all()
