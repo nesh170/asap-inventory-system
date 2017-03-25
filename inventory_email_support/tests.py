@@ -11,7 +11,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_email_support.models import SubscribedManagers, SubjectTag
+from inventory_email_support.models import SubscribedManagers, SubjectTag, PrependedBody
 from inventory_requests.models import RequestCart, Loan
 from items.models import Item
 
@@ -27,12 +27,18 @@ def equal_subscribed_manager(test_client, subscribed_manager_json, subscribed_ma
     test_client.assertEqual(subscribed_manager_json.get('member').get('email'), subscribed_manager.member.email)
     test_client.assertEqual(subscribed_manager.member.id, user_id)
 
+
 def equal_subject_tag(test_client, subject_tag_json, subject_tag_id):
     subject_tag_db = SubjectTag.objects.get(pk=subject_tag_id)
     test_client.assertEqual(subject_tag_json.get('subject_tag'), subject_tag_db.subject_tag)
 
+
+def equal_prepended_body(test_client, prepended_body_json, prepended_body_id):
+    prepended_body_db = PrependedBody.objects.get(pk=prepended_body_id)
+    test_client.assertEqual(prepended_body_json.get('prepended_body'), prepended_body_db.prepended_body)
+
+
 class EmailTestCases(APITestCase):
-    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -111,7 +117,6 @@ class EmailTestCases(APITestCase):
             unsubscribe_success = True
         self.assertEqual(unsubscribe_success, True)
 
-
     def test_unsubscribe_fail_not_exists(self):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('unsubscribe')
@@ -131,10 +136,40 @@ class EmailTestCases(APITestCase):
         url = reverse('get-subject-tag')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(json.loads(str(response.content, 'utf-8'))['count'], SubjectTag.objects.count())
-
-        subject_tags_json = json.loads(str(response.content, 'utf-8'))['results']
+        subject_tags_json = json.loads(str(response.content, 'utf-8'))
+        self.assertEqual(len(subject_tags_json), 1)
         [equal_subject_tag(self, subject_tag_json, subject_tag_json.get('id')) for subject_tag_json in subject_tags_json]
+
+    def test_edit_subject_tag_already_exists(self):
+        SubjectTag.objects.create(subject_tag="this is a subject tag")
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('edit-subject-tag')
+        data = {'subject_tag': 'modified subject tag'}
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_response = json.loads(str(response.content, 'utf-8'))
+        equal_subject_tag(self, json_response, json_response.get('id'))
+
+    def test_edit_subject_tag_not_already_exists(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('edit-subject-tag')
+        data = {'subject_tag': 'new subject tag'}
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        json_response = json.loads(str(response.content, 'utf-8'))
+        equal_subject_tag(self, json_response, json_response.get('id'))
+
+    def test_get_prepended_body(self):
+        PrependedBody.objects.create(prepended_body="this is a prepended body")
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('get-prepended-body')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        prepended_bodies_json = json.loads(str(response.content, 'utf-8'))
+        self.assertEqual(len(prepended_bodies_json), 1)
+        [equal_prepended_body(self, prepended_body_json, prepended_body_json.get('id')) for prepended_body_json in
+         prepended_bodies_json]
+
 
     # def test_get_all_loans(self):
     #     cart = RequestCart.objects.create(owner=self.basic_user, reason="test shopping cart")

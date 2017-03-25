@@ -11,6 +11,7 @@ from rest_framework.response import Response
 class GetSubjectTag(generics.ListAPIView):
     permission_classes = [IsSuperUser]
     serializer_class = SubjectTagSerializer
+    pagination_class = None
     #TODO fix this, originally had first() but then was getting an error saying SubjectTag has no len(). theoretically,
     # this shouldn't break
     queryset = SubjectTag.objects.all()

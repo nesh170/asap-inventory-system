@@ -11,7 +11,9 @@ from rest_framework.response import Response
 class GetPrependedBody(generics.ListAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = PrependedBodySerializer
-    queryset = PrependedBody.objects.first()
+    pagination_class = None
+    #TODO fix the call to .all() below (same thing as SubjectTag)
+    queryset = PrependedBody.objects.all()
 
 
 class EditPrependedBody(APIView):
