@@ -3,17 +3,13 @@ from post_office import mail
 
 
 class EmailUtility:
-    # TODO add the email templates to a fixutres and load it in the database
     @staticmethod
     def get_subject(subject=None):
-        if SubjectTag.objects.count() == 0:
-            if subject is not None:
-                subject_to_return = subject
-            else:
-                subject_to_return = ''
+        if not SubjectTag.objects.exists():
+            subject_to_return = subject if subject else ''
         # subject tag exists
         else:
-            subject_tag = SubjectTag.objects.get(pk=1)
+            subject_tag = SubjectTag.objects.first()
             if subject is not None:
                 subject_tag_string = "[{subject_tag}] {subject}".format
                 subject_to_return = subject_tag_string(subject_tag=subject_tag.subject_tag, subject=subject)
