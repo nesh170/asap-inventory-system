@@ -202,6 +202,7 @@ class EmailTestCases(APITestCase):
         url = reverse('get-loan-reminder-dates')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print(json.loads(str(response.content, 'utf-8')))
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['count'], LoanReminderSchedule.objects.count())
         loan_reminders_json = json.loads(str(response.content, 'utf-8'))['results']
         [equal_loan_reminder(self, loan_reminder_json, loan_reminder_json.get('id'))
