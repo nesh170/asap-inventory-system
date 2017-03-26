@@ -18,11 +18,6 @@ def dates_valid(date_array):
             return False
     return True
 
-def construct_date_objects(date_array):
-    for date_obj in date_array:
-        time_string = date_obj.get('date')
-        date_scheduled = datetime.strptime(time_string, "%Y-%m-%d").date()
-
 
 class GetLoanReminderDates(generics.ListAPIView):
     permission_classes = [IsStaffUser]
@@ -39,10 +34,6 @@ class ModifyLoanReminderDates(APIView):
         date_array = request.data
         if not dates_valid(date_array=date_array):
             raise MethodNotAllowed(self.post, detail="Cannot send an email on a date that has already passed")
-
-        # TODO if they enter a date of today (which is valid), and the cron job has already run, making executed true
-        # this violates the unique constraint enforced by the database, and thus returns an error - best way to handle?
-
         loan_reminder_dates_delete = LoanReminderSchedule.objects.filter(date__gte=date.today(), executed=False).delete()
         serializer = LoanReminderScheduleSerializer(data=request.data, many=True)
         # will catch an error if try to put in two of the same date

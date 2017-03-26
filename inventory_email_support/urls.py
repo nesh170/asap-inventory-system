@@ -15,5 +15,4 @@ urlpatterns = [
     url(r'^prependedBody/modify/$', ModifyPrependedBody.as_view(), name='modify-prepended-body'),
     url(r'^loanReminderDates/$', GetLoanReminderDates.as_view(), name='get-loan-reminder-dates'),
     url(r'^loanReminderDates/modify/$', ModifyLoanReminderDates.as_view(), name='modify-loan-reminder-dates'),
-
 ]

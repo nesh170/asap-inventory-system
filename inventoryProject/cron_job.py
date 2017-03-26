@@ -13,7 +13,6 @@ class EmailCronJob(CronJobBase):
     code = 'inventoryProject.email_cron_job'    # a unique code
 
     def do(self):
-        print("Running cron job YAY")
         loan_reminder_date_today = LoanReminderSchedule.objects.filter(date=date.today(), executed=False)
         if loan_reminder_date_today.exists():
             for user in User.objects.filter(is_staff=False):
@@ -26,11 +25,8 @@ class EmailCronJob(CronJobBase):
                                             'prepended_body': PrependedBody.objects.first().prepended_body,
                                             'loaned_items': loaned_items},
                                    subject="Reminder About Your Loaned Items")
-                print("Reaching this line of cron job")
             first_loan_reminder_today = loan_reminder_date_today.first()
             first_loan_reminder_today.executed = True
             first_loan_reminder_today.save()
-            print("date of today exists")
-            print("hi there this is the end")
         else:
             pass

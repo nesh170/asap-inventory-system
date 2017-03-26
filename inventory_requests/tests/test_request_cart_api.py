@@ -56,7 +56,7 @@ def equal_disbursement(test_client, disbursement_json, disbursement_id):
 
 
 class GetRequestTestCases(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['request_actions.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -115,7 +115,7 @@ class GetRequestTestCases(APITestCase):
 
 
 class ActiveCartTestCase(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['request_actions.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -149,7 +149,7 @@ class ActiveCartTestCase(APITestCase):
 
 
 class PostRequestTestCases(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['request_actions.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -256,7 +256,7 @@ class PostRequestTestCases(APITestCase):
 
 
 class DeleteItemTestCases(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['request_actions.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -346,7 +346,7 @@ class DeleteItemTestCases(APITestCase):
 
 
 class PatchRequestTestCases(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['request_actions.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -649,7 +649,7 @@ class PatchRequestTestCases(APITestCase):
 
 
 class ConvertRequestTypeTestCase(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['request_actions.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)

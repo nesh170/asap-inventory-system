@@ -30,7 +30,7 @@ def equal_loans(test_client, loan_json, loan_id, cart_id=None):
 
 
 class LoansTestCases(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['request_actions.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
