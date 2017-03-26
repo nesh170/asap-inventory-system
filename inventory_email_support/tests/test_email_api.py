@@ -197,12 +197,11 @@ class EmailTestCases(APITestCase):
         equal_prepended_body(self, json_response, json_response.get('id'))
 
     def test_get_all_loan_reminder_dates(self):
-        loan_reminder_date = LoanReminderSchedule.objects.create(date=date(2017, 3, 25))
+        loan_reminder_date = LoanReminderSchedule.objects.create(date=date.today())
         self.client.force_authenticate(user=self.admin, token=self.tok)
         url = reverse('get-loan-reminder-dates')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        print(json.loads(str(response.content, 'utf-8')))
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['count'], LoanReminderSchedule.objects.count())
         loan_reminders_json = json.loads(str(response.content, 'utf-8'))['results']
         [equal_loan_reminder(self, loan_reminder_json, loan_reminder_json.get('id'))
