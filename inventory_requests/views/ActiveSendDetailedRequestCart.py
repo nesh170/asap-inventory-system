@@ -26,7 +26,6 @@ class ActiveRequestCart(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_active(self):
-        print("About to send email")
         user = self.request.user
         try:
             return RequestCart.objects.filter(Q(owner=user) | Q(staff=user)).get(status='active')
