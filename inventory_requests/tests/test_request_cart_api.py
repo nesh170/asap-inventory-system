@@ -10,7 +10,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_requests.models import RequestCart, Disbursement
+from inventory_requests.models import RequestCart, Disbursement, Loan
 from items.models import Item
 
 # username and password to create superuser for testing
@@ -346,7 +346,7 @@ class DeleteItemTestCases(APITestCase):
 
 
 class PatchRequestTestCases(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['requests_action.json', 'email_templates.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -646,4 +646,3 @@ class PatchRequestTestCases(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
                          , "Cannot dispense due to insufficient items")
-

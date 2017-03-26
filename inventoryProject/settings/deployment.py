@@ -27,6 +27,7 @@ except IOError as e:
     SECRET_KEY = os.environ['SECRET_KEY']
 
 
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -53,7 +54,11 @@ INSTALLED_APPS = [
     'rest_framework_docs',
     'corsheaders',
     'inventory_transaction_logger.apps.InventoryTransactionLoggerConfig',
-    'inventory_requests.apps.InventoryRequestsConfig'
+    'inventory_requests.apps.InventoryRequestsConfig',
+    'post_office',
+    'django_ses',
+    'inventory_email_support.apps.InventoryEmailSupportConfig',
+    'django_cron',
 ]
 
 # SOCIAL_AUTH_DUKE_AUTH_EXTRA_ARGUMENTS = {'scope': 'basic identity:netid:read'}
@@ -63,6 +68,32 @@ SOCIAL_AUTH_DUKE_SCOPE = ['basic', 'identity:netid:read']
 
 DRFSO2_PROPRIETARY_BACKEND_NAME = 'duke'
 
+EMAIL_BACKEND = 'post_office.EmailBackend'
+
+POST_OFFICE = {
+    'BACKENDS': {
+        'default': 'django_ses.SESBackend',
+    }
+}
+
+CRON_CLASSES = [
+    "inventoryProject.cron_job.EmailCronJob"
+]
+#ses access key id
+try:
+    with open(os.path.join(__location__, 'ses_access_key_id.txt')) as f:
+        SES_ACCESS_KEY_ID = f.read().strip()
+except IOError as e:
+    SES_ACCESS_KEY_ID = os.environ['SES_ACCESS_KEY_ID']
+#ses access key
+try:
+    with open(os.path.join(__location__, 'ses_access_key.txt')) as f:
+        SES_ACCESS_KEY = f.read().strip()
+except IOError as e:
+    SES_ACCESS_KEY = os.environ['SES_ACCESS_KEY']
+
+AWS_ACCESS_KEY_ID = SES_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = SES_ACCESS_KEY
 
 
 AUTHENTICATION_BACKENDS = (
@@ -151,7 +182,6 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
 

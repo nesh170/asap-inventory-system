@@ -30,7 +30,7 @@ def equal_loans(test_client, loan_json, loan_id, cart_id=None):
 
 
 class LoansTestCases(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['requests_action.json', 'email_templates.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -243,14 +243,3 @@ class LoansTestCases(APITestCase):
         [self.assertTrue(Loan.objects.get(pk=loan_json['id']).returned_quantity,
                          Loan.objects.get(pk=loan_json['id']).quantity) for loan_json in loans_json]
         cart.delete()
-
-
-
-
-
-
-
-
-
-
-

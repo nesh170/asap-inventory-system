@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_email_support.utility.email_utility import EmailUtility
 from inventory_requests.business_logic.loan_logic import return_loan_logic
 from inventory_requests.models import Loan, RequestCart
 from inventory_requests.serializers.DisbursementSerializer import LoanSerializer
@@ -57,6 +58,11 @@ class ReturnLoan(APIView):
                 .format(quantity=quantity, loan_q=loan.quantity)
             raise MethodNotAllowed(self.patch, detail=detail_str)
         if loan.cart.status == 'fulfilled' and return_loan_logic(loan=loan, quantity=quantity):
+            EmailUtility.email(recipient=loan.cart.owner.email, template='return_loan',
+                               context={'name': loan.cart.owner.username,
+                                        'item_name': loan.item.name,
+                                        'quantity': quantity},
+                               subject="Loaned Item Returned")
             updated_loan = Loan.objects.get(pk=loan.id)
             comment_str = "{quantity} out of {quantity_loaned} lent has been returned of {item}"\
                 .format(quantity=updated_loan.returned_quantity, quantity_loaned=updated_loan.quantity,
@@ -80,6 +86,10 @@ class ReturnAllLoans(APIView):
         if cart.status == 'fulfilled' and cart.cart_loans.filter(returned_timestamp__isnull=True).exists():
             [return_loan_logic(loan=loan) for loan in cart.cart_loans.all()]
             updated_cart = get_or_not_found(RequestCart, pk=pk)
+            EmailUtility.email(recipient=cart.owner.email, template='return_all_loans',
+                               context={'name': cart.owner.username,
+                                        'loan_list': cart.cart_loans.all()},
+                               subject="Loaned Items Returned")
             LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.LOAN_RETURNED,
                               affected_user=cart.owner, carts_affected=[cart])
             return Response(data=RequestCartSerializer(updated_cart).data, status=status.HTTP_200_OK)

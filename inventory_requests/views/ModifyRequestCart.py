@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_email_support.utility.email_utility import EmailUtility
 from inventory_requests.business_logic import modify_request_cart_logic
 from inventory_requests.business_logic.modify_request_cart_logic import start_loan
 from inventory_requests.models import RequestCart, Disbursement, Loan
@@ -42,6 +43,12 @@ class ApproveRequestCart(APIView):
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_APPROVED,
                                   affected_user=request_cart_to_approve.owner,
                                   carts_affected=[request_cart_to_approve], comment=comment)
+                EmailUtility.email(recipient=request_cart_to_approve.owner.email, template='request_action',
+                                   context={'name': request_cart_to_approve.owner.username,
+                                            'loan_list': request_cart_to_approve.cart_loans.all(),
+                                            'disbursement_list': request_cart_to_approve.cart_disbursements.all(),
+                                            'request_state': 'approved'},
+                                   subject="Request Approved")
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -66,6 +73,12 @@ class CancelRequestCart(generics.UpdateAPIView):
             serializer.save(status='cancelled', reason=comment_str)
             LoggerUtility.log(initiating_user=request_cart.owner, nature_enum=ActionEnum.REQUEST_CANCELLED,
                               affected_user=request_cart.owner, carts_affected=[request_cart])
+            EmailUtility.email(recipient=request_cart.owner.email, template='request_action',
+                               context={'name': request_cart.owner.username,
+                                        'loan_list': request_cart.cart_loans.all(),
+                                        'disbursement_list': request_cart.cart_disbursements.all(),
+                                        'request_state': 'cancelled'},
+                               subject="Request Cancelled")
         else:
             raise MethodNotAllowed(method=self.patch, detail="Cart status does not allow cancellation")
 
@@ -90,6 +103,12 @@ class DenyRequestCart(generics.UpdateAPIView):
             LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.REQUEST_DENIED,
                               affected_user=request_cart.owner,
                               carts_affected=[request_cart], comment=comment)
+            EmailUtility.email(recipient=request_cart.owner.email, template='request_action',
+                               context={'name': request_cart.owner.username,
+                                        'loan_list': request_cart.cart_loans.all(),
+                                        'disbursement_list': request_cart.cart_disbursements.all(),
+                                        'request_state': 'denied'},
+                               subject="Request Denied")
             serializer.save(staff=self.request.user, staff_timestamp=datetime.now(), status="denied")
         else:
             raise MethodNotAllowed(method=self.patch, detail="Cart status does not allow denying")
@@ -125,6 +144,13 @@ class DispenseRequestCart(generics.UpdateAPIView):
         updated_request = self.get_object()
         LoggerUtility.log(initiating_user=updated_request.staff, nature_enum=ActionEnum.ITEMS_DISBURSED,
                           affected_user=updated_request.owner, carts_affected=[updated_request])
+
+        EmailUtility.email(recipient=updated_request.owner.email, template='items_dispensed',
+                           context={'name': updated_request.owner.username,
+                                    'loan_list': updated_request.cart_loans.all(),
+                                    'disbursement_list': updated_request.cart_disbursements.all()},
+                           subject="Items Dispensed")
+
         return Response(data=RequestCartSerializer(updated_request).data, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
@@ -183,23 +209,11 @@ class ConvertRequestType(APIView):
                 if new_request_type.cart.status == 'fulfilled' and new_type == 'loan':
                     new_request_type.loaned_timestamp = request_type.cart.staff_timestamp
             new_request_type.save()
+            EmailUtility.email(recipient=request_type.cart.owner.email, template='convert_loan_to_disbursement',
+                               context={'name': request_type.cart.owner.username, 'item_name': request_type.item.name,
+                                        'quantity': request_type.quantity}, subject="Loan Conversion to Disbursement")
             modify_request_cart_logic.delete_or_update_request_logic(delete_request_type, old_type,
                                                                      request_type, quantity)
             return Response(data=SERIALIZER_MAP.get(new_type)(new_request_type).data, status=status.HTTP_201_CREATED)
         raise MethodNotAllowed(method=self.post, detail="Cannot change request_type due to cart_status {status}"
                                .format(status=request_type.cart.status))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

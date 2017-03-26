@@ -10,6 +10,7 @@ from inventory_requests.models import RequestCart
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
+from inventory_email_support.utility.email_utility import EmailUtility
 
 
 class ViewDetailedRequestCart(APIView):
@@ -55,6 +56,12 @@ class SendCart(APIView):
                 serializer.save()
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_CREATED,
                                   carts_affected=[request_cart])
+                EmailUtility.email(recipient=request_cart.owner.email, template='request_action',
+                                   context={'name': request_cart.owner.username,
+                                            'loan_list': request_cart.cart_loans.all(),
+                                            'disbursement_list': request_cart.cart_disbursements.all(),
+                                            'request_state': 'created'},
+                                   subject="Request Created")
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

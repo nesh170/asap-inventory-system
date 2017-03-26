@@ -20,7 +20,7 @@ TEST_PASSWORD = 'lol'
 
 
 class ConvertRequestTypeTestCase(APITestCase):
-    fixtures = ['requests_action.json']
+    fixtures = ['requests_action.json', 'email_templates.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)

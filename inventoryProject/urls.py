@@ -30,5 +30,6 @@ urlpatterns = [
     url(r'^api/logger/', include('inventory_transaction_logger.urls')),
     url(r'^api/docs/', include('rest_framework_docs.urls')),
     url(r'^api/request/', include('inventory_requests.urls')),
+    url(r'^api/email/', include('inventory_email_support.urls')),
 
 ]
