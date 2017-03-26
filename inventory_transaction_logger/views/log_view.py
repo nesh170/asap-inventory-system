@@ -2,12 +2,12 @@ import django_filters
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
-from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_transaction_logger.models import Log
 from inventory_transaction_logger.serializers.log_serializer import LogSerializer
 
@@ -31,24 +31,17 @@ class LogList(generics.ListAPIView):
     def get_queryset(self):
         item_name = self.request.GET.get('item_name')
         if item_name is not None and item_name != "":
-            filter_condition = Q(disbursement_log__cart__disbursements__item__name=item_name) \
-                     | Q(shopping_cart_log__shopping_cart__requests__item__name=item_name) \
+            filter_condition = Q(request_cart_log__request_cart__cart_disbursements__item__name=item_name) \
+                     | Q(request_cart_log__request_cart__cart_loans__item__name=item_name) \
                      | Q(item_log__item__name=item_name)
             return Log.objects.filter(filter_condition)
         return Log.objects.all()
-
-
-def get_log(pk):
-    try:
-        return Log.objects.get(pk=pk)
-    except Log.DoesNotExist:
-        raise NotFound(detail="Log not found")
 
 
 class ViewDetailedLog(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk, format=None):
-        log = get_log(pk)
+        log = get_or_not_found(Log, pk=pk)
         serializer = LogSerializer(log)
         return Response(serializer.data)

@@ -56,7 +56,7 @@ def equal_disbursement(test_client, disbursement_json, disbursement_id):
 
 
 class GetRequestTestCases(APITestCase):
-    fixtures = ['request_actions.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -115,7 +115,7 @@ class GetRequestTestCases(APITestCase):
 
 
 class ActiveCartTestCase(APITestCase):
-    fixtures = ['request_actions.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -149,7 +149,7 @@ class ActiveCartTestCase(APITestCase):
 
 
 class PostRequestTestCases(APITestCase):
-    fixtures = ['request_actions.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -256,7 +256,7 @@ class PostRequestTestCases(APITestCase):
 
 
 class DeleteItemTestCases(APITestCase):
-    fixtures = ['request_actions.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -346,7 +346,7 @@ class DeleteItemTestCases(APITestCase):
 
 
 class PatchRequestTestCases(APITestCase):
-    fixtures = ['request_actions.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -649,7 +649,7 @@ class PatchRequestTestCases(APITestCase):
 
 
 class ConvertRequestTypeTestCase(APITestCase):
-    fixtures = ['request_actions.json']
+    fixtures = ['requests_action.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -678,6 +678,7 @@ class ConvertRequestTypeTestCase(APITestCase):
         data = {'current_type': 'disbursement', 'pk': disbursement.id}
         url = reverse('convert-request-type')
         response = self.client.post(path=url, data=data)
+        print(json.loads(str(response.content, 'utf-8'))['detail'])
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response_json = json.loads(str(response.content, 'utf-8'))
         self.assertEqual(response_json.get('item')['name'], disbursement.item.name)
@@ -712,4 +713,3 @@ class ConvertRequestTypeTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
                          "Cannot change request_type due to cart_status denied")
-

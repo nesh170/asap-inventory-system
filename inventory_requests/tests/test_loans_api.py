@@ -30,7 +30,7 @@ def equal_loans(test_client, loan_json, loan_id, cart_id=None):
 
 
 class LoansTestCases(APITestCase):
-    fixtures = ['request_actions.json']
+    fixtures = ['requests_action.json', 'email_templates.json']
 
     def setUp(self):
         self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
@@ -128,8 +128,10 @@ class LoansTestCases(APITestCase):
         response = self.client.patch(path=url)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         detail_str = "Request needs to be fulfilled but is {status} and {item_name} cannot be " \
-                     "returned already by {user_name}".format(status=cart.status, item_name=self.item_1.name,
-                                                              user_name=self.basic_user.username)
+                     "returned already by {user_name} and returned loan quantity is {returned_quantity} " \
+                     "and quantity is {quantity}"\
+            .format(status=cart.status, item_name=self.item_1.name, user_name=self.basic_user.username,
+                    returned_quantity=loan.returned_quantity, quantity=loan.quantity)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], detail_str)
         self.assertTrue(Loan.objects.filter(pk=loan.id).exists())
         cart.delete()
@@ -149,6 +151,62 @@ class LoansTestCases(APITestCase):
         updated_item = Item.objects.get(pk=self.item_1.id)
         self.assertEqual(updated_item.quantity, self.item_1.quantity + loan.quantity)
         self.assertTrue(updated_loan.returned_timestamp > updated_loan.loaned_timestamp)
+        self.assertEqual(updated_loan.returned_quantity, updated_loan.quantity)
+        cart.delete()
+
+    def test_return_partial_loan(self):
+        cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled", reason="return loan cart")
+        loan = Loan.objects.create(item=self.item_1, quantity=4, cart=cart, loaned_timestamp=datetime.now())
+        data = {'quantity': 1}
+        self.item_1.quantity = self.item_1.quantity - loan.quantity
+        self.item_1.save()
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('return-loan-from-cart', kwargs={'pk': str(loan.id)})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        loan_json = json.loads(str(response.content, 'utf-8'))
+        equal_loans(test_client=self, loan_json=loan_json, loan_id=loan_json['id'])
+        updated_loan = Loan.objects.get(pk=loan.id)
+        updated_item = Item.objects.get(pk=self.item_1.id)
+        self.assertEqual(updated_item.quantity, self.item_1.quantity + data['quantity'])
+        self.assertEqual(updated_loan.returned_quantity, data['quantity'])
+        cart.delete()
+
+    def test_return_partial_loan_when_all_returned(self):
+        cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled", reason="return loan cart")
+        loan = Loan.objects.create(item=self.item_1, quantity=4, cart=cart, loaned_timestamp=datetime.now(),
+                                   returned_quantity=2)
+        data = {'quantity': 2}
+        self.item_1.quantity = self.item_1.quantity - loan.quantity
+        self.item_1.save()
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('return-loan-from-cart', kwargs={'pk': str(loan.id)})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        loan_json = json.loads(str(response.content, 'utf-8'))
+        equal_loans(test_client=self, loan_json=loan_json, loan_id=loan_json['id'])
+        updated_loan = Loan.objects.get(pk=loan.id)
+        updated_item = Item.objects.get(pk=self.item_1.id)
+        self.assertEqual(updated_item.quantity, updated_loan.returned_quantity)
+        self.assertEqual(updated_loan.quantity, updated_loan.returned_quantity)
+        self.assertTrue(updated_loan.returned_timestamp is not None)
+        cart.delete()
+
+    def test_return_partial_loan_when_all_returned_fail_high_quantity(self):
+        cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled", reason="return loan cart")
+        loan = Loan.objects.create(item=self.item_1, quantity=4, cart=cart, loaned_timestamp=datetime.now(),
+                                   returned_quantity=2)
+        data = {'quantity': 3}
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('return-loan-from-cart', kwargs={'pk': str(loan.id)})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        detail_str = "Request needs to be fulfilled but is {status} and {item_name} cannot be " \
+                     "returned already by {user_name} and returned loan quantity is {returned_quantity} " \
+                     "and quantity is {quantity}"\
+            .format(status=cart.status, item_name=self.item_1.name, user_name=self.basic_user.username,
+                    returned_quantity=loan.returned_quantity, quantity=loan.quantity)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], detail_str)
         cart.delete()
 
     def test_return_all_loans_fully_returned_fail(self):
@@ -182,15 +240,6 @@ class LoansTestCases(APITestCase):
          for loan_json in loans_json]
         [self.assertTrue(Loan.objects.get(pk=loan_json['id']).returned_timestamp is not None)
          for loan_json in loans_json]
+        [self.assertTrue(Loan.objects.get(pk=loan_json['id']).returned_quantity,
+                         Loan.objects.get(pk=loan_json['id']).quantity) for loan_json in loans_json]
         cart.delete()
-
-
-
-
-
-
-
-
-
-
-
