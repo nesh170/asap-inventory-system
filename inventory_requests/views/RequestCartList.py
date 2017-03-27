@@ -12,7 +12,7 @@ class RequestCartList(generics.ListAPIView):
     serializer_class = RequestCartSerializer
     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
     filter_fields = ('status', 'cart_disbursements__item__name', )
-    search_fields = ('owner__username', 'reason', 'cart_disbursements__item__name', )
+    search_fields = ('owner__username', 'reason', 'cart_disbursements__item__name', 'cart_loans__item__name')
 
     def get_queryset(self):
         user = self.request.user
