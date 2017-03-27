@@ -22,7 +22,8 @@ class EmailUtility:
     def email(recipient, template, context, subject=None):
         subject_to_use = EmailUtility.get_subject(subject)
         context['subject'] = subject_to_use
-        bcc_addresses = SubscribedManagers.objects.values_list('member__email', flat=True)\
+        bcc_addresses = SubscribedManagers.objects.filter(member__email__isnull=False)\
+            .values_list('member__email', flat=True)[::1]\
             if SubscribedManagers.objects.exists() else []
         if recipient is not None:
             mail.send(recipients=[recipient], sender='asap.inventory.system@gmail.com',
