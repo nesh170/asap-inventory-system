@@ -70,10 +70,11 @@ class ReturnLoan(APIView):
             LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.LOAN_RETURNED, comment=comment_str,
                               affected_user=updated_loan.cart.owner, carts_affected=[updated_loan.cart])
             return Response(data=LoanSerializer(updated_loan).data, status=status.HTTP_200_OK)
+        user_name = loan.cart.owner.username if loan.cart.owner is not None else "NO USER"
         detail_str = "Request needs to be fulfilled but is {status} and {item_name} cannot be " \
                      "returned already by {user_name} and returned loan quantity is {returned_quantity} " \
                      "and quantity is {quantity}"\
-            .format(status=loan.cart.status, item_name=loan.item.name, user_name=loan.cart.owner.username,
+            .format(status=loan.cart.status, item_name=loan.item.name, user_name=user_name,
                     returned_quantity=loan.returned_quantity, quantity=loan.quantity)
         raise MethodNotAllowed(method=self.patch, detail=detail_str)
 
