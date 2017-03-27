@@ -1,16 +1,16 @@
 from django.db.models import Q
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed, NotFound
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_email_support.utility.email_utility import EmailUtility
 from inventory_requests.models import RequestCart
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
-from inventory_email_support.utility.email_utility import EmailUtility
 
 
 class ViewDetailedRequestCart(APIView):
@@ -27,8 +27,9 @@ class ActiveRequestCart(APIView):
 
     def get_active(self):
         user = self.request.user
+        q_func = Q(staff=user) if user.is_staff else Q(owner=user)
         try:
-            return RequestCart.objects.filter(Q(owner=user) | Q(staff=user)).get(status='active')
+            return RequestCart.objects.get(q_func, status='active')
         except RequestCart.DoesNotExist:
             new_request_cart = RequestCart.objects.create(staff=user, status='active') if user.is_staff else \
                 RequestCart.objects.create(owner=user, status='active')
