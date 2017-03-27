@@ -29,7 +29,7 @@ class ActiveRequestCart(APIView):
         user = self.request.user
         q_func = Q(staff=user) if user.is_staff else Q(owner=user)
         try:
-            return RequestCart.objects.get(q_func, status='active')
+            return RequestCart.objects.get(q_func & Q(status='active'))
         except RequestCart.DoesNotExist:
             new_request_cart = RequestCart.objects.create(staff=user, status='active') if user.is_staff else \
                 RequestCart.objects.create(owner=user, status='active')
