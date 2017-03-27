@@ -27,7 +27,7 @@ class DisbursementSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         item_id = validated_data.pop('item_id')
         user = self.context['request'].user
-        condition = (Q(owner=user) | Q(staff=user)) & Q(status='active')
+        condition = (Q(staff=user) if user.is_staff else Q(owner=user)) & Q(status='active')
         if RequestCart.objects.filter(condition).exists():
             request_cart = RequestCart.objects.get(condition)
             item = get_or_not_found(Item, pk=item_id)
@@ -57,7 +57,7 @@ class LoanSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         item_id = validated_data.pop('item_id')
         user = self.context['request'].user
-        condition = (Q(owner=user) | Q(staff=user)) & Q(status='active')
+        condition = (Q(staff=user) if user.is_staff else Q(owner=user)) & Q(status='active')
         if RequestCart.objects.filter(condition).exists():
             request_cart = RequestCart.objects.get(condition)
             item = get_or_not_found(Item, pk=item_id)
