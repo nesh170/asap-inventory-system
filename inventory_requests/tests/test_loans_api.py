@@ -187,9 +187,30 @@ class LoansTestCases(APITestCase):
         equal_loans(test_client=self, loan_json=loan_json, loan_id=loan_json['id'])
         updated_loan = Loan.objects.get(pk=loan.id)
         updated_item = Item.objects.get(pk=self.item_1.id)
-        self.assertEqual(updated_item.quantity, updated_loan.returned_quantity)
+        self.assertEqual(updated_item.quantity, self.item_1.quantity + updated_loan.returned_quantity)
         self.assertEqual(updated_loan.quantity, updated_loan.returned_quantity)
         self.assertTrue(updated_loan.returned_timestamp is not None)
+        cart.delete()
+
+    def test_return_partial_loan_when_some_returned(self):
+        cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled", reason="return loan cart")
+        loan = Loan.objects.create(item=self.item_1, quantity=4, cart=cart, loaned_timestamp=datetime.now(),
+                                   returned_quantity=1)
+        data = {'quantity': 2}
+        self.item_1.quantity = self.item_1.quantity - loan.quantity + loan.returned_quantity
+        self.item_1.save()
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('return-loan-from-cart', kwargs={'pk': str(loan.id)})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        loan_json = json.loads(str(response.content, 'utf-8'))
+        equal_loans(test_client=self, loan_json=loan_json, loan_id=loan_json['id'])
+        updated_loan = Loan.objects.get(pk=loan.id)
+        updated_item = Item.objects.get(pk=self.item_1.id)
+        self.assertEqual(updated_item.quantity, self.item_1.quantity + updated_loan.returned_quantity
+                         - loan.returned_quantity)
+        self.assertEqual(loan.returned_quantity + data['quantity'], updated_loan.returned_quantity)
+        self.assertTrue(updated_loan.returned_timestamp is None)
         cart.delete()
 
     def test_return_partial_loan_when_all_returned_fail_high_quantity(self):
