@@ -29,5 +29,3 @@ class EmailCronJob(CronJobBase):
                     first_loan_reminder_today = loan_reminder_date_today.first()
                     first_loan_reminder_today.executed = True
                     first_loan_reminder_today.save()
-        else:
-            pass
