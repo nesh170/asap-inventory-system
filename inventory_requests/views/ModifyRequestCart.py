@@ -205,13 +205,13 @@ class ConvertRequestType(APIView):
                 new_request_type.quantity = new_request_type.quantity + quantity
             except ObjectDoesNotExist:
                 new_request_type = TYPE_MAP.get(new_type).objects.create(quantity=quantity, **args)
-                # this case is when it is already disbursed out and the manager wants to convert it to a loan
-                if new_request_type.cart.status == 'fulfilled' and new_type == 'loan':
-                    new_request_type.loaned_timestamp = request_type.cart.staff_timestamp
             new_request_type.save()
-            EmailUtility.email(recipient=request_type.cart.owner.email, template='convert_loan_to_disbursement',
-                               context={'name': request_type.cart.owner.username, 'item_name': request_type.item.name,
-                                        'quantity': request_type.quantity}, subject="Loan Conversion to Disbursement")
+            if new_request_type.cart.status == 'fulfilled':
+                EmailUtility.email(recipient=new_request_type.cart.owner.email, template='convert_loan_to_disbursement',
+                                   context={'name': new_request_type.cart.owner.username,
+                                            'item_name': new_request_type.item.name,
+                                            'quantity': new_request_type.quantity},
+                                   subject="Loan Conversion to Disbursement")
             modify_request_cart_logic.delete_or_update_request_logic(delete_request_type, old_type,
                                                                      request_type, quantity)
             return Response(data=SERIALIZER_MAP.get(new_type)(new_request_type).data, status=status.HTTP_201_CREATED)
