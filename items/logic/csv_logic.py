@@ -30,7 +30,8 @@ def validate_headers(headers):
     not_included_header = validate_guaranteed_headers(set(headers), set(ITEM_HEADERS))
     if not_included_header:
         raise ParseError(detail=str(not_included_header) + " are required but not included")
-    custom_field_headers = Field.objects.values_list('name', flat=True)[::1]
+    custom_field_headers = Field.objects.values_list('name', flat=True)[::1] if \
+        Field.objects.exists() else []
     supported_headers = custom_field_headers + ITEM_HEADERS
     difference_headers = set(headers).difference(supported_headers)
     if difference_headers:
