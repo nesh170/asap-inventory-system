@@ -115,7 +115,6 @@ MIDDLEWARE = [
 CORS_ORIGIN_WHITELIST = (
     'asap-production.colab.duke.edu',
     'asap-test.colab.duke.edu',
-    'kipcoonley.com',
     'colab-sbx-86.oit.duke.edu',
     'localhost:3000'
 )
