@@ -41,19 +41,19 @@ class DetailedItemSerializer(serializers.ModelSerializer):
     def get_outstanding_disbursements(self, obj):
         user = self.context['request'].user
         q_func = Q(cart__status='outstanding', item=obj)
-        q_func = q_func if user.is_staff else q_func and Q(cart__owner=user)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
         return DisbursementSerializer(Disbursement.objects.filter(q_func), many=True).data
 
     def get_outstanding_loans(self, obj):
         user = self.context['request'].user
         q_func = Q(cart__status='outstanding', item=obj)
-        q_func = q_func if user.is_staff else q_func and Q(cart__owner=user)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
         return LoanSerializer(Loan.objects.filter(q_func), many=True).data
 
     def get_current_loans(self, obj):
         user = self.context['request'].user
         q_func = Q(cart__status='fulfilled', item=obj, returned_timestamp__isnull=True)
-        q_func = q_func if user.is_staff else q_func and Q(cart__owner=user)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
         return LoanSerializer(Loan.objects.filter(q_func), many=True).data
 
     class Meta:
