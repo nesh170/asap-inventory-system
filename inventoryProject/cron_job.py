@@ -19,14 +19,13 @@ class EmailCronJob(CronJobBase):
                 # get loans with user from User table, cart status is filled (currently owned loans), returned timestamp
                 # is null (not all quantities have been returned
                 loaned_items = Loan.objects.filter(cart__owner=user, cart__status='fulfilled',
-                                                   returned_timestamp__isnull=True).all()
-                EmailUtility.email(recipient=user.email, template='loan_reminder',
+                                                   returned_timestamp__isnull=True)
+                if loaned_items.exists():
+                    EmailUtility.email(recipient=user.email, template='loan_reminder',
                                    context={'name': user.username,
                                             'prepended_body': PrependedBody.objects.first().prepended_body,
                                             'loaned_items': loaned_items},
                                    subject="Reminder About Your Loaned Items")
-            first_loan_reminder_today = loan_reminder_date_today.first()
-            first_loan_reminder_today.executed = True
-            first_loan_reminder_today.save()
-        else:
-            pass
+                    first_loan_reminder_today = loan_reminder_date_today.first()
+                    first_loan_reminder_today.executed = True
+                    first_loan_reminder_today.save()
