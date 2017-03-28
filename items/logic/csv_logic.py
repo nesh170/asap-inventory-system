@@ -26,7 +26,7 @@ def validate_guaranteed_headers(headers, required_headers):
 
 def validate_headers(headers):
     if len(headers) != len(set(headers)):
-        raise ParseError(detail="A valid CSV file cannot caontain duplicated")
+        raise ParseError(detail="A valid CSV file cannot contain duplicated headers")
     not_included_header = validate_guaranteed_headers(set(headers), set(ITEM_HEADERS))
     if not_included_header:
         raise ParseError(detail=str(not_included_header) + " are required but not included")
