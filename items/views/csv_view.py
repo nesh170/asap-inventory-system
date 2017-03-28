@@ -71,7 +71,7 @@ class ItemCsvImport(APIView):
                 raise ParseError(detail="This csv file is not valid")
             current_row_index = 1
             for row in reader:
-                error_list = create_and_validate_data(row, reader.fieldnames)
+                error_list = create_and_validate_data(row, reader.fieldnames, request.user)
                 if error_list:
                     error[current_row_index] = error_list
                 current_row_index += 1
