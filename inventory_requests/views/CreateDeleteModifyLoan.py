@@ -66,7 +66,7 @@ class ReturnLoan(APIView):
             EmailUtility.email(recipient=loan.cart.owner.email, template='return_loan',
                                context={'name': loan.cart.owner.username,
                                         'item_name': loan.item.name,
-                                        'quantity': quantity},
+                                        'quantity': quantity if quantity else loan.quantity},
                                subject="Loaned Item Returned")
             updated_loan = Loan.objects.get(pk=loan.id)
             comment_str = "{quantity} out of {quantity_loaned} lent has been returned of {item}"\
