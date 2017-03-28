@@ -1,5 +1,8 @@
 from rest_framework.exceptions import ParseError, ValidationError
 
+from inventoryProject.utility.print_functions import serializer_pretty_print
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.models import ITEM_HEADERS, Field, IntField, FloatField, ShortTextField, LongTextField
 from items.serializers.field_serializer import IntFieldSerializer, FloatFieldSerializer, ShortTextFieldSerializer, \
     LongTextFieldSerializer
@@ -59,10 +62,14 @@ def add_custom_fields(item, header, value):
     return serializer.instance
 
 
-def create_and_validate_data(data, headers):
+def create_and_validate_data(data, headers, user):
     error = []
     try:
         item = create_item(data['name'], data['quantity'], data['model_number'], data['description'], data['tags'])
+        comment = serializer_pretty_print(serializer=ItemSerializer(item), title=ActionEnum.ITEM_CREATED.value,
+                                          validated=False)
+        LoggerUtility.log(initiating_user=user, nature_enum=ActionEnum.ITEM_CREATED,
+                          comment=comment, items_affected=[item])
     except ValidationError as e:
         return [{key: e.detail[key][0]} for key in e.detail]
     custom_field_headers = set(headers).difference(set(ITEM_HEADERS))
