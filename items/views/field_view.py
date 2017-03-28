@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.exceptions import ParseError
 
-from inventoryProject.permissions import IsSuperUser, IsStaffUser
+from inventoryProject.permissions import IsSuperUser, IsStaffUser, IsSuperUserOrStaffReadOnly
 from inventoryProject.utility.print_functions import serializer_pretty_print, serializer_compare_pretty_print
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from inventory_transaction_logger.action_enum import ActionEnum
@@ -23,7 +23,7 @@ def update_helper(client, serializer, serializer_type, title):
 
 class FieldList(generics.ListCreateAPIView):
     queryset = Field.objects.all()
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrStaffReadOnly]
     serializer_class = FieldSerializer
 
     def perform_create(self, serializer):

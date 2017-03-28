@@ -4,6 +4,7 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser, IsSuperUser
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_email_support.models import SubscribedManagers
 from rest_framework.response import Response
 from inventory_email_support.serializers.email_serializer import SubscribedManagerSerializer
@@ -25,6 +26,13 @@ class Subscribe(APIView):
         subscribed_manager = SubscribedManagers.objects.create(member=user)
         return Response(data=SubscribedManagerSerializer(subscribed_manager).data, status=status.HTTP_200_OK)
 
+
+class CurrentSubscribeUser(APIView):
+    permission_classes = [IsStaffUser]
+
+    def get(self, request, *args, **kwargs):
+        member_data = get_or_not_found(SubscribedManagers, member=request.user)
+        return Response(SubscribedManagerSerializer(member_data).data, status=status.HTTP_200_OK)
 
 
 class Unsubscribe(APIView):
