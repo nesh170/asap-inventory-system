@@ -27,8 +27,8 @@ class CreateLoan(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         returned = self.request.query_params.get('returned', None)
-        q_func = ~Q(pk=None) and Q(returned_timestamp__isnull=not (returned == 'true')) if returned else ~Q(pk=None)
-        q_func = q_func if user.is_staff else q_func and Q(cart__owner=user)
+        q_func = ~Q(pk=None) & Q(returned_timestamp__isnull=not (returned == 'true')) if returned else ~Q(pk=None)
+        q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
         return Loan.objects.filter(q_func)
 
 
