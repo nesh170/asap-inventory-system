@@ -51,8 +51,8 @@ class LogTestCase(APITestCase):
     fixtures = ['logger_action.json']
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(ADMIN_USERNAME, 'test@test.com', ADMIN_PASSWORD)
-        self.normal_user = User.objects.create_user(USER_USERNAME, 'user@testforlife.com', USER_PASSWORD)
+        self.admin = User.objects.create_superuser(ADMIN_USERNAME, '', ADMIN_PASSWORD)
+        self.normal_user = User.objects.create_user(USER_USERNAME, '', USER_PASSWORD)
         self.application = Application(
             name="Test Application",
             redirect_uris="http://localhost",

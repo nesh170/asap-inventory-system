@@ -47,8 +47,8 @@ def equal_loan_reminder(test_client, loan_reminder_json, loan_reminder_id):
 class EmailTestCases(APITestCase):
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
-        self.basic_user = User.objects.create_user(TEST_USERNAME, 'test@test.com', TEST_PASSWORD)
+        self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
+        self.basic_user = User.objects.create_user(TEST_USERNAME, '', TEST_PASSWORD)
 
         self.application = Application(
             name="Test Application",

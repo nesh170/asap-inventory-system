@@ -24,7 +24,7 @@ def equal_user(equal_client, user_id, data):
 
 class UserAPITest(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
         User.objects.create_superuser('piazza', 'lol@test.com', PASSWORD)
         self.application = Application(
             name="Test Application",

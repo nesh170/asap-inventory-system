@@ -34,7 +34,7 @@ class GetItemTestCase(APITestCase):
     fixtures = ['item_action.json']
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
         self.application = Application(
             name="Test Application",
             redirect_uris="http://localhost",
@@ -87,7 +87,7 @@ class PostItemTestCase(APITestCase):
     fixtures = ['item_action.json']
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
         self.application = Application(
             name="Test Application",
             redirect_uris="http://localhost",
@@ -137,7 +137,7 @@ class UpdateItemTestCase(APITestCase):
     fixtures = ['item_action.json']
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
         basic_item = Item.objects.create(name="Capacitor", quantity=9000)
         self.item_id = basic_item.id
         self.application = Application(
@@ -254,7 +254,7 @@ class DeleteItemTestCase(APITestCase):
     fixtures = ['item_action.json']
 
     def setUp(self):
-            self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+            self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
             basic_item = Item.objects.create(name="Cryogenic", quantity=9000)
             self.item_id = basic_item.id
             self.application = Application(
@@ -288,8 +288,8 @@ class DeleteItemTestCase(APITestCase):
 class GetDetailedItemStacks(APITestCase):
 
     def setUp(self):
-            self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
-            self.test_user = User.objects.create_user('test_31', 'test@test', 'pass')
+            self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
+            self.test_user = User.objects.create_user('test_31', '', 'pass')
             basic_item = Item.objects.create(name="Cryogenic", quantity=9000)
             self.item_id = basic_item.id
             self.application = Application(
