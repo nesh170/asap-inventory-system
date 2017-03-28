@@ -3,10 +3,12 @@ from django.conf.urls import url
 from inventory_email_support.views.loan_reminder_email_view import GetLoanReminderDates, ModifyLoanReminderDates
 from inventory_email_support.views.prepended_body_view import GetPrependedBody, ModifyPrependedBody
 from inventory_email_support.views.subject_tag_view import GetSubjectTag, ModifySubjectTag
-from inventory_email_support.views.subscribed_manager_view import Subscribe, Unsubscribe, SubscribedManagerList
+from inventory_email_support.views.subscribed_manager_view import Subscribe, Unsubscribe, SubscribedManagerList, \
+    CurrentSubscribeUser
 
 urlpatterns = [
     url(r'^subscribedManagers/$', SubscribedManagerList.as_view(), name='subscribed-manager-list'),
+    url(r'^subscribedManagers/current/$', CurrentSubscribeUser.as_view(), name='current-subscribed-manager'),
     url(r'^subscribe/$', Subscribe.as_view(), name='subscribe'),
     url(r'^unsubscribe/$', Unsubscribe.as_view(), name='unsubscribe'),
     url(r'^subjectTag/$', GetSubjectTag.as_view(), name='get-subject-tag'),
