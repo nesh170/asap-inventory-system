@@ -23,8 +23,8 @@ class ConvertRequestTypeTestCase(APITestCase):
     fixtures = ['requests_action.json', 'email_templates.json']
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
-        self.receiver = User.objects.create_user(TEST_USERNAME, 'test@test.com', TEST_PASSWORD)
+        self.admin = User.objects.create_superuser(username=USERNAME, password=PASSWORD, email='')
+        self.receiver = User.objects.create_user(username=TEST_USERNAME, password=TEST_PASSWORD, email='')
         self.application = Application(
             name="Test Application",
             redirect_uris="http://localhost",

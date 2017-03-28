@@ -20,7 +20,7 @@ class CreateDeleteTagTestCase(APITestCase):
     fixtures = ['item_action.json']
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(USERNAME, 'test@test.com', PASSWORD)
+        self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
         basic_item = Item.objects.create(name="fire", quantity=4)
         test_item = Item.objects.create(name="tourniquet", quantity=4)
         self.item_id = test_item.id

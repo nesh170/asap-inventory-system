@@ -20,7 +20,7 @@ class FieldsAPI(APITestCase):
     fixtures = ['item_action.json']
 
     def setUp(self):
-        self.admin = User.objects.create_superuser(ADMIN_USERNAME, 'test@test.com', ADMIN_PASSWORD)
+        self.admin = User.objects.create_superuser(ADMIN_USERNAME, '', ADMIN_PASSWORD)
         self.application = Application(
             name="Test Application",
             redirect_uris="http://localhost",
