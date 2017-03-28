@@ -2,7 +2,7 @@ import django_filters
 from django.db.models import Q
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, ParseError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -52,7 +52,12 @@ class ReturnLoan(APIView):
 
     def patch(self, request, pk):
         loan = get_or_not_found(Loan, pk=pk)
-        quantity = int(request.data.get('quantity')) if request.data.get('quantity') else None
+        try:
+            quantity = int(request.data.get('quantity'))
+        except ValueError:
+            raise ParseError('This is not valid quantity')
+        except TypeError:
+            quantity = None
         if quantity is not None and (quantity < 1 or quantity > loan.quantity):
             detail_str = "Quantity {quantity} cannot be greater than loan quantity({loan_q}) or less than 1"\
                 .format(quantity=quantity, loan_q=loan.quantity)
