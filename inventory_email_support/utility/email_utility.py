@@ -25,6 +25,6 @@ class EmailUtility:
         bcc_addresses = SubscribedManagers.objects.filter(member__email__isnull=False)\
             .values_list('member__email', flat=True)[::1]\
             if SubscribedManagers.objects.exists() else []
-        if recipient is not None:
+        if recipient:
             mail.send(recipients=[recipient], sender='asap.inventory.system@gmail.com',
                   priority='now', bcc=bcc_addresses, template=template, context=context)

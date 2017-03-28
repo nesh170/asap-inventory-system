@@ -192,6 +192,18 @@ class LoansTestCases(APITestCase):
         self.assertTrue(updated_loan.returned_timestamp is not None)
         cart.delete()
 
+    def test_return_partial_loan_with_quantity_return_zero(self):
+        cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled", reason="return loan cart")
+        loan = Loan.objects.create(item=self.item_1, quantity=4, cart=cart, loaned_timestamp=datetime.now())
+        data = {'quantity': 0}
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse('return-loan-from-cart', kwargs={'pk': str(loan.id)})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual("Quantity {quantity} cannot be greater than loan quantity({loan_q}) or less than 1"
+                         .format(quantity=data['quantity'], loan_q=loan.quantity),
+                         json.loads(str(response.content, 'utf-8'))['detail'])
+
     def test_return_partial_loan_when_some_returned(self):
         cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled", reason="return loan cart")
         loan = Loan.objects.create(item=self.item_1, quantity=4, cart=cart, loaned_timestamp=datetime.now(),
