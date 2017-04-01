@@ -13,15 +13,27 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser, IsSuperUser, IsSuperUserDelete, IsSuperUserOrStaffReadOnly
-from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventoryProject.utility.queryset_functions import get_or_not_found, get_or_none
+from inventory_email_support.models import SubscribedManagers
 from inventory_user.serializers.user_serializer import UserSerializer, LargeUserSerializer
 from items.custom_pagination import LargeResultsSetPagination
+
+MEMBER_LIST = [SubscribedManagers]
 
 
 class InventoryUserList(generics.ListCreateAPIView):
     permission_classes = [IsSuperUserOrStaffReadOnly]
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
+
+    def post(self, request, *args, **kwargs):
+        if request.data.get('username') is not None:
+            user = get_or_none(User, username=request.data.get('username'))
+            if user is not None and not user.is_active:
+                raise MethodNotAllowed(method=self.post,
+                                       detail="An inactive user with this username, {user} already exists."
+                                       .format(user=user.username))
+        return self.create(request, *args, **kwargs)
 
 
 class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
@@ -31,7 +43,6 @@ class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         data = serializer.validated_data
-        user = serializer.instance
         if data.get("is_superuser") is None and data.get("is_staff") is None:
             serializer.save()
         else:
@@ -45,6 +56,10 @@ class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.is_active = False
+        for model in MEMBER_LIST:
+            member = get_or_none(model, member=instance)
+            if member:
+                member.delete()
         instance.save()
 
 
