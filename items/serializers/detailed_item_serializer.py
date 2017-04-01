@@ -60,12 +60,14 @@ class DetailedItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags', 'int_fields', 'float_fields',
                   'short_text_fields', 'long_text_fields', 'outstanding_disbursements', 'outstanding_loans',
-                  'current_loans')
+                  'current_loans', 'minimum_stock', 'track_minimum_stock')
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.quantity = validated_data.get('quantity', instance.quantity)
         instance.model_number = validated_data.get('model_number', instance.model_number)
         instance.description = validated_data.get('description', instance.description)
+        instance.minimum_stock = validated_data.get('minimum_stock', instance.minimum_stock)
+        instance.track_minimum_stock = validated_data.get('track_minimum_stock', instance.track_minimum_stock)
         instance.save()
         return instance
