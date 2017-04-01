@@ -19,7 +19,7 @@ class FilterItemLogic:
     def operation_item_logic(self, included_item, excluded_item, operation):
         return included_item & excluded_item if operation.upper() == 'AND' else included_item | excluded_item
 
-    def filter_logic(self, tag_included, tag_excluded, operation):
+    def filter_tag_logic(self, tag_included, tag_excluded, operation):
         if tag_included is not None and tag_excluded is None:
             return self.included_item_logic(tag_included.split(','))
         elif tag_excluded is not None and tag_included is None:

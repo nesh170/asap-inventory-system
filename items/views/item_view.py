@@ -1,3 +1,4 @@
+from django.db.models import F
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
@@ -28,9 +29,13 @@ class ItemList(generics.ListCreateAPIView):
             tag_included = self.request.GET.get('tag_included')
             tag_excluded = self.request.GET.get('tag_excluded')
             operation = self.request.GET.get('operator')
+            threshold = self.request.GET.get('threshold')
+            current_queryset = Item.objects.all()
             if tag_included is not None or tag_excluded is not None:
-                return filter_item_logic.filter_logic(tag_included, tag_excluded, operation)
-        return Item.objects.all()
+                current_queryset = filter_item_logic.filter_tag_logic(tag_included, tag_excluded, operation)
+            if threshold is not None and threshold.lower() == 'true':
+                current_queryset = current_queryset.filter(minimum_stock__gt=F('quantity'))
+        return current_queryset
 
     def perform_create(self, serializer):
         serializer.save()
