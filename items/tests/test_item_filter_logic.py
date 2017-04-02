@@ -23,26 +23,26 @@ class FilterItemTestCase(TestCase):
         self.filter_logic = FilterItemLogic()
 
     def test_included_item(self):
-        filter_item = self.filter_logic.filter_logic('polar,bear', None, None)
+        filter_item = self.filter_logic.filter_tag_logic('polar,bear', None, None)
         self.assertEqual(filter_item.get(name="Fitness Tracker").name, 'Fitness Tracker')
 
     def test_excluded_item(self):
-        filter_item = self.filter_logic.filter_logic(None, 'Terry,bear', None)
+        filter_item = self.filter_logic.filter_tag_logic(None, 'Terry,bear', None)
         self.assertEqual(filter_item.get(name="Oscilloscope").name, 'Oscilloscope')
 
     def test_included_and_excluded_item(self):
-        filter_item = self.filter_logic.filter_logic('polar', 'king', 'AND')
+        filter_item = self.filter_logic.filter_tag_logic('polar', 'king', 'AND')
         self.assertEqual(filter_item.get(name="Fitness Tracker").name, 'Fitness Tracker')
 
     def test_included_or_excluded_item(self):
-        filter_item = self.filter_logic.filter_logic('polar,bear', 'power,bear', 'OR')
+        filter_item = self.filter_logic.filter_tag_logic('polar,bear', 'power,bear', 'OR')
         self.assertEqual(filter_item.get(name="Oscilloscope").name, 'Oscilloscope')
         self.assertEqual(filter_item.get(name="Fitness Tracker").name, 'Fitness Tracker')
 
     def test_no_operator_error(self):
         successError = False
         try:
-            filter_item = self.filter_logic.filter_logic('polar,bear', 'power,bear', None)
+            filter_item = self.filter_logic.filter_tag_logic('polar,bear', 'power,bear', None)
         except ParseError:
             successError = True
         self.assertEqual(successError, True)

@@ -7,7 +7,8 @@ from post_office.models import Email
 
 
 class SubscribedManagers(models.Model):
-    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribed_managers')
+    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribed_managers',
+                               limit_choices_to={'is_staff': True})
 
     def __str__(self):
         member_string = "Member : {username}".format
