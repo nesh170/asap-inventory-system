@@ -8,5 +8,4 @@ def send_email_with_item_under_threshold(item):
         EmailUtility.email(recipient=email, template='minimum_stock_reached',
                            context={'name': item.name, 'quantity': item.quantity,
                                     'minimum_stock': item.minimum_stock},
-                           subject=EmailUtility
-                           .get_subject(subject="{Item} reached minimum quantity".format(Item=item.name)))
+                           subject="{Item} reached minimum quantity".format(Item=item.name))
