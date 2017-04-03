@@ -3,7 +3,7 @@ from datetime import datetime
 from rest_framework.exceptions import ParseError
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
-from items.models import Item
+from items.models.item_models import Item
 
 
 def precheck_item(request):

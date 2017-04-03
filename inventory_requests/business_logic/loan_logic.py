@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from items.models import Item
+from items.models.item_models import Item
 
 
 def return_loan_logic(loan, quantity=None):

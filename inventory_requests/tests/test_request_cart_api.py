@@ -10,8 +10,8 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory_requests.models import RequestCart, Disbursement, Loan
-from items.models import Item
+from inventory_requests.models import RequestCart, Disbursement
+from items.models.item_models import Item
 
 # username and password to create superuser for testing
 USERNAME = 'test'

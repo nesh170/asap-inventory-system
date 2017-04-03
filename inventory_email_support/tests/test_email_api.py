@@ -1,5 +1,6 @@
 # username and password to create superuser for testing
 import json
+from datetime import date
 from datetime import datetime, timezone, timedelta
 
 from django.contrib.auth.models import User
@@ -12,8 +13,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from inventory_email_support.models import SubscribedManagers, SubjectTag, PrependedBody, LoanReminderSchedule
-from items.models import Item
-from datetime import date
+from items.models.item_models import Item
 
 USERNAME = 'admin'
 PASSWORD = 'adminPassword'

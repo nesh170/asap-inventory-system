@@ -10,7 +10,7 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from items.models import Item, Tag
+from items.models.item_models import Item, Tag
 
 USERNAME = 'test'
 PASSWORD = 'testPassword'

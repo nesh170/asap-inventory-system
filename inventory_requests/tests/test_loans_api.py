@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from inventory_requests.models import RequestCart, Loan
-from items.models import Item
+from items.models.item_models import Item
 
 USERNAME = 'admin'
 PASSWORD = 'adminPassword'

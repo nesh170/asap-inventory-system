@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from inventory_requests.models import RequestCart, Disbursement, Loan
-from items.models import Item
+from items.models.item_models import Item
 
 # username and password to create superuser and regular user for testing
 USERNAME = 'test'

@@ -3,7 +3,8 @@ from rest_framework import serializers
 
 from inventory_requests.models import Disbursement, Loan
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
-from items.models import Item, IntField, FloatField, ShortTextField, LongTextField
+from items.models.item_models import Item
+from items.models.custom_field_models import IntField, FloatField, ShortTextField, LongTextField
 from items.serializers.field_serializer import IntFieldSerializer, FloatFieldSerializer, ShortTextFieldSerializer, \
     LongTextFieldSerializer
 from items.serializers.tag_serializer import NestedTagSerializer

@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Item,Tag, Field, IntField, FloatField, ShortTextField, LongTextField
+
+from items.models.item_models import Item, Tag
+from items.models.custom_field_models import Field, IntField, FloatField, ShortTextField, LongTextField
 
 # Register your models here.
 admin.site.register(Item)

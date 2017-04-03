@@ -5,7 +5,8 @@ from rest_framework.exceptions import NotFound, MethodNotAllowed, ParseError
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.factory.field_factory import FieldFactory
-from items.models import Item, Tag, Field
+from items.models.item_models import Item, Tag
+from items.models.custom_field_models import Field
 from items.serializers.tag_serializer import NestedTagSerializer
 
 

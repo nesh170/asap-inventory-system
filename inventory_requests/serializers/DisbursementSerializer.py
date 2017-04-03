@@ -1,11 +1,11 @@
 from django.db.models import Q
 from rest_framework import serializers
+from rest_framework.exceptions import MethodNotAllowed
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.models import Disbursement, Loan
-from items.models import Item
 from inventory_requests.models import RequestCart
-from rest_framework.exceptions import MethodNotAllowed
+from items.models.item_models import Item
 
 
 class NestedItemSerializer(serializers.ModelSerializer):
