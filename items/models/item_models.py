@@ -14,6 +14,7 @@ class Item(models.Model):
     description = models.TextField(blank=True, null=True)
     minimum_stock = models.PositiveIntegerField(default=0)
     track_minimum_stock = models.BooleanField(default=False)
+    is_asset = models.BooleanField(default=False)
 
     def __str__(self):
         item_string = "{name} : {quantity}".format
