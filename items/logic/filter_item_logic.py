@@ -1,6 +1,6 @@
 from rest_framework.exceptions import ParseError
 
-from items.models import Item
+from items.models.item_models import Item
 
 
 class FilterItemLogic:

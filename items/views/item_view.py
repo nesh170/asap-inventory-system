@@ -12,7 +12,7 @@ from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
 from items.logic.filter_item_logic import FilterItemLogic
-from items.models import Item
+from items.models.item_models import Item
 from items.serializers.detailed_item_serializer import DetailedItemSerializer
 from items.serializers.item_serializer import ItemSerializer, UniqueItemSerializer, ItemQuantitySerializer
 

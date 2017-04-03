@@ -1,6 +1,7 @@
 from rest_framework_csv.renderers import CSVRenderer
 
-from items.models import Field, ITEM_HEADERS
+from items.models.item_models import ITEM_HEADERS
+from items.models.custom_field_models import Field
 
 
 class ItemRendererCSV(CSVRenderer):
