@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 
 from inventoryProject.utility.generator_functions import generate_unique_key
 from inventory_requests.models import Loan
+from items.models.asset_models import Asset, ASSET_TAG_MAX_LENGTH
 
 
 def add_to_dict_if_not_none(dictionary, key, value):
@@ -20,8 +21,7 @@ def create_asset_helper(item, loan=None, disbursement=None):
     created = False
     while not created:
         try:
-            # Asset.objects \
-            #     .create(asset_tag=generate_unique_key(length=ASSET_TAG_MAX_LENGTH, prepend=item.id), **args)
+            Asset.objects.create(asset_tag=generate_unique_key(length=ASSET_TAG_MAX_LENGTH, prepend=item.id), **args)
             created = True
         except IntegrityError:
             created = False

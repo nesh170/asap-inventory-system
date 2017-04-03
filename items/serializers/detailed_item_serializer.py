@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from inventory_requests.models import Disbursement, Loan
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
+from items.models.asset_models import Asset
 from items.models.item_models import Item
 from items.models.custom_field_models import IntField, FloatField, ShortTextField, LongTextField
 from items.serializers.field_serializer import IntFieldSerializer, FloatFieldSerializer, ShortTextFieldSerializer, \
@@ -17,15 +18,15 @@ def get_values(table, is_staff, item, serializer_constructor):
     return serializer.data
 
 
-# class AssetSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Asset
-#         fields = ('id', 'asset_tag')
+class AssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = ('id', 'asset_tag')
 
 
 class DetailedItemSerializer(serializers.ModelSerializer):
     tags = NestedTagSerializer(many=True, allow_null=True, required=False)
-    # asset = AssetSerializer(many=True, allow_null=True, required=False)
+    asset = AssetSerializer(many=True, allow_null=True, required=False)
     int_fields = serializers.SerializerMethodField()
     float_fields = serializers.SerializerMethodField()
     short_text_fields = serializers.SerializerMethodField()
@@ -68,7 +69,7 @@ class DetailedItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags', 'int_fields', 'float_fields',
                   'short_text_fields', 'long_text_fields', 'outstanding_disbursements', 'outstanding_loans',
-                  'current_loans', 'minimum_stock', 'track_minimum_stock', 'is_asset')
+                  'current_loans', 'minimum_stock', 'track_minimum_stock', 'is_asset', 'asset')
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
