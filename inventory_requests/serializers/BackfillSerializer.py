@@ -3,17 +3,13 @@ from inventory_requests.serializers.DisbursementSerializer import NestedItemSeri
 
 from inventory_requests.models import Backfill
 
-class BackfillSerializer(serializers.ModelSerializer):
-    item = NestedItemSerializer(many=False, allow_null=False, read_only=True)
-    item_id = serializers.IntegerField(required=True, write_only=True)
-    cart_owner = serializers.SerializerMethodField()
 
+class BackfillSerializer(serializers.ModelSerializer):
+    #TODO make quantity required within serializer
     class Meta:
         model = Backfill
-        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'pdf_url')
+        fields = ('id', 'loan_id', 'quantity', 'pdf_url', 'status')
 
-    def get_cart_owner(self, obj):
-        return obj.cart.owner.username if obj.cart.owner is not None else None
 
 #TODO add pdf support to this
 class LoanToBackfillSerializer(serializers.Serializer):

@@ -6,7 +6,7 @@ from inventory_requests.views.ActiveSendDetailedRequestCart import ViewDetailedR
 from inventory_requests.views.CreateDeleteModifyDisbursement import CreateDisbursement, DeleteDisbursement
 from inventory_requests.views.ModifyRequestCart import ApproveRequestCart, DenyRequestCart, CancelRequestCart, \
     FulfillRequestCart, DispenseRequestCart, ModifyQuantityRequested, ConvertRequestType
-from inventory_requests.views.BackfillView import ConvertLoanToBackfill
+from inventory_requests.views.BackfillView import ConvertLoanToBackfill, BackfillList, ApproveBackfillRequest
 
 urlpatterns = [
     url(r'^$', RequestCartList.as_view(), name='request-cart-list'),
@@ -27,6 +27,8 @@ urlpatterns = [
     url(r'^loan/returnItem/(?P<pk>[0-9]+)/$', ReturnLoan.as_view(), name='return-loan-from-cart'),
     url(r'^returnAllLoans/(?P<pk>[0-9]+)/$', ReturnAllLoans.as_view(), name='return-all-loans-from-cart'),
     url(r'^convertRequestType/$', ConvertRequestType.as_view(), name='convert-request-type'),
-    url(r'^backfill/convertLoan/$', ConvertLoanToBackfill.as_view(), name='convert-loan-to-backfill')
+    url(r'^backfill/$', BackfillList.as_view(), name='backfill-list'),
+    url(r'^backfill/convertLoan/$', ConvertLoanToBackfill.as_view(), name='convert-loan-to-backfill'),
+    url(r'^backfill/approve/(?P<pk>[0-9]+)/$', ApproveBackfillRequest.as_view(), name='approve-backfill-request'),
 
 ]
