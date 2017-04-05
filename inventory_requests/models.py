@@ -5,7 +5,7 @@ from items.models import Item
 
 class RequestCart(models.Model):
     owner = models.ForeignKey('auth.User', related_name='request_owner', on_delete=models.CASCADE, null=True)
-    status = models.CharField(max_length=16, choices=[
+    status = models.CharField(max_length=40, choices=[
         ('outstanding', 'outstanding'), ('approved', 'approved'),
         ('cancelled', 'cancelled'), ('denied', 'denied'), ('active', 'active'), ('fulfilled', 'fulfilled')],
                               default='active')
@@ -46,6 +46,19 @@ class Loan(models.Model):
 
     class Meta:
         unique_together = ('cart', 'item',)
+
+
+class Backfill(models.Model):
+    loan = models.ForeignKey(Loan, related_name='backfill_loan', on_delete=models.CASCADE)
+    status = models.CharField(max_length=40, choices=[('backfill_request_loan', 'backfill_request_loan'),
+                                                        ('backfill_request_outright', 'backfill_request_outright'),
+                                                        ('backfill_transit', 'backfill_transit'),
+                                                      ('backfill_satisfied', 'backfill_satisfied'),
+                                                        ('backfill_failed', 'backfill_failed')])
+    #cart = models.ForeignKey(RequestCart, related_name='cart_backfills', on_delete=models.CASCADE)
+    #item = models.ForeignKey(Item, related_name='backfill_items', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    pdf_url = models.CharField(max_length=100)
 
 
 
