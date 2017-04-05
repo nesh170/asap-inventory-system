@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from inventory_requests.models import RequestCart
 from inventory_transaction_logger.models import Log, Action, ItemLog, RequestCartLog
-from items.models import Item
+from items.models.item_models import Item
 
 
 class ActionSerializer(serializers.ModelSerializer):

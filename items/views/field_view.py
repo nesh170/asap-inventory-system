@@ -3,9 +3,9 @@ from rest_framework.exceptions import ParseError
 
 from inventoryProject.permissions import IsSuperUser, IsStaffUser, IsSuperUserOrStaffReadOnly
 from inventoryProject.utility.print_functions import serializer_pretty_print, serializer_compare_pretty_print
-from inventory_transaction_logger.utility.logger import LoggerUtility
 from inventory_transaction_logger.action_enum import ActionEnum
-from items.models import Field, IntField, FloatField, ShortTextField, LongTextField
+from inventory_transaction_logger.utility.logger import LoggerUtility
+from items.models.custom_field_models import Field, IntField, FloatField, ShortTextField, LongTextField
 from items.serializers.field_serializer import FieldSerializer, IntFieldSerializer, FloatFieldSerializer, \
     ShortTextFieldSerializer, LongTextFieldSerializer
 

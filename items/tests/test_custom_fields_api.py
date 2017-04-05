@@ -10,7 +10,8 @@ from oauth2_provider.settings import oauth2_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from items.models import Item, Field, LongTextField, ShortTextField, IntField, FloatField
+from items.models.item_models import Item
+from items.models.custom_field_models import Field, IntField, FloatField, ShortTextField, LongTextField
 
 ADMIN_USERNAME = 'admin'
 ADMIN_PASSWORD = 'password'

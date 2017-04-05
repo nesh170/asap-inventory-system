@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from items.models import Item
 from inventory_requests.models import RequestCart
+from items.models.item_models import Item
+
 
 class Action(models.Model):
     color = models.CharField(max_length=9, unique=True)

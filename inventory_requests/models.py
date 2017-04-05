@@ -1,6 +1,6 @@
 from django.db import models
 
-from items.models import Item
+from items.models.item_models import Item
 
 
 class RequestCart(models.Model):

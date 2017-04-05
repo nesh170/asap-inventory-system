@@ -10,7 +10,8 @@ from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
 from items.logic.csv_logic import validate_headers, create_and_validate_data, FIELD_MAP
-from items.models import Item, Field, Tag
+from items.models.item_models import Item, Tag
+from items.models.custom_field_models import Field
 from items.renderers import ItemRendererCSV
 
 
