@@ -21,16 +21,22 @@ def create_asset_helper(item, loan=None, disbursement=None):
     created = False
     while not created:
         try:
-            Asset.objects.create(asset_tag=generate_unique_key(length=ASSET_TAG_MAX_LENGTH, prepend=item.id), **args)
+            asset = Asset.objects.create(asset_tag=generate_unique_key(length=ASSET_TAG_MAX_LENGTH, prepend=item.id),
+                                         **args)
             created = True
+            return asset
         except IntegrityError:
             created = False
+    return None
 
 
 def create_assets(item):
+    # These are currently approved/fulfilled loans which haven't been returned to the staff
+    loan_queryset = Loan.objects.filter(item=item, cart__status__in=['approved', 'fulfilled'],
+                                        returned_timestamp__isnull=False)
     if not Asset.objects.filter(item=item).exists():
         # if there are no assets for the item, create items with assets
         [create_asset_helper(item=item) for x in range(item.quantity)]
-        [create_asset_helper(item=item, loan=loan) for loan in
-         Loan.objects.filter(item=item, cart__status__in=['approved', 'fulfilled'], returned_timestamp__isnull=False)]
+        [create_asset_helper(item=item, loan=loan) for loan in loan_queryset]
+
 

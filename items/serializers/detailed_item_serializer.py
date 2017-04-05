@@ -1,11 +1,13 @@
 from django.db.models import Q
 from rest_framework import serializers
+from rest_framework.exceptions import MethodNotAllowed
 
 from inventory_requests.models import Disbursement, Loan
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
 from items.models.asset_models import Asset
 from items.models.item_models import Item
 from items.models.custom_field_models import IntField, FloatField, ShortTextField, LongTextField
+from items.serializers.asset_serializer import AssetSerializer
 from items.serializers.field_serializer import IntFieldSerializer, FloatFieldSerializer, ShortTextFieldSerializer, \
     LongTextFieldSerializer
 from items.serializers.tag_serializer import NestedTagSerializer
@@ -18,15 +20,8 @@ def get_values(table, is_staff, item, serializer_constructor):
     return serializer.data
 
 
-class AssetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Asset
-        fields = ('id', 'asset_tag')
-
-
 class DetailedItemSerializer(serializers.ModelSerializer):
     tags = NestedTagSerializer(many=True, allow_null=True, required=False)
-    asset = AssetSerializer(many=True, allow_null=True, required=False)
     int_fields = serializers.SerializerMethodField()
     float_fields = serializers.SerializerMethodField()
     short_text_fields = serializers.SerializerMethodField()
@@ -69,9 +64,14 @@ class DetailedItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags', 'int_fields', 'float_fields',
                   'short_text_fields', 'long_text_fields', 'outstanding_disbursements', 'outstanding_loans',
-                  'current_loans', 'minimum_stock', 'track_minimum_stock', 'is_asset', 'asset')
+                  'current_loans', 'minimum_stock', 'track_minimum_stock', 'is_asset')
 
     def update(self, instance, validated_data):
+        if instance.is_asset:
+            if validated_data.get('is_asset') is not None and not validated_data.get('is_asset'):
+                raise MethodNotAllowed(method=self.update, detail='This Item is already an Asset')
+            if validated_data.get('quantity') is not None:
+                raise MethodNotAllowed(method=self.update, detail='Cannot change quantity if Item is an Asset')
         instance.name = validated_data.get('name', instance.name)
         instance.quantity = validated_data.get('quantity', instance.quantity)
         instance.model_number = validated_data.get('model_number', instance.model_number)

@@ -2,12 +2,13 @@ from django.db.models import F
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, MethodNotAllowed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from inventoryProject.permissions import IsStaffOrReadOnly, IsSuperUserDelete, IsStaffUser
 from inventoryProject.utility.print_functions import serializer_pretty_print, serializer_compare_pretty_print
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.custom_pagination import LargeResultsSetPagination
@@ -36,7 +37,8 @@ class ItemList(generics.ListCreateAPIView):
                 current_queryset = filter_item_logic.filter_tag_logic(tag_included, tag_excluded, operation)
             if threshold is not None and threshold.lower() == 'true':
                 current_queryset = current_queryset.filter(minimum_stock__gt=F('quantity'))
-        return current_queryset
+            return current_queryset
+        return None
 
     def perform_create(self, serializer):
         serializer.save()
@@ -91,6 +93,9 @@ class ItemQuantityModification(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        old_item = get_or_not_found(Item, pk=serializer.validated_data.get('item_id'))
+        if old_item.is_asset:
+            raise MethodNotAllowed(method=self.create, detail="Cannot modify quantity of is_asset items")
         item = serializer.save()
         item_serializer = ItemSerializer(item)
         return Response(item_serializer.data, status=status.HTTP_200_OK)
