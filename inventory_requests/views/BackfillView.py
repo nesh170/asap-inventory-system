@@ -5,7 +5,7 @@ from rest_framework import generics
 
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
-from inventory_requests.models import Loan, Backfill
+from inventory_requests.models import Loan, Backfill, Disbursement
 from inventory_requests.serializers.BackfillSerializer import BackfillSerializer, LoanToBackfillSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,6 +31,35 @@ class ApproveBackfillRequest(APIView):
         return Response(BackfillSerializer(backfill_request_to_approve).data, status=status.HTTP_200_OK)
 
 
+class FailBackfill(APIView):
+    permission_classes = [IsStaffUser]
+
+    def patch(self, request, pk, format=None):
+        backfill_request_to_fail = get_or_not_found(Backfill, pk=pk)
+        if backfill_request_to_fail.status != 'backfill_transit':
+            raise MethodNotAllowed(self.patch, detail="Cannot mark a backfill as failed if it hasn't been approved "
+                                                      "first and is not in transit")
+
+
+class SatisfyBackfill(APIView):
+    permission_classes = [IsStaffUser]
+
+    def patch(self, request, pk, format=None):
+        backfill_request_to_satisfy = get_or_not_found(Backfill, pk=pk)
+        if backfill_request_to_satisfy.status != 'backfill_transit':
+            raise MethodNotAllowed(self.patch, detail="Cannot mark a backfill as satisfied if it hasn't been approved "
+                                                      "first and is not in transit")
+        #add quantity back to available quantity
+        item_backfilled = backfill_request_to_satisfy.loan.item
+        item_backfilled.quantity = item_backfilled.quantity + backfill_request_to_satisfy.quantity
+        item_backfilled.save()
+        backfill_request_to_satisfy.status = 'backfill_satisfied'
+        backfill_request_to_satisfy.save()
+        # forgive associate loan if any
+        if backfill_request_to_satisfy.loan.cart.status == 'fulfilled':
+            Disbursement.objects.create(cart=backfill_request_to_satisfy.loan.cart, item=item_backfilled,
+                                        quantity=backfill_request_to_satisfy.quantity, from_backfill=True)
+        return Response(BackfillSerializer(backfill_request_to_satisfy).data, status=status.HTTP_200_OK)
 
 class ConvertLoanToBackfill(APIView):
     permission_classes = [IsAuthenticated]

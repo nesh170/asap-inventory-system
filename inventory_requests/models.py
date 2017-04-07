@@ -21,6 +21,7 @@ class Disbursement(models.Model):
     cart = models.ForeignKey(RequestCart, related_name='cart_disbursements', on_delete=models.CASCADE)
     item = models.ForeignKey(Item, related_name='disbursement_items', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
+    from_backfill = models.BooleanField(default=False)
 
     def __str__(self):
         disbursement_str = "{cart_id} : {cart_owner} was disbursed {item_name} : {quantity}".format
