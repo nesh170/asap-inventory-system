@@ -3,6 +3,8 @@ from rest_framework.exceptions import ValidationError
 
 from inventoryProject.utility.generator_functions import generate_unique_key
 from inventory_requests.models import Loan
+from items.factory.field_factory import AssetFieldFactory
+from items.models.asset_custom_fields import AssetField
 from items.models.asset_models import Asset, ASSET_TAG_MAX_LENGTH
 
 
@@ -10,6 +12,12 @@ def add_to_dict_if_not_none(dictionary, key, value):
     if value:
         dictionary[key] = value
     return value is not None
+
+
+def create_asset_fields(asset):
+    factory = AssetFieldFactory()
+    fields = AssetField.objects.all()
+    [factory.create_asset_field(field, asset) for field in fields]
 
 
 def create_asset_helper(item, loan=None, disbursement=None):
@@ -24,6 +32,7 @@ def create_asset_helper(item, loan=None, disbursement=None):
             asset = Asset.objects.create(asset_tag=generate_unique_key(length=ASSET_TAG_MAX_LENGTH, prepend=item.id),
                                          **args)
             created = True
+            create_asset_fields(asset)
             return asset
         except IntegrityError:
             created = False

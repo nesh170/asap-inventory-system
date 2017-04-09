@@ -1,5 +1,7 @@
 from django.conf.urls import url
 
+from items.views.asset_field_view import AssetFieldList, AssetFieldDetailed, IntAssetFieldUpdate, FloatAssetFieldUpdate, \
+    ShortTextAssetFieldUpdate, LongTextAssetFieldUpdate
 from items.views.asset_view import AssetList, AssetDetail
 from items.views.csv_view import export_item_view, ItemCsvImport, export_example_item_view
 from items.views.field_view import FieldList, IntFieldUpdate, FloatFieldUpdate, ShortTextFieldUpdate, \
@@ -25,5 +27,13 @@ urlpatterns = [
     url(r'^csv/export/example$', export_example_item_view, name='export-example-item-csv'),
     url(r'^csv/import$', ItemCsvImport.as_view(), name='import-item'),
     url(r'^asset/$', AssetList.as_view(), name='asset-list'),
-    url(r'^asset/(?P<pk>[0-9]+)$', AssetDetail.as_view(), name='asset-detail')
+    url(r'^asset/(?P<pk>[0-9]+)$', AssetDetail.as_view(), name='asset-detail'),
+    url(r'^asset/field/$', AssetFieldList.as_view(), name='asset-field-list'),
+    url(r'^asset/field/(?P<pk>[0-9]+)$', AssetFieldDetailed.as_view(), name='asset-field-detail'),
+    url(r'^asset/field/int/(?P<pk>[0-9]+)$', IntAssetFieldUpdate.as_view(), name='int-asset-field-update'),
+    url(r'^asset/field/float/(?P<pk>[0-9]+)$', FloatAssetFieldUpdate.as_view(), name='float-asset-field-update'),
+    url(r'^asset/field/short_text/(?P<pk>[0-9]+)$', ShortTextAssetFieldUpdate.as_view(),
+        name='short-text-asset-field-update'),
+    url(r'^asset/field/long_text/(?P<pk>[0-9]+)$', LongTextAssetFieldUpdate.as_view(),
+        name='long-text-asset-field-update'),
 ]
