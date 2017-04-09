@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from inventory_requests.models import RequestCart, Loan
+from items.models.asset_models import Asset
 
 from items.models.item_models import Item
 

@@ -53,9 +53,25 @@ class DetailedAssetSerializer(serializers.ModelSerializer):
             if (loan_id and disbursement_id) or instance.disbursement or instance.loan:
                 raise MethodNotAllowed(method=self.update, detail='Cannot put in both disbursement and loan')
             if loan_id:
-                instance.loan = get_or_not_found(Loan, pk=loan_id)
+                loan = get_or_not_found(Loan, pk=loan_id)
+                instance.loan = loan
+                if Asset.objects.filter(loan=loan).count() >= loan.quantity:  # >= because this instance not included
+                    raise MethodNotAllowed(method=self.update,
+                                           detail="{asset_tag} are already associated with loan"
+                                           .format(asset_tag=str(
+                                               Asset.objects
+                                                   .filter(loan=loan).values_list('asset_tag', flat=True)[::1])))
             if disbursement_id:
-                instance.disbursement = get_or_not_found(Disbursement, pk=disbursement_id)
+                disbursement = get_or_not_found(Disbursement, pk=disbursement_id)
+                instance.disbursement = disbursement
+                if Asset.objects.filter(disbursement=disbursement).count() >= disbursement.quantity:
+                    # >= because this instance not included
+                    raise MethodNotAllowed(method=self.update,
+                                           detail="{asset_tag} are already associated with disbursement"
+                                           .format(asset_tag=str(
+                                               Asset.objects
+                                                   .filter(disbursement=disbursement)
+                                                   .values_list('asset_tag', flat=True)[::1])))
         asset_tag = validated_data.get('asset_tag')
         if asset_tag and get_or_none(Asset, asset_tag=asset_tag):
             raise MethodNotAllowed(method=self.update, detail="{asset_tag} is not unique".format(asset_tag=asset_tag))

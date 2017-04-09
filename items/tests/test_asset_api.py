@@ -191,6 +191,43 @@ class UpdateAssetAPI(APITestCase):
         item.delete()
         cart.delete()
 
+    def test_oversubscribe_asset_to_loan_fail(self):
+        cart = RequestCart.objects.create(owner=self.admin, reason="test shopping cart", status="outstanding")
+        item = Item.objects.create(name='test_item', quantity=2, is_asset=True)
+        loan = cart.cart_loans.create(item=item, quantity=1)
+        asset = item.assets.first()
+        asset.loan = loan
+        asset.save()
+        asset_2 = item.assets.exclude(pk=asset.id).first()
+        data = {"loan_id": loan.id}
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='asset-detail', kwargs={'pk': asset_2.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "{asset_tag} are already associated with loan"
+                         .format(asset_tag=str(Asset.objects
+                                               .filter(loan=loan).values_list('asset_tag', flat=True)[::1])))
+
+    def test_oversubscribe_asset_to_disbursement_fail(self):
+        cart = RequestCart.objects.create(owner=self.admin, reason="test shopping cart", status="outstanding")
+        item = Item.objects.create(name='test_item', quantity=2, is_asset=True)
+        disbursement = cart.cart_disbursements.create(item=item, quantity=1)
+        asset = item.assets.first()
+        asset.disbursement = disbursement
+        asset.save()
+        asset_2 = item.assets.exclude(pk=asset.id).first()
+        data = {"disbursement_id": disbursement.id}
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='asset-detail', kwargs={'pk': asset_2.id})
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
+                         "{asset_tag} are already associated with disbursement"
+                         .format(asset_tag=str(Asset.objects
+                                               .filter(disbursement=disbursement)
+                                               .values_list('asset_tag', flat=True)[::1])))
+
 
 class DeleteAssetAPI(APITestCase):
     fixtures = ['item_action.json']
