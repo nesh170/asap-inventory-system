@@ -3,6 +3,8 @@ from datetime import datetime
 from rest_framework.exceptions import ParseError
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_requests.models import RequestCart
+from items.models.asset_models import Asset
 from items.models.item_models import Item
 
 
@@ -66,3 +68,11 @@ def delete_or_update_request_logic(delete_request_type, old_type, request_type, 
         if old_type == 'loan' and request_type.returned_quantity == request_type.quantity:
             request_type.returned_timestamp = datetime.now()
         request_type.save()
+
+
+def precheck_asset_item(request_cart):
+    asset_loans = request_cart.cart_loans.filter(item__is_asset=True)
+    asset_disbursement = request_cart.cart_disbursements.filter(item__is_asset=True)
+    [get_or_not_found(Asset, loan=loan, item=loan.item) for loan in asset_loans]
+    [get_or_not_found(Asset, disbursement=disbursement, item=disbursement.item) for disbursement in asset_disbursement]
+

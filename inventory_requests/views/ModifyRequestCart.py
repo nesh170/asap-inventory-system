@@ -37,6 +37,7 @@ class ApproveRequestCart(APIView):
             serializer = ApproveDenySerializer(request_cart_to_approve, data=request.data)
             if serializer.is_valid():
                 serializer.save(staff=request.user, staff_timestamp=datetime.now())
+                modify_request_cart_logic.precheck_asset_item(request_cart_to_approve)
                 modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve)
                 comment = "Request Approved: {item_count} items"\
                     .format(item_count=serializer.instance.cart_disbursements.count())
@@ -163,6 +164,7 @@ class DispenseRequestCart(generics.UpdateAPIView):
             detail_str = 'Cannot dispense due to insufficient items' if request_cart.status == 'active' else \
                 'Cart needs to be active'
             raise MethodNotAllowed(method=self.patch, detail=detail_str)
+        modify_request_cart_logic.precheck_asset_item(request_cart)
         modify_request_cart_logic.subtract_item_in_cart(request_cart)
         start_loan(request_cart)
         serializer.save(staff_timestamp=datetime.now())

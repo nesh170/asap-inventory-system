@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from inventory_requests.models import RequestCart, Loan
+
 from items.models.item_models import Item
 
 USERNAME = 'admin'
@@ -276,3 +277,95 @@ class LoansTestCases(APITestCase):
         [self.assertTrue(Loan.objects.get(pk=loan_json['id']).returned_quantity,
                          Loan.objects.get(pk=loan_json['id']).quantity) for loan_json in loans_json]
         cart.delete()
+
+    class CartAssetAPI(APITestCase):
+        fixtures = ['requests_action.json', 'email_templates.json']
+
+        def setUp(self):
+            self.admin = User.objects.create_superuser(USERNAME, '', PASSWORD)
+            self.basic_user = User.objects.create_user(TEST_USERNAME, '', TEST_PASSWORD)
+            self.application = Application(
+                name="Test Application",
+                redirect_uris="http://localhost",
+                user=self.admin,
+                client_type=Application.CLIENT_CONFIDENTIAL,
+                authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+            )
+            self.application.save()
+            self.tok = AccessToken.objects.create(
+                user=self.admin, token='1234567890',
+                application=self.application, scope='read write',
+                expires=datetime.now(timezone.utc) + timedelta(days=30)
+            )
+
+        def test_admin_cart_loan_not_asset_marked_fail(self):
+            request_cart = RequestCart.objects.create(status="active", reason="test shopping cart",
+                                                      staff_comment="this is an admin comment", staff=self.admin)
+            item = Item.objects.create(name='test_item', quantity=10, is_asset=True)
+            request_cart.cart_loans.create(item=item, quantity=1)
+            url = reverse('dispense-request-cart', kwargs={'pk': str(request_cart.id)})
+            data = {'owner_id': self.basic_user.id, 'staff_comment': 'lit'}
+            self.client.force_authenticate(user=self.admin, token=self.tok)
+            response = self.client.patch(path=url, data=data)
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+            self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
+                             , "Asset not found")
+            item.delete()
+            request_cart.delete()
+
+        def test_admin_cart_loan_asset_marked(self):
+            request_cart = RequestCart.objects.create(status="active", reason="test shopping cart",
+                                                      staff_comment="this is an admin comment", staff=self.admin)
+            item = Item.objects.create(name='test_item', quantity=1, is_asset=True)
+            loan = request_cart.cart_loans.create(item=item, quantity=1)
+            Asset.objects.create(item=item, loan=loan)
+            url = reverse('dispense-request-cart', kwargs={'pk': str(request_cart.id)})
+            data = {'owner_id': self.basic_user.id, 'staff_comment': 'lit'}
+            self.client.force_authenticate(user=self.admin, token=self.tok)
+            response = self.client.patch(path=url, data=data)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            updated_item = Item.objects.get(pk=item.id)
+            self.assertEqual(updated_item.quantity, item.quantity - loan.quantity)
+            item.delete()
+            request_cart.delete()
+
+        def test_return_loan(self):
+            request_cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled",
+                                                      reason="test shopping cart",
+                                                      staff_comment="this is an admin comment", staff=self.admin)
+            item = Item.objects.create(name='test_item', quantity=2, is_asset=True)
+            loan = request_cart.cart_loans.create(item=item, quantity=1, loaned_timestamp=datetime.now())
+            asset = item.assets.first()
+            asset.loan = loan
+            asset.save()
+            item = Item.objects.get(pk=item.id)
+            item.quantity = item.quantity - 1
+            item.save()
+            url = reverse('return-all-loans-from-cart', kwargs={'pk': str(request_cart.id)})
+            self.client.force_authenticate(user=self.admin, token=self.tok)
+            response = self.client.patch(path=url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            updated_asset = Asset.objects.get(pk=asset.id)
+            self.assertIsNone(updated_asset.loan)
+            updated_item = Item.objects.get(pk=item.id)
+            self.assertEqual(updated_item.quantity, item.quantity + 1)
+            self.assertEqual(updated_item.quantity, Asset.objects.filter(item=updated_item).count())
+
+        def test_return_quantity_asset_loan_fail(self):
+            request_cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled",
+                                                      reason="test shopping cart",
+                                                      staff_comment="this is an admin comment", staff=self.admin)
+            item = Item.objects.create(name='test_item', quantity=2, is_asset=True)
+            loan = request_cart.cart_loans.create(item=item, quantity=1, loaned_timestamp=datetime.now())
+            asset = item.assets.first()
+            asset.loan = loan
+            asset.save()
+            item = Item.objects.get(pk=item.id)
+            item.quantity = item.quantity - 1
+            item.save()
+            data = {'quantity': 1}
+            url = reverse('return-loan-from-cart', kwargs={'pk': str(loan.id)})
+            self.client.force_authenticate(user=self.admin, token=self.tok)
+            response = self.client.patch(path=url, data=data)
+            self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+            self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], 'Item cannot be an asset')

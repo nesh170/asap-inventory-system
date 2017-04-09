@@ -3,7 +3,6 @@ from rest_framework import serializers
 from items.factory.field_factory import FieldFactory
 from items.models.custom_field_models import Field, IntField, FloatField, ShortTextField, LongTextField
 
-
 class FieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = Field

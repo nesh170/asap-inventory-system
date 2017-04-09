@@ -11,7 +11,7 @@ from items.models.item_models import Item
 class NestedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ('id', 'name', 'quantity')
+        fields = ('id', 'name', 'quantity', 'is_asset')
 
 
 class DisbursementSerializer(serializers.ModelSerializer):
