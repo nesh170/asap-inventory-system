@@ -1,5 +1,6 @@
 from rest_framework.exceptions import ParseError, ValidationError
 
+from inventoryProject.utility.generator_functions import str_to_bool
 from inventoryProject.utility.print_functions import serializer_pretty_print
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
@@ -43,8 +44,10 @@ def validate_headers(headers):
         raise ParseError(detail=str(difference_headers) + " are not supported")
 
 
-def create_item(name, quantity, model_number, description, tags):
-    data = {'name': name, 'quantity': quantity, 'model_number': model_number, 'description': description}
+def create_item(name, quantity, model_number, description, tags, is_asset, minimum_stock, track_minimum_stock):
+    data = {'name': name, 'quantity': quantity, 'model_number': model_number, 'description': description,
+            'is_asset': str_to_bool(is_asset), 'minimum_stock': minimum_stock,
+            'track_minimum_stock': str_to_bool(track_minimum_stock)}
     if tags:
         data['tags'] = [{'tag': tag} for tag in tags.split(',')]
     serializer = ItemSerializer(data=data)
@@ -67,7 +70,8 @@ def add_custom_fields(item, header, value):
 def create_and_validate_data(data, headers, user):
     error = []
     try:
-        item = create_item(data['name'], data['quantity'], data['model_number'], data['description'], data['tags'])
+        item = create_item(data['name'], data['quantity'], data['model_number'], data['description'], data['tags'],
+                           data['is_asset'], data['minimum_stock'], data['track_minimum_stock'])
         comment = serializer_pretty_print(serializer=ItemSerializer(item), title=ActionEnum.ITEM_CREATED.value,
                                           validated=False)
         LoggerUtility.log(initiating_user=user, nature_enum=ActionEnum.ITEM_CREATED,

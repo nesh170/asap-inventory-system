@@ -1,6 +1,7 @@
 from django.db import models
 
-ITEM_HEADERS = ['name', 'quantity', 'description', 'model_number', 'tags', 'minimum_stock', 'track_minimum_stock']
+ITEM_HEADERS = ['name', 'quantity', 'description', 'model_number', 'tags', 'minimum_stock', 'track_minimum_stock',
+                'is_asset']
 
 
 class Item(models.Model):

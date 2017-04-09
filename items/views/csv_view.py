@@ -1,5 +1,6 @@
 import csv
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import renderer_classes, api_view, permission_classes
@@ -16,9 +17,10 @@ from items.renderers import ItemRendererCSV
 
 
 def create_content(item, fields):
-    tags = ','.join(Tag.objects.filter(item=item).values_list('tag',flat=True))
+    tags = ','.join(Tag.objects.filter(item=item).values_list('tag', flat=True))
     content_dictionary = {'name': item.name, 'quantity': item.quantity, 'model_number': item.model_number,
-                          'description': item.description, 'tags': tags}
+                          'description': item.description, 'tags': tags, 'is_asset': item.is_asset,
+                          'minimum_stock': item.minimum_stock, 'track_minimum_stock': item.track_minimum_stock}
     for field in fields:
         table = FIELD_MAP.get(field.type)
         content_dictionary[field.name] = table.objects.get(field=field, item=item).value
