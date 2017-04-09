@@ -3,15 +3,22 @@ from rest_framework import serializers
 from rest_framework.exceptions import MethodNotAllowed
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
-from inventory_requests.models import Disbursement, Loan
+from inventory_requests.models import Disbursement, Loan, Backfill
 from inventory_requests.models import RequestCart
 from items.models.item_models import Item
+from inventory_requests.serializers.BackfillSerializer import BackfillSerializer
 
 
 class NestedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('id', 'name', 'quantity')
+
+
+# class NestedBackfillSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Backfill
+#         fields = ('id', 'status', 'quantity', 'pdf_url')
 
 
 class DisbursementSerializer(serializers.ModelSerializer):
@@ -21,7 +28,7 @@ class DisbursementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Disbursement
-        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner')
+        fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'from_backfill')
         extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):
@@ -47,11 +54,13 @@ class LoanSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(many=False, allow_null=False, read_only=True)
     item_id = serializers.IntegerField(required=True, write_only=True)
     cart_owner = serializers.SerializerMethodField()
+    #TODO determine if this should be many=True or many=False
+    backfill_loan = BackfillSerializer(many=True, read_only=True)
 
     class Meta:
         model = Loan
         fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'loaned_timestamp',
-                  'returned_timestamp', 'returned_quantity')
+                  'returned_timestamp', 'returned_quantity', 'backfill_loan')
         extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):

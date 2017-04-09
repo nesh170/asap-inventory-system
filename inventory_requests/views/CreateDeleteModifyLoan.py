@@ -29,7 +29,7 @@ class CreateLoan(generics.ListCreateAPIView):
         returned = self.request.query_params.get('returned', None)
         q_func = ~Q(pk=None) & Q(returned_timestamp__isnull=not (returned == 'true')) if returned else ~Q(pk=None)
         q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
-        q_func = q_func & ~Q(backfill_loan__status='backfill_satisfied')
+        #q_func = q_func & ~Q(backfill_loan__status='backfill_satisfied')
         return Loan.objects.filter(q_func)
 
 

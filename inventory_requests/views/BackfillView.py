@@ -57,7 +57,7 @@ class ApproveBackfillRequest(APIView):
         #to prevent them from calling this api for a request that is outstanding
         if cart.status != 'fulfilled':
             raise MethodNotAllowed(self.patch, detail="Please approve the entire request if you would like to approve"
-                                                      "this backfill request")
+                                                      " this backfill request")
         backfill_request_to_approve.status = 'backfill_transit'
         backfill_request_to_approve.save()
         return Response(BackfillSerializer(backfill_request_to_approve).data, status=status.HTTP_200_OK)
@@ -74,7 +74,7 @@ class DenyBackfillRequest(APIView):
         cart = backfill_request_to_deny.loan.cart
         if cart.status != 'fulfilled':
             raise MethodNotAllowed(self.patch, detail="Please deny the entire request if you would like to deny"
-                                                      "this backfill request")
+                                                      " this backfill request")
         backfill_request_to_deny.status='backfill_denied'
         backfill_request_to_deny.save()
         return Response(BackfillSerializer(backfill_request_to_deny).data, status=status.HTTP_200_OK)
