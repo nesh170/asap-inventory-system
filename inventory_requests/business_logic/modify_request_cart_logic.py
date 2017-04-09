@@ -29,6 +29,14 @@ def subtract_item(request):
     item.save()
 
 
+def approve_deny_backfill(request, approve_deny):
+    request.backfill_loan.status = approve_deny
+
+
+def approve_deny_backfills_in_cart(request_cart_to_modify, approve_deny):
+    [approve_deny_backfill(request, approve_deny) for request in request_cart_to_modify.cart_loans.all()]
+
+
 def subtract_item_in_cart(request_cart_to_modify):
     [subtract_item(request) for request in request_cart_to_modify.cart_disbursements.all()]
     [subtract_item(request) for request in request_cart_to_modify.cart_loans.all()]

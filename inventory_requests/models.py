@@ -52,11 +52,11 @@ class Loan(models.Model):
 class Backfill(models.Model):
     #to get backfill associated with specific loan, call loan.backfill_loan
     loan = models.ForeignKey(Loan, related_name='backfill_loan', on_delete=models.CASCADE)
-    status = models.CharField(max_length=40, choices=[('backfill_request_loan', 'backfill_request_loan'),
-                                                        ('backfill_request_outright', 'backfill_request_outright'),
+    status = models.CharField(max_length=40, choices=[('backfill_request', 'backfill_request'),
                                                         ('backfill_transit', 'backfill_transit'),
                                                       ('backfill_satisfied', 'backfill_satisfied'),
-                                                        ('backfill_failed', 'backfill_failed')])
+                                                        ('backfill_failed', 'backfill_failed'),
+                                                      ('backfill_denied', 'backfill_denied')])
     #cart = models.ForeignKey(RequestCart, related_name='cart_backfills', on_delete=models.CASCADE)
     #item = models.ForeignKey(Item, related_name='backfill_items', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
