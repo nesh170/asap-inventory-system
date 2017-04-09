@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 from items.models.item_models import Tag
 
-
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag

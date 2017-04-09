@@ -1,5 +1,6 @@
 from django.conf.urls import url
 
+from inventory_requests.views.AssetInstaRequest import InstantRequest
 from inventory_requests.views.CreateDeleteModifyLoan import CreateLoan, DeleteLoan, ReturnLoan, ReturnAllLoans
 from inventory_requests.views.RequestCartList import RequestCartList
 from inventory_requests.views.ActiveSendDetailedRequestCart import ViewDetailedRequestCart, ActiveRequestCart, SendCart
@@ -34,5 +35,5 @@ urlpatterns = [
     url(r'^backfill/deny/(?P<pk>[0-9]+)/$', DenyBackfillRequest.as_view(), name='deny-backfill-request'),
     url(r'^backfill/satisfy/(?P<pk>[0-9]+)/$', SatisfyBackfill.as_view(), name='satisfy-backfill-request'),
     url(r'^backfill/fail/(?P<pk>[0-9]+)/$', FailBackfill.as_view(), name='fail-backfill-request'),
-
+    url(r'^instantRequest/$', InstantRequest.as_view(), name='instant-request')
 ]

@@ -13,6 +13,7 @@ from inventory_requests.models import RequestCart
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.models import Log
 from inventory_transaction_logger.utility.logger import LoggerUtility
+
 from items.models.item_models import Item
 
 ADMIN_USERNAME = 'test'
