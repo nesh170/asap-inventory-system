@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_email_support.utility.email_utility import EmailUtility
-from inventory_requests.business_logic.loan_logic import return_loan_logic
+from inventory_requests.business_logic.loan_logic import return_loan_logic, clear_asset
 from inventory_requests.models import Loan, RequestCart
 from inventory_requests.serializers.DisbursementSerializer import LoanSerializer
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
@@ -62,6 +62,8 @@ class ReturnLoan(APIView):
             detail_str = "Quantity {quantity} cannot be greater than loan quantity({loan_q}) or less than 1"\
                 .format(quantity=quantity, loan_q=loan.quantity)
             raise MethodNotAllowed(self.patch, detail=detail_str)
+        if loan.item.is_asset:
+            raise MethodNotAllowed(self.patch, detail='Item cannot be an asset')
         if loan.cart.status == 'fulfilled' and return_loan_logic(loan=loan, quantity=quantity):
             EmailUtility.email(recipient=loan.cart.owner.email, template='return_loan',
                                context={'name': loan.cart.owner.username,
@@ -91,6 +93,7 @@ class ReturnAllLoans(APIView):
         cart = get_or_not_found(RequestCart, pk=pk)
         if cart.status == 'fulfilled' and cart.cart_loans.filter(returned_timestamp__isnull=True).exists():
             [return_loan_logic(loan=loan) for loan in cart.cart_loans.all()]
+            [clear_asset(loan=loan) for loan in cart.cart_loans.all()]
             updated_cart = get_or_not_found(RequestCart, pk=pk)
             EmailUtility.email(recipient=cart.owner.email, template='return_all_loans',
                                context={'name': cart.owner.username,
