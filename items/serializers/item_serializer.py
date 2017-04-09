@@ -28,7 +28,7 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags', 'minimum_stock'
-                  , 'track_minimum_stock')
+                  , 'track_minimum_stock', 'is_asset')
 
     def create(self, validated_data):
         try:

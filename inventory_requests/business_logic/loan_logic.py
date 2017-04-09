@@ -3,6 +3,12 @@ from datetime import datetime
 from items.models.item_models import Item
 
 
+def clear_asset(loan):
+    for asset in loan.assets.all():
+        asset.loan = None
+        asset.save()
+
+
 def return_loan_logic(loan, quantity=None):
     if loan.returned_timestamp is None and loan.loaned_timestamp is not None and loan.returned_quantity < loan.quantity:
         if quantity is None or loan.returned_quantity + quantity == loan.quantity:

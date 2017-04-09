@@ -5,6 +5,7 @@ from inventory_requests.models import RequestCart
 from items.models.item_models import Item
 
 
+
 class Action(models.Model):
     color = models.CharField(max_length=9, unique=True)
     tag = models.CharField(max_length=100, unique=True)
