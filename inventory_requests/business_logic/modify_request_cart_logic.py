@@ -3,7 +3,7 @@ from datetime import datetime
 from rest_framework.exceptions import ParseError
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
-from inventory_requests.models import RequestCart
+from inventory_requests.models import RequestCart, Loan
 from items.models.asset_models import Asset
 from items.models.item_models import Item
 
@@ -96,3 +96,14 @@ def precheck_asset_item(request_cart):
     [get_or_not_found(Asset, loan=loan, item=loan.item) for loan in asset_loans]
     [get_or_not_found(Asset, disbursement=disbursement, item=disbursement.item) for disbursement in asset_disbursement]
 
+
+def update_asset_request_type(asset, new_request):
+    if not asset:
+        return
+    if type(new_request) == Loan:
+        asset.disbursement = None
+        asset.loan = new_request
+    else:
+        asset.loan = None
+        asset.disbursement = new_request
+    asset.save()

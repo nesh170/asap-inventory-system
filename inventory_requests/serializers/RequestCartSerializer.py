@@ -1,8 +1,8 @@
+from django.db.models import Q
 from rest_framework import serializers
 
-from inventory_requests.models import RequestCart, Loan
+from inventory_requests.models import RequestCart
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
-from django.db.models import Q
 
 
 class RequestCartSerializer(serializers.ModelSerializer):
@@ -38,4 +38,10 @@ class RequestTypeSerializer(serializers.Serializer):
     current_type = serializers.ChoiceField(choices=['loan', 'disbursement'], required=True)
     pk = serializers.IntegerField(min_value=1, required=True)
     quantity = serializers.IntegerField(min_value=1, required=False)
+    asset_id = serializers.IntegerField(min_value=1, required=False)
+
+    def validate(self, attrs):
+        if attrs.get('quantity') and attrs.get('asset_id'):
+            raise serializers.ValidationError("Cannot Have Both Asset Id and Quantity")
+        return attrs
 

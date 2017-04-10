@@ -1,7 +1,8 @@
 from django.conf.urls import url
 
 from inventory_requests.views.AssetInstaRequest import InstantRequest
-from inventory_requests.views.CreateDeleteModifyLoan import CreateLoan, DeleteLoan, ReturnLoan, ReturnAllLoans
+from inventory_requests.views.CreateDeleteModifyLoan import CreateLoan, DeleteLoan, ReturnLoan, ReturnAllLoans, \
+    ReturnAssetLoan
 from inventory_requests.views.RequestCartList import RequestCartList
 from inventory_requests.views.ActiveSendDetailedRequestCart import ViewDetailedRequestCart, ActiveRequestCart, SendCart
 from inventory_requests.views.CreateDeleteModifyDisbursement import CreateDisbursement, DeleteDisbursement
@@ -27,6 +28,7 @@ urlpatterns = [
     url(r'^loan/$', CreateLoan.as_view(), name='add-loan-to-cart'),
     url(r'^loan/deleteItem/(?P<pk>[0-9]+)/$', DeleteLoan.as_view(), name='delete-loan-from-cart'),
     url(r'^loan/returnItem/(?P<pk>[0-9]+)/$', ReturnLoan.as_view(), name='return-loan-from-cart'),
+    url(r'^loan/returnAsset/(?P<pk>[0-9]+)/$', ReturnAssetLoan.as_view(), name='return-asset-loan-from-cart'),
     url(r'^returnAllLoans/(?P<pk>[0-9]+)/$', ReturnAllLoans.as_view(), name='return-all-loans-from-cart'),
     url(r'^convertRequestType/$', ConvertRequestType.as_view(), name='convert-request-type'),
     url(r'^backfill/$', BackfillList.as_view(), name='backfill-list'),

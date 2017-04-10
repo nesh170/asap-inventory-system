@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
-from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventoryProject.utility.queryset_functions import get_or_not_found, get_or_none
 from inventory_email_support.utility.email_utility import EmailUtility
 from inventory_requests.business_logic import modify_request_cart_logic
 from inventory_requests.business_logic.modify_request_cart_logic import start_loan
@@ -22,6 +22,7 @@ from inventory_requests.serializers.RequestStatusSerializer import ApproveDenySe
     CancelSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
+from items.models.asset_models import Asset
 
 TYPE_MAP = {'loan': Loan, 'disbursement': Disbursement}
 SERIALIZER_MAP = {'loan': LoanSerializer, 'disbursement': DisbursementSerializer}
@@ -194,15 +195,21 @@ class ConvertRequestType(APIView):
         serializer = RequestTypeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         old_type = serializer.validated_data['current_type']
+        asset = get_or_none(Asset, pk=serializer.validated_data['asset_id'])\
+            if serializer.validated_data.get('asset_id') else None
         request_type = get_or_not_found(TYPE_MAP.get(old_type), pk=serializer.validated_data['pk'])
+        if asset and not request_type.assets.filter(pk=asset.id).exists():
+            raise MethodNotAllowed(method=self.post, detail='The {request_type} does not have the asset'
+                                   .format(request_type=old_type))
         if request_type.cart.owner != request.user and not request.user.is_staff:
             raise MethodNotAllowed(method=self.post, detail="This request type does not belong to {user}"
                                    .format(user=request_type.cart.owner.username))
+        request_quantity = 1 if serializer.validated_data.get('asset_id') else serializer.validated_data.get('quantity')
         if modify_request_cart_logic.can_convert_request_type(request_type.cart, request.user.is_staff, old_type):
             args = {'item': request_type.item, 'cart': request_type.cart}
             new_type = 'loan' if old_type != 'loan' else 'disbursement'
             quantity, delete_request_type = modify_request_cart_logic\
-                .validate_quantity(request_type, serializer.validated_data.get('quantity'), old_type)
+                .validate_quantity(request_type, request_quantity, old_type)
             try:
                 # this case is when there is a request_type for that item already, just add quantity
                 new_request_type = TYPE_MAP.get(new_type).objects.get(**args)
@@ -210,6 +217,7 @@ class ConvertRequestType(APIView):
             except ObjectDoesNotExist:
                 new_request_type = TYPE_MAP.get(new_type).objects.create(quantity=quantity, **args)
             new_request_type.save()
+            modify_request_cart_logic.update_asset_request_type(asset=asset, new_request=new_request_type)
             if new_request_type.cart.status == 'fulfilled':
                 EmailUtility.email(recipient=new_request_type.cart.owner.email, template='convert_loan_to_disbursement',
                                    context={'name': new_request_type.cart.owner.username,
