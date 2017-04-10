@@ -61,6 +61,7 @@ class Backfill(models.Model):
     #item = models.ForeignKey(Item, related_name='backfill_items', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     pdf_url = models.CharField(max_length=100)
+    timestamp = models.DateTimeField(null=True, blank=True)
 
 
 

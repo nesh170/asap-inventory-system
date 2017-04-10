@@ -7,7 +7,7 @@ class BackfillSerializer(serializers.ModelSerializer):
     #TODO make quantity required within serializer
     class Meta:
         model = Backfill
-        fields = ('id', 'loan_id', 'status', 'quantity', 'pdf_url')
+        fields = ('id', 'loan_id', 'status', 'quantity', 'pdf_url', 'timestamp')
 
 
 #TODO add pdf support to this
