@@ -1,7 +1,9 @@
 from rest_framework import serializers
 
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.models import RequestCart
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
+from items.models.asset_models import ASSET_TAG_MAX_LENGTH, Asset
 
 
 class RequestCartSerializer(serializers.ModelSerializer):
@@ -32,4 +34,10 @@ class RequestTypeSerializer(serializers.Serializer):
     current_type = serializers.ChoiceField(choices=['loan', 'disbursement'], required=True)
     pk = serializers.IntegerField(min_value=1, required=True)
     quantity = serializers.IntegerField(min_value=1, required=False)
+    asset_id = serializers.IntegerField(min_value=1, required=False)
+
+    def validate(self, attrs):
+        if attrs.get('quantity') and attrs.get('asset_id'):
+            raise serializers.ValidationError("Cannot Have Both Asset Id and Quantity")
+        return attrs
 

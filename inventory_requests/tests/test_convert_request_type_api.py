@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from inventory_requests.models import RequestCart, Disbursement, Loan
+from items.models.asset_models import Asset
 from items.models.item_models import Item
 
 # username and password to create superuser and regular user for testing
@@ -388,3 +389,27 @@ class ConvertRequestTypeTestCase(APITestCase):
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
                          "Cannot change request_type due to cart_status {status}".format(status=cart.status))
         cart.delete()
+
+    def test_fulfilled_cart_convert_loan_to_disbursement_staff_asset(self):
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        item = Item.objects.create(name="test_item128937", quantity=10, is_asset=True)
+        asset = item.assets.first()
+        cart = RequestCart.objects.create(owner=self.receiver, status="fulfilled", reason="lit")
+        loan = Loan.objects.create(item=item, cart=cart, quantity=1)
+        asset.loan = loan
+        asset.save()
+        data = {'current_type': 'loan', 'pk': loan.id, 'asset_id': asset.id}
+        url = reverse('convert-request-type')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_json = json.loads(str(response.content, 'utf-8'))
+        disbursement = Disbursement.objects.get(pk=response_json['id'])
+        self.assertEqual(loan.item.name, disbursement.item.name)
+        self.assertEqual(loan.quantity, disbursement.quantity)
+        self.assertEqual(loan.cart.owner.username, disbursement.cart.owner.username)
+        updated_asset = Asset.objects.get(pk=asset.id)
+        self.assertIsNotNone(updated_asset.disbursement)
+        self.assertIsNone(updated_asset.loan)
+        self.assertFalse(Loan.objects.filter(pk=loan.id).exists())
+        cart.delete()
+
