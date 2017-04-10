@@ -14,5 +14,5 @@ def changed_to_asset(instance, **kwargs):
 
 @receiver(post_save, sender=Item)
 def minimum_quantity_callback(instance, **kwargs):
-    if instance.quantity < instance.minimum_stock and instance.track_minimum_stock:
+    if instance.quantity <= instance.minimum_stock and instance.track_minimum_stock:
         send_email_with_item_under_threshold(instance)
