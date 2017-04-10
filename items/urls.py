@@ -1,5 +1,6 @@
 from django.conf.urls import url
 
+from items.views.asset_csv_view import export_asset_view, export_example_asset_view, AssetCsvImport
 from items.views.asset_field_view import AssetFieldList, AssetFieldDetailed, IntAssetFieldUpdate, FloatAssetFieldUpdate, \
     ShortTextAssetFieldUpdate, LongTextAssetFieldUpdate
 from items.views.asset_view import AssetList, AssetDetail
@@ -36,4 +37,7 @@ urlpatterns = [
         name='short-text-asset-field-update'),
     url(r'^asset/field/long_text/(?P<pk>[0-9]+)$', LongTextAssetFieldUpdate.as_view(),
         name='long-text-asset-field-update'),
+    url(r'^asset/csv/export$', export_asset_view, name='export-asset'),
+    url(r'^asset/csv/export/example$', export_example_asset_view, name='export-example-asset-csv'),
+    url(r'^asset/csv/import$', AssetCsvImport.as_view(), name='import-asset'),
 ]
