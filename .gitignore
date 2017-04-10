@@ -143,3 +143,4 @@ templates/
 
 # CSV files
 /items.csv
+/assets.csv
