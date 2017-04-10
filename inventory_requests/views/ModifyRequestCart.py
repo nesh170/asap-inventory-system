@@ -55,7 +55,8 @@ class ApproveRequestCart(APIView):
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            raise MethodNotAllowed(self.patch, detail="Request cannot be Approved")
+            detail_str = "Request with status {status} cannot be approved".format
+            raise MethodNotAllowed(self.patch, detail=detail_str(status=request_cart_to_approve.status))
 
 
 class CancelRequestCart(generics.UpdateAPIView):
