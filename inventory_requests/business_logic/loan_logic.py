@@ -9,8 +9,13 @@ def clear_asset(loan):
         asset.save()
 
 
-def return_loan_logic(loan, quantity=None):
-    if loan.returned_timestamp is None and loan.loaned_timestamp is not None and loan.returned_quantity < loan.quantity:
+def match_loan_asset(loan, asset):
+    return (asset and loan.assets.filter(pk=asset.id).exists()) or not asset
+
+
+def return_loan_logic(loan, quantity=None, asset=None):
+    if loan.returned_timestamp is None and loan.loaned_timestamp is not None \
+            and loan.returned_quantity < loan.quantity and match_loan_asset(loan,asset):
         if quantity is None or loan.returned_quantity + quantity == loan.quantity:
             loan.returned_timestamp = datetime.now()
             quantity = loan.quantity
