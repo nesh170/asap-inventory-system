@@ -372,6 +372,48 @@ class CartAssetAPI(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], 'Item cannot be an asset')
 
+    def test_return_asset_bad_request_fail(self):
+        request_cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled",
+                                                  reason="test shopping cart",
+                                                  staff_comment="this is an admin comment", staff=self.admin)
+        item = Item.objects.create(name='test_item', quantity=2, is_asset=True)
+        loan = request_cart.cart_loans.create(item=item, quantity=1, loaned_timestamp=datetime.now())
+        asset = item.assets.first()
+        asset.loan = loan
+        asset.save()
+        item = Item.objects.get(pk=item.id)
+        item.quantity = item.quantity - 1
+        item.save()
+        data = {'quantity': 1}
+        url = reverse('return-asset-loan-from-cart', kwargs={'pk': str(loan.id)})
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], 'Must have asset_tag')
+
+    def test_return_asset(self):
+        request_cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled",
+                                                  reason="test shopping cart",
+                                                  staff_comment="this is an admin comment", staff=self.admin)
+        item = Item.objects.create(name='test_item', quantity=2, is_asset=True)
+        loan = request_cart.cart_loans.create(item=item, quantity=1, loaned_timestamp=datetime.now())
+        asset = item.assets.first()
+        asset.loan = loan
+        asset.save()
+        item = Item.objects.get(pk=item.id)
+        item.quantity = item.quantity - 1
+        item.save()
+        data = {'asset_tag': asset.asset_tag}
+        url = reverse('return-asset-loan-from-cart', kwargs={'pk': str(loan.id)})
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        response = self.client.patch(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_item = Item.objects.get(pk=item.id)
+        self.assertEqual(updated_item.quantity, item.quantity + 1)
+        updated_loan = Loan.objects.get(pk=loan.id)
+        self.assertIsNotNone(updated_loan.returned_timestamp)
+        self.assertEqual(loan.quantity, updated_loan.returned_quantity)
+
     def test_instant_request_loan_asset(self):
         item = Item.objects.create(name='test_item', quantity=2, is_asset=True)
         asset = item.assets.first()
@@ -403,3 +445,4 @@ class CartAssetAPI(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'],
                          'Asset is already tied to loan/disbursement')
+

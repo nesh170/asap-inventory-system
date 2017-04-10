@@ -16,6 +16,7 @@ from inventory_requests.serializers.DisbursementSerializer import LoanSerializer
 from inventory_requests.serializers.RequestCartSerializer import RequestCartSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
+from items.models.asset_models import Asset
 
 
 class CreateLoan(generics.ListCreateAPIView):
@@ -86,6 +87,22 @@ class ReturnLoan(APIView):
         raise MethodNotAllowed(method=self.patch, detail=detail_str)
 
 
+class ReturnAssetLoan(APIView):
+    permission_classes = [IsStaffUser]
+
+    def patch(self, request, pk):
+        asset_tag = request.data.get('asset_tag')
+        if not asset_tag:
+            raise ParseError(detail='Must have asset_tag')
+        loan = get_or_not_found(Loan, pk=pk)
+        asset = get_or_not_found(Asset, asset_tag=asset_tag)
+        if not return_loan_logic(loan=loan, quantity=1, asset=asset):
+            raise MethodNotAllowed(method=return_loan_logic, detail='Loan cannot be returned')
+        asset.loan = None
+        asset.save()
+        return Response(status=status.HTTP_200_OK, data=LoanSerializer(Loan.objects.get(pk=loan.id)).data)
+
+
 class ReturnAllLoans(APIView):
     permission_classes = [IsStaffUser]
 
@@ -105,4 +122,5 @@ class ReturnAllLoans(APIView):
         detail_str = "Request needs to be fulfilled but is {status} or Cart has been fully returned"\
             .format(status=cart.status)
         raise MethodNotAllowed(method=self.patch, detail=detail_str)
+
 
