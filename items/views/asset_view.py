@@ -30,6 +30,10 @@ class AssetList(generics.ListCreateAPIView):
         item = serializer.instance.item
         item.quantity = item.quantity + 1
         item.save()
+        comment = "Asset {tag} Created for item name: {item_name}".format(item_name=item.name,
+                                                                          tag=serializer.instance.asset_tag)
+        LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.ADDITIONAL_ITEM_INSTANCES,
+                          comment=comment, items_affected=[item])
 
 
 class AssetDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -40,8 +44,10 @@ class AssetDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         item = self.get_object().item
-        comment = "Asset Deleted for item name: {item_name} ; {comment}"\
-            .format(item_name=item.name, comment=request.data.get('comment') if request.data.get('comment') else '')
+        asset_tag = self.get_object().asset_tag
+        comment = "Asset {tag} Deleted for item name: {item_name} ; {comment}"\
+            .format(item_name=item.name, comment=request.data.get('comment') if request.data.get('comment') else '',
+                    tag=asset_tag)
         response = self.destroy(request, *args, **kwargs)
         LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.DESTRUCTION_ITEM_INSTANCES,
                           comment=comment, items_affected=[item])
