@@ -1,9 +1,8 @@
+from django.db.models import Q
 from rest_framework import serializers
 
-from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.models import RequestCart
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
-from items.models.asset_models import ASSET_TAG_MAX_LENGTH, Asset
 
 
 class RequestCartSerializer(serializers.ModelSerializer):
@@ -11,6 +10,7 @@ class RequestCartSerializer(serializers.ModelSerializer):
     owner = serializers.SlugRelatedField(read_only=True, many=False, slug_field='username')
     cart_disbursements = DisbursementSerializer(read_only=True, many=True)
     cart_loans = LoanSerializer(read_only=True, many=True)
+    #cart_loans = serializers.SerializerMethodField()
     reason = serializers.CharField(required=True)
 
     class Meta:
@@ -23,6 +23,10 @@ class RequestCartSerializer(serializers.ModelSerializer):
         request_cart = RequestCart.objects.create(staff=user, **validated_data) if user.is_staff else \
             RequestCart.objects.create(owner=user, **validated_data)
         return request_cart
+
+    def get_cart_loans(self, obj):
+        q_func = ~Q(backfill_loan__status='backfill_satisfied')
+        return LoanSerializer(obj.cart_loans.filter(q_func), many=True).data
 
 
 class QuantitySerializer(serializers.Serializer):

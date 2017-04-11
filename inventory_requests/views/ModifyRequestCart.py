@@ -40,6 +40,7 @@ class ApproveRequestCart(APIView):
                 serializer.save(staff=request.user, staff_timestamp=datetime.now())
                 modify_request_cart_logic.precheck_asset_item(request_cart_to_approve)
                 modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve)
+                modify_request_cart_logic.approve_deny_backfills_in_cart(request_cart_to_approve, 'backfill_transit')
                 comment = "Request Approved: {item_count} items"\
                     .format(item_count=serializer.instance.cart_disbursements.count())
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_APPROVED,
@@ -54,7 +55,8 @@ class ApproveRequestCart(APIView):
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            raise MethodNotAllowed(self.patch, detail="Request cannot be Approved")
+            detail_str = "Request with status {status} cannot be approved".format
+            raise MethodNotAllowed(self.patch, detail=detail_str(status=request_cart_to_approve.status))
 
 
 class CancelRequestCart(generics.UpdateAPIView):
@@ -100,6 +102,7 @@ class DenyRequestCart(generics.UpdateAPIView):
     def perform_update(self, serializer):
         request_cart = self.get_object()
         if modify_request_cart_logic.can_modify_cart_status(request_cart):
+            modify_request_cart_logic.approve_deny_backfills_in_cart(request_cart, 'backfill_denied')
             comment = "Request Denied: {item_count} items"\
                 .format(item_count=serializer.instance.cart_disbursements.count())
             LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.REQUEST_DENIED,

@@ -5,7 +5,7 @@ from items.models.item_models import Item
 
 class RequestCart(models.Model):
     owner = models.ForeignKey('auth.User', related_name='request_owner', on_delete=models.CASCADE, null=True)
-    status = models.CharField(max_length=16, choices=[
+    status = models.CharField(max_length=40, choices=[
         ('outstanding', 'outstanding'), ('approved', 'approved'),
         ('cancelled', 'cancelled'), ('denied', 'denied'), ('active', 'active'), ('fulfilled', 'fulfilled')],
                               default='active')
@@ -21,6 +21,7 @@ class Disbursement(models.Model):
     cart = models.ForeignKey(RequestCart, related_name='cart_disbursements', on_delete=models.CASCADE)
     item = models.ForeignKey(Item, related_name='disbursement_items', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
+    from_backfill = models.BooleanField(default=False)
 
     def __str__(self):
         disbursement_str = "{cart_id} : {cart_owner} was disbursed {item_name} : {quantity}".format
@@ -46,6 +47,21 @@ class Loan(models.Model):
 
     class Meta:
         unique_together = ('cart', 'item',)
+
+
+class Backfill(models.Model):
+    #to get backfill associated with specific loan, call loan.backfill_loan
+    loan = models.ForeignKey(Loan, related_name='backfill_loan', on_delete=models.CASCADE)
+    status = models.CharField(max_length=40, choices=[('backfill_request', 'backfill_request'),
+                                                        ('backfill_transit', 'backfill_transit'),
+                                                      ('backfill_satisfied', 'backfill_satisfied'),
+                                                        ('backfill_failed', 'backfill_failed'),
+                                                      ('backfill_denied', 'backfill_denied')])
+    #cart = models.ForeignKey(RequestCart, related_name='cart_backfills', on_delete=models.CASCADE)
+    #item = models.ForeignKey(Item, related_name='backfill_items', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    pdf_url = models.CharField(max_length=100)
+    timestamp = models.DateTimeField(null=True, blank=True)
 
 
 
