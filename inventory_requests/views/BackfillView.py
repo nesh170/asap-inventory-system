@@ -11,7 +11,7 @@ from inventory_requests.serializers.BackfillSerializer import BackfillSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters
-
+import boto3
 from items.logic.asset_logic import create_asset_helper
 
 
@@ -23,29 +23,47 @@ class BackfillList(generics.ListAPIView):
     filter_fields = ('status',)
 
 
+def generate_key(file):
+    key_str = "{timestamp}{file_name}".format
+    return key_str(timestamp=datetime.now(), file_name=file)
+
+
+def upload_file(file):
+    print("in upload file function")
+    s3 = boto3.resource('s3')
+    key = generate_key(file)
+    print(key)
+    filename = "{file}".format
+    s3.Bucket('bakfillfiles').upload_file(r'C:\Users\Ankit\Desktop\Group_6_ASAP_Evolution_3_Report.pdf', key)
+
 #TODO add support for PDF
 #TODO how are we handling multiple backfill requests for the same item?
 class CreateBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        serializer = CreateBackfillSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        associated_loan = get_or_not_found(Loan, pk=serializer.validated_data.get('pk'))
-        backfill_request_quantity = serializer.validated_data.get('quantity')
-        cart_status = associated_loan.cart.status
-        #can request backfill if cart is active, outstanding, fulfilled, or approved
-        if cart_status == 'denied' or cart_status == 'cancelled':
-            detail_str = "Cannot create backfill request for the current cart because it is {cart_status}".format
-            raise MethodNotAllowed(self.post, detail=detail_str(cart_status=cart_status))
-        if backfill_request_quantity > associated_loan.quantity:
-            raise MethodNotAllowed(method=self.post,
-                                   detail="Cannot backfill a quantity greater than the current amount for loan")
-        if cart_status == 'fulfilled' and associated_loan.returned_timestamp is not None:
-            raise MethodNotAllowed(self.post, "Cannot request backfill because the loan has been fully returned")
-        backfill_obj = Backfill.objects.create(loan=associated_loan, status='backfill_request',
-                                quantity=backfill_request_quantity, timestamp=datetime.now())
-        return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
+        receipt = request.FILES['receipt_pdf'] if 'receipt_pdf' in request.FILES else None
+        print("About to upload file")
+        upload_file(receipt)
+        print("Finished uploading file")
+        # serializer = CreateBackfillSerializer(data=request.data)
+        # serializer.is_valid(raise_exception=True)
+        # associated_loan = get_or_not_found(Loan, pk=serializer.validated_data.get('pk'))
+        # backfill_request_quantity = serializer.validated_data.get('quantity')
+        # cart_status = associated_loan.cart.status
+        # #can request backfill if cart is active, outstanding, fulfilled, or approved
+        # if cart_status == 'denied' or cart_status == 'cancelled':
+        #     detail_str = "Cannot create backfill request for the current cart because it is {cart_status}".format
+        #     raise MethodNotAllowed(self.post, detail=detail_str(cart_status=cart_status))
+        # if backfill_request_quantity > associated_loan.quantity:
+        #     raise MethodNotAllowed(method=self.post,
+        #                            detail="Cannot backfill a quantity greater than the current amount for loan")
+        # if cart_status == 'fulfilled' and associated_loan.returned_timestamp is not None:
+        #     raise MethodNotAllowed(self.post, "Cannot request backfill because the loan has been fully returned")
+        # backfill_obj = Backfill.objects.create(loan=associated_loan, status='backfill_request',
+        #                         quantity=backfill_request_quantity, timestamp=datetime.now())
+        # return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK)
 
 
 class ApproveBackfillRequest(APIView):
