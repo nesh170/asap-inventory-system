@@ -3,7 +3,7 @@ from django.db import models
 from inventory_requests.models import Loan, Disbursement
 from items.models.item_models import Item
 
-ASSET_TAG_MAX_LENGTH = 40
+ASSET_TAG_MAX_LENGTH = 10
 ASSET_HEADERS = ['item_name', 'asset_tag']
 
 
