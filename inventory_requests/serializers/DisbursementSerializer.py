@@ -22,12 +22,6 @@ class NestedAssetSerializer(serializers.ModelSerializer):
         fields = ('id', 'asset_tag')
 
 
-# class NestedBackfillSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Backfill
-#         fields = ('id', 'status', 'quantity', 'pdf_url')
-
-
 class DisbursementSerializer(serializers.ModelSerializer):
     item = NestedItemSerializer(many=False, allow_null=False, read_only=True)
     assets = NestedAssetSerializer(many=True, read_only=True, allow_null=True)
@@ -63,7 +57,6 @@ class LoanSerializer(serializers.ModelSerializer):
     assets = NestedAssetSerializer(many=True, read_only=True, allow_null=True)
     item_id = serializers.IntegerField(required=True, write_only=True)
     cart_owner = serializers.SerializerMethodField()
-    #TODO determine if this should be many=True or many=False
     backfill_loan = BackfillSerializer(many=True, read_only=True)
 
     class Meta:

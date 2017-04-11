@@ -160,6 +160,4 @@ class SatisfyBackfill(APIView):
         associated_item.save()
         if associated_item.is_asset:
             [create_asset_helper(item=associated_item) for x in range(backfill_request_to_satisfy.quantity)]
-        # forgive associate loan if any
-        #TODO do i need to do this check - will cart status always be fulfilled?
         return Response(BackfillSerializer(backfill_request_to_satisfy).data, status=status.HTTP_200_OK)
