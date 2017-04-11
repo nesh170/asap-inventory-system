@@ -3,7 +3,7 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
 from datetime import datetime
-
+from django.conf import settings
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.models import Loan, Backfill, Disbursement
@@ -30,11 +30,14 @@ def generate_key(file):
 
 def upload_file(file):
     print("in upload file function")
-    s3 = boto3.resource('s3')
+    print(settings.AWS_ACCESS_KEY_ID)
+    print(settings.AWS_SECRET_ACCESS_KEY)
+    s3 = boto3.resource('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY, location='us-east')
     key = generate_key(file)
     print(key)
     filename = "{file}".format
-    s3.Bucket('bakfillfiles').upload_file(r'C:\Users\Ankit\Desktop\Group_6_ASAP_Evolution_3_Report.pdf', key)
+    s3.Bucket('backfillfiles').upload_file(r'C:\Users\Ankit\Desktop\Group_6_ASAP_Evolution_3_Report.pdf', key)
 
 #TODO add support for PDF
 #TODO how are we handling multiple backfill requests for the same item?
