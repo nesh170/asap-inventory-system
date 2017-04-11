@@ -28,45 +28,41 @@ def generate_key(file):
     return key_str(timestamp=datetime.now(), file_name=file)
 
 
-def upload_file(file):
-    print("in upload file function")
-    print(settings.AWS_ACCESS_KEY_ID)
-    print(settings.AWS_SECRET_ACCESS_KEY)
+def upload_file(file, filename):
     s3 = boto3.resource('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY, location='us-east')
+                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
     key = generate_key(file)
-    print(key)
-    filename = "{file}".format
-    s3.Bucket('backfillfiles').upload_file(r'C:\Users\Ankit\Desktop\Group_6_ASAP_Evolution_3_Report.pdf', key)
+    s3.Bucket('backfillfiles').upload_file(filename, key)
+    return 'https://s3.amazonaws.com/backfillfiles/{key}'.format(key=key)
 
-#TODO add support for PDF
-#TODO how are we handling multiple backfill requests for the same item?
+
 class CreateBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
         receipt = request.FILES['receipt_pdf'] if 'receipt_pdf' in request.FILES else None
-        print("About to upload file")
-        upload_file(receipt)
-        print("Finished uploading file")
-        # serializer = CreateBackfillSerializer(data=request.data)
-        # serializer.is_valid(raise_exception=True)
-        # associated_loan = get_or_not_found(Loan, pk=serializer.validated_data.get('pk'))
-        # backfill_request_quantity = serializer.validated_data.get('quantity')
-        # cart_status = associated_loan.cart.status
-        # #can request backfill if cart is active, outstanding, fulfilled, or approved
-        # if cart_status == 'denied' or cart_status == 'cancelled':
-        #     detail_str = "Cannot create backfill request for the current cart because it is {cart_status}".format
-        #     raise MethodNotAllowed(self.post, detail=detail_str(cart_status=cart_status))
-        # if backfill_request_quantity > associated_loan.quantity:
-        #     raise MethodNotAllowed(method=self.post,
-        #                            detail="Cannot backfill a quantity greater than the current amount for loan")
-        # if cart_status == 'fulfilled' and associated_loan.returned_timestamp is not None:
-        #     raise MethodNotAllowed(self.post, "Cannot request backfill because the loan has been fully returned")
-        # backfill_obj = Backfill.objects.create(loan=associated_loan, status='backfill_request',
-        #                         quantity=backfill_request_quantity, timestamp=datetime.now())
-        # return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_200_OK)
+        filename = 'receipt.pdf'
+        with open(filename, 'wb+') as temp_file:
+            for chunk in receipt.chunks():
+                temp_file.write(chunk)
+        file_url = upload_file(receipt, filename)
+        serializer = CreateBackfillSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        associated_loan = get_or_not_found(Loan, pk=serializer.validated_data.get('loan_id'))
+        backfill_request_quantity = serializer.validated_data.get('quantity')
+        cart_status = associated_loan.cart.status
+        #can request backfill if cart is active, outstanding, fulfilled, or approved
+        if cart_status == 'denied' or cart_status == 'cancelled':
+            detail_str = "Cannot create backfill request for the current cart because it is {cart_status}".format
+            raise MethodNotAllowed(self.post, detail=detail_str(cart_status=cart_status))
+        if backfill_request_quantity > associated_loan.quantity:
+            raise MethodNotAllowed(method=self.post,
+                                   detail="Cannot backfill a quantity greater than the current amount for loan")
+        if cart_status == 'fulfilled' and associated_loan.returned_timestamp is not None:
+            raise MethodNotAllowed(self.post, "Cannot request backfill because the loan has been fully returned")
+        backfill_obj = Backfill.objects.create(loan=associated_loan, status='backfill_request',
+                                quantity=backfill_request_quantity, timestamp=datetime.now(), pdf_url=file_url)
+        return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
 
 
 class ApproveBackfillRequest(APIView):

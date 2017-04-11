@@ -13,4 +13,4 @@ class BackfillSerializer(serializers.ModelSerializer):
 #TODO add pdf support to this
 class CreateBackfillSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=1, required=True)
-    pk = serializers.IntegerField(min_value=1, required=True)
+    loan_id = serializers.IntegerField(min_value=1, required=True)

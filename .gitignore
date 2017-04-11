@@ -144,3 +144,6 @@ templates/
 # CSV files
 /items.csv
 /assets.csv
+
+# receipt.pdf
+/receipt.pdf
