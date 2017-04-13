@@ -57,9 +57,11 @@ class Backfill(models.Model):
                                                       ('backfill_satisfied', 'backfill_satisfied'),
                                                         ('backfill_failed', 'backfill_failed'),
                                                       ('backfill_denied', 'backfill_denied'),
-                                                      ('backfill_cancelled', 'backfill_cancelled')])
+                                                      ('backfill_cancelled', 'backfill_cancelled'),
+                                                      ('backfill_active', 'backfill_active')], default='backfill_active')
     quantity = models.PositiveIntegerField()
     pdf_url = models.CharField(max_length=100)
+    file_name = models.CharField(max_length=100)
     timestamp = models.DateTimeField(null=True, blank=True)
 
 

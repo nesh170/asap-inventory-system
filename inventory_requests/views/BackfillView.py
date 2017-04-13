@@ -1,3 +1,4 @@
+from django.http import Http404
 from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed, ParseError
 from rest_framework.permissions import IsAuthenticated
@@ -64,8 +65,10 @@ class CreateBackfillRequest(APIView):
                                    detail="Cannot backfill a quantity greater than the current amount for loan")
         if cart_status == 'fulfilled' and associated_loan.returned_timestamp is not None:
             raise MethodNotAllowed(self.post, "Cannot request backfill because the loan has been fully returned")
-        backfill_obj = Backfill.objects.create(loan=associated_loan, status='backfill_request',
-                                quantity=backfill_request_quantity, timestamp=datetime.now(), pdf_url=file_url)
+        file_name = "{name}".format
+        backfill_obj = Backfill.objects.create(loan=associated_loan,
+                                quantity=backfill_request_quantity, timestamp=datetime.now(), pdf_url=file_url,
+                                               file_name=file_name(name=receipt))
         comment_str = "Backfill for quantity {quantity} was created for loaned {item_name}, " \
                       "which is part of request with status {status}".format
         comment = comment_str(quantity=backfill_request_quantity, item_name=associated_loan.item.name,
@@ -73,6 +76,20 @@ class CreateBackfillRequest(APIView):
         LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_CREATED,
                           items_affected=[associated_loan.item], comment=comment, carts_affected=associated_loan.cart)
         return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
+
+class ActiveBackfillRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_backfill(self, loan_pk):
+        try:
+            loan = Loan.objects.get(pk=loan_pk)
+            return loan.backfill_loan.filter(status='backfill_active').first()
+        except Loan.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        active_backfill = self.get_backfill(pk)
+        return Response(BackfillSerializer(active_backfill).data, status=status.HTTP_200_OK)
 
 
 class ApproveBackfillRequest(APIView):
@@ -140,7 +157,7 @@ class DenyBackfillRequest(APIView):
         return Response(BackfillSerializer(backfill_request_to_deny).data, status=status.HTTP_200_OK)
 
 
-class FailBackfill(APIView):
+class FailBackfillRequest(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, pk, format=None):
@@ -188,7 +205,7 @@ def add_asset_to_disbursement(disbursement, assets):
 # reduce quantity that is loaned out - convert to disbursement, add to available quantity
 
 
-class SatisfyBackfill(APIView):
+class SatisfyBackfillRequest(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, pk, format=None):
