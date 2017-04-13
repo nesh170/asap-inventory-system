@@ -15,4 +15,9 @@
   {"model": "inventory_transaction_logger.action", "pk": 14, "fields": {"color": "#B22222", "tag": "CUSTOM FIELD DELETED"}},
   {"model": "inventory_transaction_logger.action", "pk": 15, "fields": {"color": "#FF3030", "tag": "CUSTOM FIELD VALUE MODIFIED"}},
   {"model": "inventory_transaction_logger.action", "pk": 16, "fields": {"color": "#6D063A", "tag": "REQUEST FULFILLED"}},
-  {"model": "inventory_transaction_logger.action", "pk": 17, "fields": {"color": "#6B7AEE", "tag": "LOAN RETURNED"}}]
+  {"model": "inventory_transaction_logger.action", "pk": 17, "fields": {"color": "#6B7AEE", "tag": "LOAN RETURNED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 18, "fields": {"color": "#510B74", "tag": "BACKFILL CREATED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 19, "fields": {"color": "#31343E", "tag": "BACKFILL APPROVED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 20, "fields": {"color": "#E4B6F7", "tag": "BACKFILL DENIED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 21, "fields": {"color": "#A7FF8B", "tag": "BACKFILL FAILED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 22, "fields": {"color": "#941021", "tag": "BACKFILL SATISFIED"}}]

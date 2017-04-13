@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters
 import boto3
+
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.logic.asset_logic import create_asset_helper
 
 
@@ -52,8 +55,9 @@ class CreateBackfillRequest(APIView):
         backfill_request_quantity = serializer.validated_data.get('quantity')
         cart_status = associated_loan.cart.status
         #can request backfill if cart is active, outstanding, fulfilled, or approved
-        if cart_status == 'denied' or cart_status == 'cancelled':
-            detail_str = "Cannot create backfill request for the current cart because it is {cart_status}".format
+        if not cart_status in ('active', 'fulfilled'):
+            detail_str = "Cannot create backfill request for the current loan because the corresponding request is" \
+                         " {cart_status}".format
             raise MethodNotAllowed(self.post, detail=detail_str(cart_status=cart_status))
         if backfill_request_quantity > associated_loan.quantity:
             raise MethodNotAllowed(method=self.post,
@@ -62,6 +66,12 @@ class CreateBackfillRequest(APIView):
             raise MethodNotAllowed(self.post, "Cannot request backfill because the loan has been fully returned")
         backfill_obj = Backfill.objects.create(loan=associated_loan, status='backfill_request',
                                 quantity=backfill_request_quantity, timestamp=datetime.now(), pdf_url=file_url)
+        comment_str = "Backfill for quantity {quantity} was created for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_quantity, item_name=associated_loan.item.name,
+                              status=cart_status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_CREATED,
+                          items_affected=[associated_loan.item], comment=comment, carts_affected=associated_loan.cart)
         return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
 
 
@@ -93,6 +103,14 @@ class ApproveBackfillRequest(APIView):
         backfill_request_to_approve.status = 'backfill_transit'
         backfill_request_to_approve.timestamp = datetime.now()
         backfill_request_to_approve.save()
+        comment_str = "Backfill for quantity {quantity} was approved for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_approve.quantity,
+                              item_name=backfill_request_to_approve.loan.item.name, status=cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_APPROVED,
+                          affected_user=backfill_request_to_approve.loan.cart.owner,
+                          items_affected=[backfill_request_to_approve.loan.item], comment=comment,
+                          carts_affected=backfill_request_to_approve.loan.cart)
         return Response(BackfillSerializer(backfill_request_to_approve).data, status=status.HTTP_200_OK)
 
 
@@ -111,6 +129,14 @@ class DenyBackfillRequest(APIView):
         backfill_request_to_deny.status='backfill_denied'
         backfill_request_to_deny.timestamp = datetime.now()
         backfill_request_to_deny.save()
+        comment_str = "Backfill for quantity {quantity} was denied for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_deny.quantity,
+                              item_name=backfill_request_to_deny.loan.item.name, status=cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_DENIED,
+                          affected_user=backfill_request_to_deny.loan.cart.owner,
+                          items_affected=[backfill_request_to_deny.loan.item], comment=comment,
+                          carts_affected=backfill_request_to_deny.loan.cart)
         return Response(BackfillSerializer(backfill_request_to_deny).data, status=status.HTTP_200_OK)
 
 
@@ -125,6 +151,15 @@ class FailBackfill(APIView):
         backfill_request_to_fail.status = 'backfill_failed'
         backfill_request_to_fail.timestamp = datetime.now()
         backfill_request_to_fail.save()
+        comment_str = "Backfill for quantity {quantity} was marked failed for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_fail.quantity,
+                              item_name=backfill_request_to_fail.loan.item.name,
+                              status=backfill_request_to_fail.loan.cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_FAILED,
+                          affected_user=backfill_request_to_fail.loan.cart.owner,
+                          items_affected=[backfill_request_to_fail.loan.item], comment=comment,
+                          carts_affected=backfill_request_to_fail.loan.cart)
         return Response(BackfillSerializer(backfill_request_to_fail).data, status=status.HTTP_200_OK)
 
 
@@ -188,4 +223,11 @@ class SatisfyBackfill(APIView):
         associated_item.save()
         if associated_item.is_asset:
             [create_asset_helper(item=associated_item) for x in range(backfill_request_to_satisfy.quantity)]
+        comment_str = "Backfill for quantity {quantity} was marked satisfied for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_satisfy.quantity, item_name=associated_loan.item.name,
+                              status=associated_cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_SATISFIED,
+                          affected_user=associated_cart.owner,
+                          items_affected=[associated_item], comment=comment, carts_affected=associated_cart)
         return Response(BackfillSerializer(backfill_request_to_satisfy).data, status=status.HTTP_200_OK)

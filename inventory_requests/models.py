@@ -56,9 +56,8 @@ class Backfill(models.Model):
                                                         ('backfill_transit', 'backfill_transit'),
                                                       ('backfill_satisfied', 'backfill_satisfied'),
                                                         ('backfill_failed', 'backfill_failed'),
-                                                      ('backfill_denied', 'backfill_denied')])
-    #cart = models.ForeignKey(RequestCart, related_name='cart_backfills', on_delete=models.CASCADE)
-    #item = models.ForeignKey(Item, related_name='backfill_items', on_delete=models.CASCADE)
+                                                      ('backfill_denied', 'backfill_denied'),
+                                                      ('backfill_cancelled', 'backfill_cancelled')])
     quantity = models.PositiveIntegerField()
     pdf_url = models.CharField(max_length=100)
     timestamp = models.DateTimeField(null=True, blank=True)
