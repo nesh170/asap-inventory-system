@@ -2,7 +2,8 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import MethodNotAllowed
 
-from inventory_requests.models import Disbursement, Loan
+from inventory_requests.models import Disbursement, Loan, Backfill
+from inventory_requests.serializers.BackfillSerializer import BackfillSerializer
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
 from items.models.asset_models import Asset
 from items.models.item_models import Item
@@ -29,6 +30,8 @@ class DetailedItemSerializer(serializers.ModelSerializer):
     outstanding_disbursements = serializers.SerializerMethodField()
     outstanding_loans = serializers.SerializerMethodField()
     current_loans = serializers.SerializerMethodField()
+    backfill_transit = serializers.SerializerMethodField()
+    backfill_requested = serializers.SerializerMethodField()
 
     def get_int_fields(self, obj):
         return get_values(IntField, self.context['request'].user.is_staff, obj, IntFieldSerializer)
@@ -60,11 +63,24 @@ class DetailedItemSerializer(serializers.ModelSerializer):
         q_func = q_func if user.is_staff else q_func & Q(cart__owner=user)
         return LoanSerializer(Loan.objects.filter(q_func), many=True).data
 
+    def get_backfill_requested(self, obj):
+        user = self.context['request'].user
+        q_func = Q(status='backfill_request', loan__item=obj)
+        q_func = q_func if user.is_staff else q_func & Q(loan__cart__owner=user)
+        return BackfillSerializer(Backfill.objects.filter(q_func), many=True).data
+
+    def get_backfill_transit(self, obj):
+        user = self.context['request'].user
+        q_func = Q(status='backfill_transit', loan__item=obj)
+        q_func = q_func if user.is_staff else q_func & Q(loan__cart__owner=user)
+        return BackfillSerializer(Backfill.objects.filter(q_func), many=True).data
+
     class Meta:
         model = Item
         fields = ('id', 'name', 'quantity', 'model_number', 'description', 'tags', 'int_fields', 'float_fields',
                   'short_text_fields', 'long_text_fields', 'outstanding_disbursements', 'outstanding_loans',
-                  'current_loans', 'minimum_stock', 'track_minimum_stock', 'is_asset')
+                  'current_loans', 'backfill_requested', 'backfill_transit', 'minimum_stock',
+                  'track_minimum_stock', 'is_asset')
 
     def update(self, instance, validated_data):
         if instance.is_asset:
