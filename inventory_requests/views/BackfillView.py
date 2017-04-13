@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, ParseError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
 from datetime import datetime
@@ -127,7 +127,32 @@ class FailBackfill(APIView):
         backfill_request_to_fail.save()
         return Response(BackfillSerializer(backfill_request_to_fail).data, status=status.HTTP_200_OK)
 
-#reduce quantity that is loaned out - convert to disbursement, add to available quantity
+
+def validate_assets(data, backfill_request_to_satisfy, item):
+    if item.is_asset:
+        if data.get('asset_tags'):
+            json_asset_tags = data.get('asset_tags')
+            if not isinstance(json_asset_tags, list):
+                raise ParseError(detail='Asset Tags must be in list')
+            assets = item.assets.filter(asset_tag__in=[tag.get('asset_tag') for tag in json_asset_tags],
+                                        loan=backfill_request_to_satisfy.loan)
+            if not (backfill_request_to_satisfy.quantity == assets.count()):
+                raise MethodNotAllowed(method=validate_assets, detail='Please specify  the same number'
+                                                                      ' of assets that were requested')
+            return assets
+        raise ParseError(detail='Since item is an asset, Specify asset tags')
+    return []
+
+
+def add_asset_to_disbursement(disbursement, assets):
+    for asset in assets:
+        asset.disbursement = disbursement
+        asset.loan = None
+        asset.save()
+
+# reduce quantity that is loaned out - convert to disbursement, add to available quantity
+
+
 class SatisfyBackfill(APIView):
     permission_classes = [IsStaffUser]
 
@@ -136,10 +161,11 @@ class SatisfyBackfill(APIView):
         if backfill_request_to_satisfy.status != 'backfill_transit':
             raise MethodNotAllowed(self.patch, detail="Cannot mark a backfill as satisfied if it hasn't been approved "
                                                       "first and is not in transit")
-        #if backfill request quantity = loaned quantity, then have to get rid of loan and add it as a disbursement
+        # if backfill request quantity = loaned quantity, then have to get rid of loan and add it as a disbursement
         associated_loan = backfill_request_to_satisfy.loan
         associated_cart = associated_loan.cart
         associated_item = associated_loan.item
+        assets = validate_assets(request.data, backfill_request_to_satisfy, associated_item)
         backfill_request_to_satisfy.status = 'backfill_satisfied'
         backfill_request_to_satisfy.save()
         if backfill_request_to_satisfy.quantity == backfill_request_to_satisfy.loan.quantity:
@@ -148,14 +174,16 @@ class SatisfyBackfill(APIView):
             associated_loan.quantity = associated_loan.quantity - backfill_request_to_satisfy.quantity
             associated_loan.save()
         if associated_cart.cart_disbursements.filter(item=associated_loan.item).exists():
-            existing_disbursement = associated_cart.cart_disbursements.get(item=associated_loan.item)
-            existing_disbursement.quantity = existing_disbursement.quantity + backfill_request_to_satisfy.quantity
-            existing_disbursement.from_backfill = True
-            existing_disbursement.save()
+            disbursement = associated_cart.cart_disbursements.get(item=associated_loan.item)
+            disbursement.quantity = disbursement.quantity + backfill_request_to_satisfy.quantity
+            disbursement.from_backfill = True
+            disbursement.save()
         else:
-            Disbursement.objects.create(cart=backfill_request_to_satisfy.loan.cart, item=associated_item,
-                                        quantity=backfill_request_to_satisfy.quantity, from_backfill=True)
-            #add quantity back to available quantity
+            disbursement = Disbursement.objects.create(cart=backfill_request_to_satisfy.loan.cart, item=associated_item,
+                                                       quantity=backfill_request_to_satisfy.quantity,
+                                                       from_backfill=True)
+        # add quantity back to available quantity
+        add_asset_to_disbursement(disbursement, assets)
         associated_item.quantity = associated_item.quantity + backfill_request_to_satisfy.quantity
         associated_item.save()
         if associated_item.is_asset:
