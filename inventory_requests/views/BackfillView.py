@@ -1,6 +1,6 @@
 from django.http import Http404
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed, ParseError
+from rest_framework.exceptions import MethodNotAllowed, ParseError, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
 from datetime import datetime
@@ -17,6 +17,14 @@ import boto3
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.logic.asset_logic import create_asset_helper
+
+
+def get_object(self, pk):
+    try:
+        return Backfill.objects.get(pk=pk)
+    except Backfill.DoesNotExist:
+        raise NotFound(detail="Backfill object to delete not found")
+
 
 
 class BackfillList(generics.ListAPIView):
@@ -77,6 +85,31 @@ class CreateBackfillRequest(APIView):
                           items_affected=[associated_loan.item], comment=comment, carts_affected=associated_loan.cart)
         return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
 
+
+class DeleteBackfillRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk, format=None):
+        backfill_to_delete = get_object(pk)
+        if backfill_to_delete.status != 'backfill_active':
+            raise MethodNotAllowed(method=self.delete, detail="Cannot delete a backfill request that is not active")
+        backfill_to_delete.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UpdateBackfillRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk, format=None):
+        backfill_to_update = get_object(pk)
+        if backfill_to_update.status != 'backfill_active':
+            raise MethodNotAllowed(self.patch, detail="Cannot update a backfill request that is not active")
+        serializer = BackfillSerializer(backfill_to_update, data=request.data)
+        if serializer.is_valid():
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ActiveBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -85,7 +118,7 @@ class ActiveBackfillRequest(APIView):
             loan = Loan.objects.get(pk=loan_pk)
             return loan.backfill_loan.filter(status='backfill_active').first()
         except Loan.DoesNotExist:
-            raise Http404
+            raise NotFound(detail="Loan not found in database")
 
     def get(self, request, pk, format=None):
         active_backfill = self.get_backfill(pk)
