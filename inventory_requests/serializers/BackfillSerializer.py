@@ -10,7 +10,7 @@ class BackfillSerializer(serializers.ModelSerializer):
 
 
 class UpdateBackfillSerializer(serializers.Serializer):
-    quantity = serializers.IntegerField(min_value=1)
+    quantity = serializers.IntegerField(min_value=1, required=False)
     backfill_id = serializers.IntegerField(min_value=1, required=True)
 
 

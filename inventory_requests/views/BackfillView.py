@@ -1,4 +1,3 @@
-from django.http import Http404
 from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed, ParseError, NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -27,7 +26,6 @@ def get_object(self, pk):
         raise NotFound(detail="Backfill object to delete not found")
 
 
-
 class BackfillList(generics.ListAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = BackfillSerializer
@@ -52,6 +50,8 @@ def upload_file(file, filename):
 #backfill for a loan that has been fulfilled, it creates a backfill with status 'backfill_request' directly since there
 #is no need for an active state
 #TODO I'm not sure if this is the desired behavior, it depends on how the UI wants to do it
+
+
 class CreateBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -64,8 +64,6 @@ class CreateBackfillRequest(APIView):
             for chunk in receipt.chunks():
                 temp_file.write(chunk)
         file_url = upload_file(receipt, filename)
-        print("About to print request data")
-        print(request.data)
         serializer = CreateBackfillSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         associated_loan = get_or_not_found(Loan, pk=serializer.validated_data.get('loan_id'))
@@ -77,8 +75,7 @@ class CreateBackfillRequest(APIView):
                                                             "one hasn't been requested already")
         backfill_request_quantity = serializer.validated_data.get('quantity')
         cart_status = associated_loan.cart.status
-        #can request backfill if cart is active, outstanding, fulfilled, or approved
-        if not cart_status in ('active', 'fulfilled'):
+        if cart_status not in ('active', 'fulfilled'):
             detail_str = "Cannot create backfill request for the current loan because the corresponding request is" \
                          " {cart_status}".format
             raise MethodNotAllowed(self.post, detail=detail_str(cart_status=cart_status))
@@ -120,8 +117,6 @@ class UpdateBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        #print("About to print request data")
-        #print(request.data)
         serializer = UpdateBackfillSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         backfill_to_update = get_or_not_found(Backfill, pk=serializer.validated_data.get('backfill_id'))
@@ -157,6 +152,9 @@ class ActiveBackfillRequest(APIView):
     def get_backfill(self, loan_pk):
         try:
             loan = Loan.objects.get(pk=loan_pk)
+            if loan.cart.status != 'active':`
+                raise MethodNotAllowed(method=self.get, detail="Cart must be active in order to find a backfill "
+                                                               "request that is active")
             return loan.backfill_loan.filter(status='backfill_active').first()
         except Loan.DoesNotExist:
             raise NotFound(detail="Loan not found in database")
