@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters
 import boto3
+from django.db.models import Q
 
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
@@ -29,9 +30,11 @@ def get_object(self, pk):
 class BackfillList(generics.ListAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = BackfillSerializer
-    queryset = Backfill.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filter_fields = ('status',)
+
+    def get_queryset(self):
+        return Backfill.objects.exclude(Q(status='backfill_active'))
 
 
 def generate_key(file):
@@ -152,7 +155,7 @@ class ActiveBackfillRequest(APIView):
     def get_backfill(self, loan_pk):
         try:
             loan = Loan.objects.get(pk=loan_pk)
-            if loan.cart.status != 'active':`
+            if loan.cart.status != 'active':
                 raise MethodNotAllowed(method=self.get, detail="Cart must be active in order to find a backfill "
                                                                "request that is active")
             return loan.backfill_loan.filter(status='backfill_active').first()
@@ -170,8 +173,8 @@ class ApproveBackfillRequest(APIView):
     def patch(self, request, pk, format=None):
         backfill_request_to_approve = get_or_not_found(Backfill, pk=pk)
         if backfill_request_to_approve.status != 'backfill_request':
-            raise MethodNotAllowed(self.patch, detail="Cannot approve backfill because it is not an "
-                                                      "outstanding backfill request")
+            raise MethodNotAllowed(self.patch, detail="Cannot approve backfill because it is not in the backfill request "
+                                                      "state")
         cart = backfill_request_to_approve.loan.cart
         #to prevent them from calling this api for a request that is outstanding
         if cart.status == 'outstanding':
@@ -209,8 +212,8 @@ class DenyBackfillRequest(APIView):
     def patch(self, request, pk, format=None):
         backfill_request_to_deny = get_or_not_found(Backfill, pk=pk)
         if backfill_request_to_deny.status != 'backfill_request':
-            raise MethodNotAllowed(self.patch, detail="Cannot deny backfill because it is not an "
-                                                      "outstanding backfill request")
+            raise MethodNotAllowed(self.patch, detail="Cannot deny backfill because it is not in the backfill request "
+                                                      "state")
         cart = backfill_request_to_deny.loan.cart
         if cart.status == 'outstanding':
             raise MethodNotAllowed(self.patch, detail="Please deny the entire request if you would like to deny"
