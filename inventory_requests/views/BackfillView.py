@@ -24,11 +24,9 @@ from items.logic.asset_logic import create_asset_helper
 class BackfillList(generics.ListAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = BackfillSerializer
+    queryset = Backfill.objects.exclude(status='backfill_active')
     filter_backends = (filters.DjangoFilterBackend,)
     filter_fields = ('status',)
-
-    def get_queryset(self):
-        return Backfill.objects.exclude(status='backfill_active')
 
 
 def generate_key(file):

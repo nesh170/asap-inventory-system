@@ -64,5 +64,8 @@ class Backfill(models.Model):
     file_name = models.CharField(max_length=500)
     timestamp = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        ordering = ["-timestamp"]
+
 
 
