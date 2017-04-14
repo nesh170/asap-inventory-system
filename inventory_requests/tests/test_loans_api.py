@@ -152,6 +152,7 @@ class LoansTestCases(APITestCase):
         updated_loan = Loan.objects.get(pk=loan.id)
         updated_item = Item.objects.get(pk=self.item_1.id)
         self.assertEqual(updated_item.quantity, self.item_1.quantity + loan.quantity)
+        self.assertIsNotNone(updated_loan.returned_timestamp)
         self.assertTrue(updated_loan.returned_timestamp > updated_loan.loaned_timestamp)
         self.assertEqual(updated_loan.returned_quantity, updated_loan.quantity)
         cart.delete()

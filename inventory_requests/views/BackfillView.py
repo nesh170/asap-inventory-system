@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed, ParseError
+from rest_framework.exceptions import MethodNotAllowed, ParseError, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
 from datetime import datetime
@@ -7,20 +7,27 @@ from django.conf import settings
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.models import Loan, Backfill, Disbursement
-from inventory_requests.serializers.BackfillSerializer import BackfillSerializer, CreateBackfillSerializer
+from inventory_requests.serializers.BackfillSerializer import BackfillSerializer, CreateBackfillSerializer, \
+    UpdateBackfillSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters
 import boto3
+from django.db.models import Q
+
+from inventory_transaction_logger.action_enum import ActionEnum
+from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.logic.asset_logic import create_asset_helper
 
 
 class BackfillList(generics.ListAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = BackfillSerializer
-    queryset = Backfill.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filter_fields = ('status',)
+
+    def get_queryset(self):
+        return Backfill.objects.exclude(status='backfill_active')
 
 
 def generate_key(file):
@@ -35,12 +42,19 @@ def upload_file(file, filename):
     s3.Bucket('backfillfiles').upload_file(filename, key)
     return 'https://s3.amazonaws.com/backfillfiles/{key}'.format(key=key)
 
+#creates a backfill with status 'backfill_active' when a PDF is uploaded on the cart page. However, when they request
+#backfill for a loan that has been fulfilled, it creates a backfill with status 'backfill_request' directly since there
+#is no need for an active state
+#TODO I'm not sure if this is the desired behavior, it depends on how the UI wants to do it
+
 
 class CreateBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
         receipt = request.FILES['receipt_pdf'] if 'receipt_pdf' in request.FILES else None
+        if receipt is None:
+            raise MethodNotAllowed(method=self.post, detail="Please upload a PDF to make the backfill request")
         filename = 'receipt.pdf'
         with open(filename, 'wb+') as temp_file:
             for chunk in receipt.chunks():
@@ -49,20 +63,101 @@ class CreateBackfillRequest(APIView):
         serializer = CreateBackfillSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         associated_loan = get_or_not_found(Loan, pk=serializer.validated_data.get('loan_id'))
+        associated_cart = associated_loan.cart
+        #to catch an error when they try creating another backfill request for a loan they already created a backfill
+        #for on the cart page
+        if associated_loan.backfill_loan.filter(status='backfill_active').exists() and associated_cart.status == 'active':
+            raise MethodNotAllowed(method=self.post, detail="Cannot create a backfill request when the current "
+                                                            "one hasn't been requested already")
         backfill_request_quantity = serializer.validated_data.get('quantity')
         cart_status = associated_loan.cart.status
-        #can request backfill if cart is active, outstanding, fulfilled, or approved
-        if cart_status == 'denied' or cart_status == 'cancelled':
-            detail_str = "Cannot create backfill request for the current cart because it is {cart_status}".format
+        if cart_status not in ('active', 'fulfilled'):
+            detail_str = "Cannot create backfill request for the current loan because the corresponding request is" \
+                         " {cart_status}".format
             raise MethodNotAllowed(self.post, detail=detail_str(cart_status=cart_status))
         if backfill_request_quantity > associated_loan.quantity:
             raise MethodNotAllowed(method=self.post,
                                    detail="Cannot backfill a quantity greater than the current amount for loan")
         if cart_status == 'fulfilled' and associated_loan.returned_timestamp is not None:
             raise MethodNotAllowed(self.post, "Cannot request backfill because the loan has been fully returned")
-        backfill_obj = Backfill.objects.create(loan=associated_loan, status='backfill_request',
-                                quantity=backfill_request_quantity, timestamp=datetime.now(), pdf_url=file_url)
+        file_name = "{name}".format
+        backfill_obj = Backfill.objects.create(loan=associated_loan,
+                                quantity=backfill_request_quantity, timestamp=datetime.now(), pdf_url=file_url,
+                                               file_name=file_name(name=receipt))
+        #for fulfilled cart, want to set it to backfill_request state directly
+        if associated_cart.status == 'fulfilled':
+            backfill_obj.status = 'backfill_request'
+            backfill_obj.save()
+        comment_str = "Backfill for quantity {quantity} was created for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_quantity, item_name=associated_loan.item.name,
+                              status=cart_status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_CREATED,
+                          items_affected=[associated_loan.item], comment=comment, carts_affected=[associated_loan.cart])
         return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
+
+
+class DeleteBackfillRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk, format=None):
+        backfill_to_delete = get_or_not_found(Backfill, pk=pk)
+        if backfill_to_delete.status != 'backfill_active':
+            raise MethodNotAllowed(method=self.delete, detail="Cannot delete a backfill request that is not part of "
+                                                              "an active cart")
+        backfill_to_delete.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UpdateBackfillRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        serializer = UpdateBackfillSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        backfill_to_update = get_or_not_found(Backfill, pk=serializer.validated_data.get('backfill_id'))
+        associated_loan = backfill_to_update.loan
+        associated_cart = associated_loan.cart
+        if backfill_to_update.status != 'backfill_active':
+            raise MethodNotAllowed(self.post, detail="Cannot update a backfill request that is not part of an active"
+                                                      " cart")
+        requested_quantity = serializer.validated_data.get('quantity')
+        if requested_quantity is not None:
+            if requested_quantity > backfill_to_update.loan.quantity:
+                raise MethodNotAllowed(self.post, detail="Cannot backfill a quantity greater than the current amount"
+                                                      " for loan")
+            backfill_to_update.quantity = requested_quantity
+            backfill_to_update.save()
+        receipt = request.FILES['receipt_pdf'] if 'receipt_pdf' in request.FILES else None
+        if receipt is not None:
+            filename = 'receipt.pdf'
+            with open(filename, 'wb+') as temp_file:
+                for chunk in receipt.chunks():
+                    temp_file.write(chunk)
+            file_url = upload_file(receipt, filename)
+            backfill_to_update.pdf_url = file_url
+            file_name = "{name}".format
+            backfill_to_update.file_name = file_name(name=receipt)
+            backfill_to_update.save()
+        return Response(BackfillSerializer(backfill_to_update).data, status=status.HTTP_200_OK)
+
+
+class ActiveBackfillRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_backfill(self, loan_pk):
+        try:
+            loan = Loan.objects.get(pk=loan_pk)
+            if loan.cart.status != 'active':
+                raise MethodNotAllowed(method=self.get, detail="Cart must be active in order to find a backfill "
+                                                               "request that is active")
+            return loan.backfill_loan.filter(status='backfill_active').first()
+        except Loan.DoesNotExist:
+            raise NotFound(detail="Loan not found in database")
+
+    def get(self, request, pk, format=None):
+        active_backfill = self.get_backfill(pk)
+        return Response(BackfillSerializer(active_backfill).data, status=status.HTTP_200_OK)
 
 
 class ApproveBackfillRequest(APIView):
@@ -71,8 +166,8 @@ class ApproveBackfillRequest(APIView):
     def patch(self, request, pk, format=None):
         backfill_request_to_approve = get_or_not_found(Backfill, pk=pk)
         if backfill_request_to_approve.status != 'backfill_request':
-            raise MethodNotAllowed(self.patch, detail="Cannot approve backfill because it is not an "
-                                                      "outstanding backfill request")
+            raise MethodNotAllowed(self.patch, detail="Cannot approve backfill because it is not in the backfill request "
+                                                      "state")
         cart = backfill_request_to_approve.loan.cart
         #to prevent them from calling this api for a request that is outstanding
         if cart.status == 'outstanding':
@@ -93,6 +188,14 @@ class ApproveBackfillRequest(APIView):
         backfill_request_to_approve.status = 'backfill_transit'
         backfill_request_to_approve.timestamp = datetime.now()
         backfill_request_to_approve.save()
+        comment_str = "Backfill for quantity {quantity} was approved for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_approve.quantity,
+                              item_name=backfill_request_to_approve.loan.item.name, status=cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_APPROVED,
+                          affected_user=backfill_request_to_approve.loan.cart.owner,
+                          items_affected=[backfill_request_to_approve.loan.item], comment=comment,
+                          carts_affected=[backfill_request_to_approve.loan.cart])
         return Response(BackfillSerializer(backfill_request_to_approve).data, status=status.HTTP_200_OK)
 
 
@@ -102,8 +205,8 @@ class DenyBackfillRequest(APIView):
     def patch(self, request, pk, format=None):
         backfill_request_to_deny = get_or_not_found(Backfill, pk=pk)
         if backfill_request_to_deny.status != 'backfill_request':
-            raise MethodNotAllowed(self.patch, detail="Cannot deny backfill because it is not an "
-                                                      "outstanding backfill request")
+            raise MethodNotAllowed(self.patch, detail="Cannot deny backfill because it is not in the backfill request "
+                                                      "state")
         cart = backfill_request_to_deny.loan.cart
         if cart.status == 'outstanding':
             raise MethodNotAllowed(self.patch, detail="Please deny the entire request if you would like to deny"
@@ -111,10 +214,18 @@ class DenyBackfillRequest(APIView):
         backfill_request_to_deny.status='backfill_denied'
         backfill_request_to_deny.timestamp = datetime.now()
         backfill_request_to_deny.save()
+        comment_str = "Backfill for quantity {quantity} was denied for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_deny.quantity,
+                              item_name=backfill_request_to_deny.loan.item.name, status=cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_DENIED,
+                          affected_user=backfill_request_to_deny.loan.cart.owner,
+                          items_affected=[backfill_request_to_deny.loan.item], comment=comment,
+                          carts_affected=[backfill_request_to_deny.loan.cart])
         return Response(BackfillSerializer(backfill_request_to_deny).data, status=status.HTTP_200_OK)
 
 
-class FailBackfill(APIView):
+class FailBackfillRequest(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, pk, format=None):
@@ -125,6 +236,15 @@ class FailBackfill(APIView):
         backfill_request_to_fail.status = 'backfill_failed'
         backfill_request_to_fail.timestamp = datetime.now()
         backfill_request_to_fail.save()
+        comment_str = "Backfill for quantity {quantity} was marked failed for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_fail.quantity,
+                              item_name=backfill_request_to_fail.loan.item.name,
+                              status=backfill_request_to_fail.loan.cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_FAILED,
+                          affected_user=backfill_request_to_fail.loan.cart.owner,
+                          items_affected=[backfill_request_to_fail.loan.item], comment=comment,
+                          carts_affected=[backfill_request_to_fail.loan.cart])
         return Response(BackfillSerializer(backfill_request_to_fail).data, status=status.HTTP_200_OK)
 
 
@@ -153,7 +273,7 @@ def add_asset_to_disbursement(disbursement, assets):
 # reduce quantity that is loaned out - convert to disbursement, add to available quantity
 
 
-class SatisfyBackfill(APIView):
+class SatisfyBackfillRequest(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, pk, format=None):
@@ -188,4 +308,11 @@ class SatisfyBackfill(APIView):
         associated_item.save()
         if associated_item.is_asset:
             [create_asset_helper(item=associated_item) for x in range(backfill_request_to_satisfy.quantity)]
+        comment_str = "Backfill for quantity {quantity} was marked satisfied for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_satisfy.quantity, item_name=associated_loan.item.name,
+                              status=associated_cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_SATISFIED,
+                          affected_user=associated_cart.owner,
+                          items_affected=[associated_item], comment=comment, carts_affected=[associated_cart])
         return Response(BackfillSerializer(backfill_request_to_satisfy).data, status=status.HTTP_200_OK)

@@ -38,8 +38,8 @@ class ApproveRequestCart(APIView):
             serializer = ApproveDenySerializer(request_cart_to_approve, data=request.data)
             if serializer.is_valid():
                 modify_request_cart_logic.precheck_asset_item(request_cart_to_approve)
-                modify_request_cart_logic.approve_deny_backfills_in_cart(request_cart_to_approve, 'backfill_transit')
                 modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve)
+                modify_request_cart_logic.approve_deny_cancel_backfills_in_cart(request_cart_to_approve, 'backfill_transit')
                 serializer.save(staff=request.user, staff_timestamp=datetime.now())
                 comment = "Request Approved: {item_count} items"\
                     .format(item_count=serializer.instance.cart_disbursements.count())
@@ -69,6 +69,7 @@ class CancelRequestCart(generics.UpdateAPIView):
     def perform_update(self, serializer):
         request_cart = self.get_object()
         if modify_request_cart_logic.can_modify_cart_status(request_cart):
+            modify_request_cart_logic.approve_deny_cancel_backfills_in_cart(request_cart, 'backfill_cancelled')
             if serializer.validated_data.get('comment') is not None:
                 comment_str = "{old_reason} cancellation reason is : {new_reason}"\
                     .format(old_reason=request_cart.reason, new_reason=serializer.validated_data.get('comment'))
@@ -102,7 +103,7 @@ class DenyRequestCart(generics.UpdateAPIView):
     def perform_update(self, serializer):
         request_cart = self.get_object()
         if modify_request_cart_logic.can_modify_cart_status(request_cart):
-            modify_request_cart_logic.approve_deny_backfills_in_cart(request_cart, 'backfill_denied')
+            modify_request_cart_logic.approve_deny_cancel_backfills_in_cart(request_cart, 'backfill_denied')
             comment = "Request Denied: {item_count} items"\
                 .format(item_count=serializer.instance.cart_disbursements.count())
             LoggerUtility.log(initiating_user=self.request.user, nature_enum=ActionEnum.REQUEST_DENIED,

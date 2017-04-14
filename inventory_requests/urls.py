@@ -9,7 +9,8 @@ from inventory_requests.views.CreateDeleteModifyDisbursement import CreateDisbur
 from inventory_requests.views.ModifyRequestCart import ApproveRequestCart, DenyRequestCart, CancelRequestCart, \
     FulfillRequestCart, DispenseRequestCart, ModifyQuantityRequested, ConvertRequestType
 from inventory_requests.views.BackfillView import CreateBackfillRequest, BackfillList, ApproveBackfillRequest, \
-    DenyBackfillRequest, SatisfyBackfill, FailBackfill
+    DenyBackfillRequest, SatisfyBackfillRequest, FailBackfillRequest, ActiveBackfillRequest, DeleteBackfillRequest, \
+    UpdateBackfillRequest
 
 urlpatterns = [
     url(r'^$', RequestCartList.as_view(), name='request-cart-list'),
@@ -35,7 +36,10 @@ urlpatterns = [
     url(r'^backfill/create/$', CreateBackfillRequest.as_view(), name='create-backfill-request'),
     url(r'^backfill/approve/(?P<pk>[0-9]+)/$', ApproveBackfillRequest.as_view(), name='approve-backfill-request'),
     url(r'^backfill/deny/(?P<pk>[0-9]+)/$', DenyBackfillRequest.as_view(), name='deny-backfill-request'),
-    url(r'^backfill/satisfy/(?P<pk>[0-9]+)/$', SatisfyBackfill.as_view(), name='satisfy-backfill-request'),
-    url(r'^backfill/fail/(?P<pk>[0-9]+)/$', FailBackfill.as_view(), name='fail-backfill-request'),
+    url(r'^backfill/satisfy/(?P<pk>[0-9]+)/$', SatisfyBackfillRequest.as_view(), name='satisfy-backfill-request'),
+    url(r'^backfill/fail/(?P<pk>[0-9]+)/$', FailBackfillRequest.as_view(), name='fail-backfill-request'),
+    url(r'^backfill/active/(?P<pk>[0-9]+)/$', ActiveBackfillRequest.as_view(), name='active-backfill-request'),
+    url(r'^backfill/delete/(?P<pk>[0-9]+)/$', DeleteBackfillRequest.as_view(), name='delete-backfill-request'),
+    url(r'^backfill/update/$', UpdateBackfillRequest.as_view(), name='update-backfill-request'),
     url(r'^instantRequest/$', InstantRequest.as_view(), name='instant-request')
 ]

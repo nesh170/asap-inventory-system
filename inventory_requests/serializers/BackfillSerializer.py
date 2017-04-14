@@ -6,7 +6,12 @@ from inventory_requests.models import Backfill
 class BackfillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Backfill
-        fields = ('id', 'loan_id', 'status', 'quantity', 'pdf_url', 'timestamp')
+        fields = ('id', 'loan_id', 'status', 'quantity', 'pdf_url', 'file_name', 'timestamp')
+
+
+class UpdateBackfillSerializer(serializers.Serializer):
+    quantity = serializers.IntegerField(min_value=1, required=False)
+    backfill_id = serializers.IntegerField(min_value=1, required=True)
 
 
 class CreateBackfillSerializer(serializers.Serializer):

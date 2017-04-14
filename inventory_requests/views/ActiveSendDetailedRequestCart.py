@@ -1,6 +1,6 @@
 from django.db.models import Q
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -44,6 +44,13 @@ class ActiveRequestCart(APIView):
 class SendCart(APIView):
     permission_classes = [IsAuthenticated]
 
+    def request_backfills(self, cart_loans):
+        for loan in cart_loans.all():
+            active_backfill = loan.backfill_loan.get(status='backfill_active')
+            active_backfill.status = 'backfill_request'
+            active_backfill.save()
+
+
     def patch(self, request, pk, format=None):
         request_cart = get_or_not_found(RequestCart, pk=pk)
         if request_cart.owner is None and request_cart.staff is not None:
@@ -52,6 +59,7 @@ class SendCart(APIView):
             raise MethodNotAllowed(detail="Cannot submit empty request cart", method=self.patch)
         if request_cart.status == "active":
             request_cart.status = "outstanding"
+            self.request_backfills(request_cart.cart_loans)
             serializer = RequestCartSerializer(request_cart, data=request.data)
             if serializer.is_valid():
                 serializer.save()
