@@ -37,10 +37,10 @@ class ApproveRequestCart(APIView):
             request_cart_to_approve.status = "approved"
             serializer = ApproveDenySerializer(request_cart_to_approve, data=request.data)
             if serializer.is_valid():
-                serializer.save(staff=request.user, staff_timestamp=datetime.now())
                 modify_request_cart_logic.precheck_asset_item(request_cart_to_approve)
-                modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve)
                 modify_request_cart_logic.approve_deny_backfills_in_cart(request_cart_to_approve, 'backfill_transit')
+                modify_request_cart_logic.subtract_item_in_cart(request_cart_to_approve)
+                serializer.save(staff=request.user, staff_timestamp=datetime.now())
                 comment = "Request Approved: {item_count} items"\
                     .format(item_count=serializer.instance.cart_disbursements.count())
                 LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.REQUEST_APPROVED,
