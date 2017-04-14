@@ -20,13 +20,6 @@ from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.logic.asset_logic import create_asset_helper
 
 
-def get_object(self, pk):
-    try:
-        return Backfill.objects.get(pk=pk)
-    except Backfill.DoesNotExist:
-        raise NotFound(detail="Backfill object to delete not found")
-
-
 class BackfillList(generics.ListAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = BackfillSerializer
@@ -34,7 +27,7 @@ class BackfillList(generics.ListAPIView):
     filter_fields = ('status',)
 
     def get_queryset(self):
-        return Backfill.objects.exclude(Q(status='backfill_active'))
+        return Backfill.objects.exclude(status='backfill_active')
 
 
 def generate_key(file):
