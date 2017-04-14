@@ -37,7 +37,7 @@ class ItemList(generics.ListCreateAPIView):
                 current_queryset = filter_item_logic.filter_tag_logic(tag_included, tag_excluded, operation)
             if threshold is not None and threshold.lower() == 'true':
                 current_queryset = current_queryset.filter(minimum_stock__gt=F('quantity'))
-            return current_queryset
+            return current_queryset.order_by('-id')
         return None
 
     def perform_create(self, serializer):
