@@ -40,6 +40,6 @@ urlpatterns = [
     url(r'^backfill/fail/(?P<pk>[0-9]+)/$', FailBackfillRequest.as_view(), name='fail-backfill-request'),
     url(r'^backfill/active/(?P<pk>[0-9]+)/$', ActiveBackfillRequest.as_view(), name='active-backfill-request'),
     url(r'^backfill/delete/(?P<pk>[0-9]+)/$', DeleteBackfillRequest.as_view(), name='delete-backfill-request'),
-    url(r'^backfill/update/(?P<pk>[0-9]+)/$', UpdateBackfillRequest.as_view(), name='update-backfill-request'),
+    url(r'^backfill/update/$', UpdateBackfillRequest.as_view(), name='update-backfill-request'),
     url(r'^instantRequest/$', InstantRequest.as_view(), name='instant-request')
 ]

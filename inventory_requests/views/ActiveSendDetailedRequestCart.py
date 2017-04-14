@@ -45,15 +45,10 @@ class SendCart(APIView):
     permission_classes = [IsAuthenticated]
 
     def request_backfills(self, cart_loans):
-        for loan in cart_loans:
+        for loan in cart_loans.all():
             active_backfill = loan.backfill_loan.get(status='backfill_active')
-            if active_backfill.exists():
-                active_backfill.status = 'backfill_request'
-                active_backfill.save()
-            else:
-                raise NotFound(detail="Active Backfill not found in database")
-
-
+            active_backfill.status = 'backfill_request'
+            active_backfill.save()
 
 
     def patch(self, request, pk, format=None):
