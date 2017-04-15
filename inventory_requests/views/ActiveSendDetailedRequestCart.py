@@ -46,9 +46,10 @@ class SendCart(APIView):
 
     def request_backfills(self, cart_loans):
         for loan in cart_loans.all():
-            active_backfill = loan.backfill_loan.get(status='backfill_active')
-            active_backfill.status = 'backfill_request'
-            active_backfill.save()
+            if loan.backfill_loan.filter(status='backfill_active').exists():
+                active_backfill = loan.backfill_loan.get(status='backfill_active')
+                active_backfill.status = 'backfill_request'
+                active_backfill.save()
 
 
     def patch(self, request, pk, format=None):

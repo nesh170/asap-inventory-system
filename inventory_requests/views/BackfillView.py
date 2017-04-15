@@ -1,20 +1,21 @@
-from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed, ParseError, NotFound
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics
 from datetime import datetime
+
+import boto3
 from django.conf import settings
+from rest_framework import filters
+from rest_framework import generics
+from rest_framework import status
+from rest_framework.exceptions import MethodNotAllowed, ParseError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_email_support.utility.email_utility import EmailUtility
 from inventory_requests.models import Loan, Backfill, Disbursement
 from inventory_requests.serializers.BackfillSerializer import BackfillSerializer, CreateBackfillSerializer, \
     UpdateBackfillSerializer
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import filters
-import boto3
-from django.db.models import Q
-
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.logic.asset_logic import create_asset_helper
@@ -23,11 +24,9 @@ from items.logic.asset_logic import create_asset_helper
 class BackfillList(generics.ListAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = BackfillSerializer
+    queryset = Backfill.objects.exclude(status='backfill_active')
     filter_backends = (filters.DjangoFilterBackend,)
     filter_fields = ('status',)
-
-    def get_queryset(self):
-        return Backfill.objects.exclude(status='backfill_active')
 
 
 def generate_key(file):
@@ -88,12 +87,17 @@ class CreateBackfillRequest(APIView):
         if associated_cart.status == 'fulfilled':
             backfill_obj.status = 'backfill_request'
             backfill_obj.save()
-        comment_str = "Backfill for quantity {quantity} was created for loaned {item_name}, " \
+            comment_str = "Backfill for quantity {quantity} was created for loaned {item_name}, " \
                       "which is part of request with status {status}".format
-        comment = comment_str(quantity=backfill_request_quantity, item_name=associated_loan.item.name,
+            comment = comment_str(quantity=backfill_request_quantity, item_name=associated_loan.item.name,
                               status=cart_status)
-        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_CREATED,
+            LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_CREATED,
                           items_affected=[associated_loan.item], comment=comment, carts_affected=[associated_loan.cart])
+            EmailUtility.email(recipient=associated_cart.owner.email, template='backfill_create_approve_deny',
+                           context={'name': associated_cart.owner.username,
+                                    'backfill_state': 'created',
+                                    'item_name': associated_loan.item.name, 'quantity': backfill_obj.quantity},
+                           subject="Backfill Request Created")
         return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
 
 
@@ -146,14 +150,7 @@ class ActiveBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_backfill(self, loan_pk):
-        try:
-            loan = Loan.objects.get(pk=loan_pk)
-            if loan.cart.status != 'active':
-                raise MethodNotAllowed(method=self.get, detail="Cart must be active in order to find a backfill "
-                                                               "request that is active")
-            return loan.backfill_loan.filter(status='backfill_active').first()
-        except Loan.DoesNotExist:
-            raise NotFound(detail="Loan not found in database")
+        return get_or_not_found(Backfill, loan__id=loan_pk, loan__cart__status='active', status='backfill_active')
 
     def get(self, request, pk, format=None):
         active_backfill = self.get_backfill(pk)
@@ -196,6 +193,12 @@ class ApproveBackfillRequest(APIView):
                           affected_user=backfill_request_to_approve.loan.cart.owner,
                           items_affected=[backfill_request_to_approve.loan.item], comment=comment,
                           carts_affected=[backfill_request_to_approve.loan.cart])
+        EmailUtility.email(recipient=cart.owner.email, template='backfill_create_approve_deny',
+                           context={'name': cart.owner.username,
+                                    'backfill_state': 'approved',
+                                    'item_name': backfill_request_to_approve.loan.item.name,
+                                    'quantity': backfill_request_to_approve.quantity},
+                           subject="Backfill Request Approved")
         return Response(BackfillSerializer(backfill_request_to_approve).data, status=status.HTTP_200_OK)
 
 
@@ -222,6 +225,12 @@ class DenyBackfillRequest(APIView):
                           affected_user=backfill_request_to_deny.loan.cart.owner,
                           items_affected=[backfill_request_to_deny.loan.item], comment=comment,
                           carts_affected=[backfill_request_to_deny.loan.cart])
+        EmailUtility.email(recipient=cart.owner.email, template='backfill_create_approve_deny',
+                           context={'name': cart.owner.username,
+                                    'backfill_state': 'denied',
+                                    'item_name': backfill_request_to_deny.loan.item.name,
+                                    'quantity': backfill_request_to_deny.quantity},
+                           subject="Backfill Request Denied")
         return Response(BackfillSerializer(backfill_request_to_deny).data, status=status.HTTP_200_OK)
 
 
@@ -233,6 +242,7 @@ class FailBackfillRequest(APIView):
         if backfill_request_to_fail.status != 'backfill_transit':
             raise MethodNotAllowed(self.patch, detail="Cannot mark a backfill as failed if it hasn't been approved "
                                                       "first and is not in transit")
+        associated_cart = backfill_request_to_fail.loan.cart
         backfill_request_to_fail.status = 'backfill_failed'
         backfill_request_to_fail.timestamp = datetime.now()
         backfill_request_to_fail.save()
@@ -245,6 +255,12 @@ class FailBackfillRequest(APIView):
                           affected_user=backfill_request_to_fail.loan.cart.owner,
                           items_affected=[backfill_request_to_fail.loan.item], comment=comment,
                           carts_affected=[backfill_request_to_fail.loan.cart])
+        EmailUtility.email(recipient=associated_cart.owner.email, template='backfill_satisfy_fail',
+                           context={'name': associated_cart.owner.username,
+                                    'backfill_state': 'failed',
+                                    'item_name': backfill_request_to_fail.loan.item.name,
+                                    'quantity': backfill_request_to_fail.quantity},
+                           subject="Failed Backfill Request")
         return Response(BackfillSerializer(backfill_request_to_fail).data, status=status.HTTP_200_OK)
 
 
@@ -315,4 +331,10 @@ class SatisfyBackfillRequest(APIView):
         LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_SATISFIED,
                           affected_user=associated_cart.owner,
                           items_affected=[associated_item], comment=comment, carts_affected=[associated_cart])
+        EmailUtility.email(recipient=associated_cart.owner.email, template='backfill_satisfy_fail',
+                           context={'name': associated_cart.owner.username,
+                                    'backfill_state': 'satisfied',
+                                    'item_name': associated_item.name,
+                                    'quantity': backfill_request_to_satisfy.quantity},
+                           subject="Satisfied Backfill Request")
         return Response(BackfillSerializer(backfill_request_to_satisfy).data, status=status.HTTP_200_OK)
