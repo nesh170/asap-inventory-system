@@ -2,11 +2,10 @@ from datetime import datetime
 
 import boto3
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed, ParseError, NotFound
+from rest_framework.exceptions import MethodNotAllowed, ParseError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView

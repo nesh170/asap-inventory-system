@@ -65,7 +65,7 @@ class InventoryUser(generics.RetrieveUpdateDestroyAPIView):
 
 class InventoryCurrentUser(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.all()
+    queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
 
     def get(self, request, *args, **kwargs):
@@ -75,7 +75,7 @@ class InventoryCurrentUser(generics.RetrieveAPIView):
 
 class LargeUserList(generics.ListAPIView):
     permission_classes = [IsStaffUser]
-    queryset = User.objects.all().values('id', 'username').distinct()
+    queryset = User.objects.filter(is_active=True).values('id', 'username').distinct()
     serializer_class = LargeUserSerializer
     pagination_class = LargeResultsSetPagination
     filter_backends = (filters.SearchFilter,)
