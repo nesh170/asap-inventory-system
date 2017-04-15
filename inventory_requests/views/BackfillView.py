@@ -2,6 +2,7 @@ from datetime import datetime
 
 import boto3
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
@@ -150,14 +151,7 @@ class ActiveBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_backfill(self, loan_pk):
-        try:
-            loan = Loan.objects.get(pk=loan_pk)
-            if loan.cart.status != 'active':
-                raise MethodNotAllowed(method=self.get, detail="Cart must be active in order to find a backfill "
-                                                               "request that is active")
-            return loan.backfill_loan.filter(status='backfill_active').first()
-        except Loan.DoesNotExist:
-            raise NotFound(detail="Loan not found in database")
+        return get_or_not_found(Backfill, loan__id=loan_pk, loan__cart__status='active', status='backfill_active')
 
     def get(self, request, pk, format=None):
         active_backfill = self.get_backfill(pk)
