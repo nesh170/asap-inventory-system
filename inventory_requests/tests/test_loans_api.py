@@ -310,9 +310,9 @@ class CartAssetAPI(APITestCase):
         data = {'owner_id': self.basic_user.id, 'staff_comment': 'lit'}
         self.client.force_authenticate(user=self.admin, token=self.tok)
         response = self.client.patch(path=url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail']
-                         , "Asset not found")
+                         , "Quantity does not match")
         item.delete()
         request_cart.delete()
 

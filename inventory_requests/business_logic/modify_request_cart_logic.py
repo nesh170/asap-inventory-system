@@ -1,7 +1,7 @@
 from datetime import datetime
 from functools import reduce
 
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, MethodNotAllowed
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_requests.models import RequestCart, Loan
@@ -102,11 +102,31 @@ def delete_or_update_request_logic(delete_request_type, old_type, request_type, 
         request_type.save()
 
 
+def raise_error_if_bad_quantity_loan(loan):
+    for asset in loan.assets.all():
+        if asset.item != loan.item:
+            raise MethodNotAllowed(detail='This asset {item} does not match loan item {loan_item}'
+                                   .format(item=asset.item.name, loan_item=loan.item),
+                                   method=raise_error_if_bad_quantity_loan)
+    if loan.quantity != Asset.objects.filter(loan=loan).count():
+        raise MethodNotAllowed(detail='Quantity does not match', method=raise_error_if_bad_quantity_loan)
+
+
+def raise_error_if_bad_quantity_disbursement(disbursement):
+    for asset in disbursement.assets.all():
+        if asset.item != disbursement.item:
+            raise MethodNotAllowed(detail='This asset {item} does not match loan item {loan_item}'
+                                   .format(item=asset.item.name, loan_item=disbursement.item),
+                                   method=raise_error_if_bad_quantity_disbursement)
+    if disbursement.quantity != Asset.objects.filter(disbursment=disbursement).count():
+        raise MethodNotAllowed(detail='Quantity does not match', method=raise_error_if_bad_quantity_loan)
+
+
 def precheck_asset_item(request_cart):
     asset_loans = request_cart.cart_loans.filter(item__is_asset=True)
     asset_disbursement = request_cart.cart_disbursements.filter(item__is_asset=True)
-    [get_or_not_found(Asset, loan=loan, item=loan.item) for loan in asset_loans]
-    [get_or_not_found(Asset, disbursement=disbursement, item=disbursement.item) for disbursement in asset_disbursement]
+    [raise_error_if_bad_quantity_loan(loan) for loan in asset_loans]
+    [raise_error_if_bad_quantity_disbursement(disbursement) for disbursement in asset_disbursement]
 
 
 def update_asset_request_type(asset, new_request):
