@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import reduce
 
 from rest_framework.exceptions import ParseError
 
@@ -69,6 +70,12 @@ def can_convert_request_type(cart, is_staff, request_type):
                                                   and request_type == 'loan')))
 
 
+def get_backfill_quantity(backfill_loan):
+    if backfill_loan.filter(status='backfill_request').exists():
+        return reduce((lambda x, y: x.quantity + y.quantity), backfill_loan.filter(status='backfill_request')[::1])
+    return 0
+
+
 def validate_quantity(request, quantity, request_type):
     max_quantity = request.quantity - request.returned_quantity if request_type == 'loan' else request.quantity
     if quantity is None:
@@ -76,6 +83,9 @@ def validate_quantity(request, quantity, request_type):
     if quantity > max_quantity:
         raise ParseError(detail="Quantity requested, {quantity} does not validate with maximum quantity, {max_quantity}"
                          .format(quantity=quantity, max_quantity=max_quantity))
+    if request_type == 'loan' and get_backfill_quantity(request.backfill_loan) > (request.quantity - quantity):
+        raise ParseError(detail="Cannot backfill a quantity greater than the current amount for loan")
+
     return quantity, quantity == max_quantity
 
 
