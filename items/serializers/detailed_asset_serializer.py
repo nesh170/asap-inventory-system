@@ -57,7 +57,8 @@ class DetailedAssetSerializer(serializers.ModelSerializer):
                 instance.loan = loan
                 if loan.item.id != instance.item.id:
                     raise MethodNotAllowed(method=self.update, detail='Asset item need to match loan item')
-                if Asset.objects.filter(loan=loan).count() >= loan.quantity:  # >= because this instance not included
+                if Asset.objects.filter(loan=loan, item=loan.item).count() >= loan.quantity:
+                    # >= because this instance not included
                     raise MethodNotAllowed(method=self.update,
                                            detail="{asset_tag} are already associated with loan"
                                            .format(asset_tag=str(
@@ -68,7 +69,8 @@ class DetailedAssetSerializer(serializers.ModelSerializer):
                 instance.disbursement = disbursement
                 if disbursement.item.id != instance.item.id:
                     raise MethodNotAllowed(method=self.update, detail='Asset item need to match disbursement item')
-                if Asset.objects.filter(disbursement=disbursement).count() >= disbursement.quantity:
+                if Asset.objects.filter(disbursement=disbursement, item=disbursement.item).count() \
+                        >= disbursement.quantity:
                     # >= because this instance not included
                     raise MethodNotAllowed(method=self.update,
                                            detail="{asset_tag} are already associated with disbursement"
