@@ -84,8 +84,10 @@ def validate_quantity(request, quantity, request_type):
         raise ParseError(detail="Quantity requested, {quantity} does not validate with maximum quantity, {max_quantity}"
                          .format(quantity=quantity, max_quantity=max_quantity))
     if request_type == 'loan' and get_backfill_quantity(request.backfill_loan) > (request.quantity - quantity):
-        raise ParseError(detail="Cannot backfill a quantity greater than the current amount for loan")
-
+        raise ParseError(detail="Cannot convert when backfill quantity {backtill_quantity} is greater than requested"
+                                " quantity, {quantity}".format(backtill_quantity=get_backfill_quantity(request
+                                                                                                       .backfill_loan),
+                                                               quantity=quantity))
     return quantity, quantity == max_quantity
 
 
