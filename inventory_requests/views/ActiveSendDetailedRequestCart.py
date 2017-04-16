@@ -1,6 +1,6 @@
 from django.db.models import Q
 from rest_framework import status
-from rest_framework.exceptions import MethodNotAllowed, NotFound
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -48,9 +48,11 @@ class SendCart(APIView):
         for loan in cart_loans.all():
             if loan.backfill_loan.filter(status='backfill_active').exists():
                 active_backfill = loan.backfill_loan.get(status='backfill_active')
+                if active_backfill.quantity > loan.quantity:
+                    raise MethodNotAllowed(method=self.patch, detail="Cannot backfill a quantity greater than the "
+                                                                     "current amount for loan")
                 active_backfill.status = 'backfill_request'
                 active_backfill.save()
-
 
     def patch(self, request, pk, format=None):
         request_cart = get_or_not_found(RequestCart, pk=pk)
