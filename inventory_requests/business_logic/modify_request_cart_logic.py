@@ -118,7 +118,7 @@ def raise_error_if_bad_quantity_disbursement(disbursement):
             raise MethodNotAllowed(detail='This asset {item} does not match disbursement item {loan_item}'
                                    .format(item=asset.item.name, loan_item=disbursement.item),
                                    method=raise_error_if_bad_quantity_disbursement)
-    if disbursement.quantity != Asset.objects.filter(disbursment=disbursement).count():
+    if disbursement.quantity != Asset.objects.filter(disbursement=disbursement).count():
         raise MethodNotAllowed(detail='Quantity does not match', method=raise_error_if_bad_quantity_loan)
 
 
