@@ -4,9 +4,14 @@ from inventory_requests.models import Backfill
 
 
 class BackfillSerializer(serializers.ModelSerializer):
+    cart_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Backfill
-        fields = ('id', 'loan_id', 'status', 'quantity', 'pdf_url', 'file_name', 'timestamp')
+        fields = ('id', 'loan_id', 'status', 'quantity', 'pdf_url', 'file_name', 'timestamp', 'cart_id')
+
+    def get_cart_id(self, obj):
+        return obj.loan.cart.id
 
 
 class UpdateBackfillSerializer(serializers.Serializer):
