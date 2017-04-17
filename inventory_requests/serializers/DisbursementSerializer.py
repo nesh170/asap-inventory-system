@@ -59,11 +59,13 @@ class LoanSerializer(serializers.ModelSerializer):
     cart_owner = serializers.SerializerMethodField()
     backfill_loan = BackfillSerializer(many=True, read_only=True)
     has_active_backfill = serializers.SerializerMethodField()
+    total_backfill_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = Loan
         fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'loaned_timestamp',
-                  'returned_timestamp', 'returned_quantity', 'backfill_loan', 'assets', 'has_active_backfill')
+                  'returned_timestamp', 'returned_quantity', 'backfill_loan', 'assets', 'has_active_backfill',
+                  'total_backfill_quantity')
         extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):
@@ -86,3 +88,10 @@ class LoanSerializer(serializers.ModelSerializer):
 
     def get_has_active_backfill(self, obj):
         return obj.backfill_loan.filter(status='backfill_active').exists()
+
+    def get_total_backfill_quantity(self, obj):
+        backfills = obj.backfill_loan.filter(status='backfill_request')
+        counter = 0
+        for backfill in backfills:
+            counter = counter + backfill.quantity
+        return counter
