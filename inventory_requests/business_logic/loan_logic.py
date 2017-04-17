@@ -21,7 +21,7 @@ def return_loan_logic(loan, quantity=None, asset=None):
         if quantity is None or (loan.returned_quantity + quantity) == max_quantity_to_return:
             # this case means return everything :/
             loan.returned_timestamp = datetime.now()
-            quantity = max_quantity_to_return # condition A
+            quantity = max_quantity_to_return  # condition A
             new_returned_quantity = quantity
         else:
             # this is for partial return
