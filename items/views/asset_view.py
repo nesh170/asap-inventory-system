@@ -18,10 +18,16 @@ class AssetList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         available = self.request.GET.get('available')
+        loan_id = self.request.GET.get('loan_available_id')
+        disbursement_id = self.request.GET.get('disbursement_available_id')
         if available:
             available_bool = available.lower() == 'true'
             filter_logic = Q(loan__isnull=True) & Q(disbursement__isnull=True) if available_bool else\
                 Q(loan__isnull=False) | Q(disbursement__isnull=False)
+            if loan_id:
+                filter_logic = filter_logic | Q(loan__id=loan_id)
+            if disbursement_id:
+                filter_logic = filter_logic | Q(disbursement__id=disbursement_id)
             return Asset.objects.filter(filter_logic)
         return Asset.objects.all()
 
