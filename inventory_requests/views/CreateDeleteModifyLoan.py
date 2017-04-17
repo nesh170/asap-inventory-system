@@ -91,11 +91,11 @@ class ReturnAssetLoan(APIView):
     permission_classes = [IsStaffUser]
 
     def patch(self, request, pk):
-        asset_tag = request.data.get('asset_tag')
-        if not asset_tag:
-            raise ParseError(detail='Must have asset_tag')
+        asset_id = request.data.get('asset_id')
+        if not asset_id:
+            raise ParseError(detail='Must have asset_id')
         loan = get_or_not_found(Loan, pk=pk)
-        asset = get_or_not_found(Asset, asset_tag=asset_tag)
+        asset = get_or_not_found(Asset, pk=asset_id)
         if not return_loan_logic(loan=loan, quantity=1, asset=asset):
             raise MethodNotAllowed(method=return_loan_logic, detail='Loan cannot be returned')
         asset.loan = None

@@ -390,7 +390,7 @@ class CartAssetAPI(APITestCase):
         self.client.force_authenticate(user=self.admin, token=self.tok)
         response = self.client.patch(path=url, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], 'Must have asset_tag')
+        self.assertEqual(json.loads(str(response.content, 'utf-8'))['detail'], 'Must have asset_id')
 
     def test_return_asset(self):
         request_cart = RequestCart.objects.create(owner=self.basic_user, status="fulfilled",
@@ -404,7 +404,7 @@ class CartAssetAPI(APITestCase):
         item = Item.objects.get(pk=item.id)
         item.quantity = item.quantity - 1
         item.save()
-        data = {'asset_tag': asset.asset_tag}
+        data = {'asset_id': asset.id}
         url = reverse('return-asset-loan-from-cart', kwargs={'pk': str(loan.id)})
         self.client.force_authenticate(user=self.admin, token=self.tok)
         response = self.client.patch(path=url, data=data)
