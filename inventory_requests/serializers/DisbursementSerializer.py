@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import MethodNotAllowed
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_requests.business_logic.modify_request_cart_logic import get_backfill_quantity
 from inventory_requests.models import Disbursement, Loan, Backfill
 from inventory_requests.models import RequestCart
 from items.models.asset_models import Asset
@@ -60,12 +61,13 @@ class LoanSerializer(serializers.ModelSerializer):
     backfill_loan = BackfillSerializer(many=True, read_only=True)
     has_active_backfill = serializers.SerializerMethodField()
     total_backfill_quantity = serializers.SerializerMethodField()
+    max_return_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = Loan
         fields = ('id', 'item_id', 'item', 'quantity', 'cart_id', 'cart_owner', 'loaned_timestamp',
                   'returned_timestamp', 'returned_quantity', 'backfill_loan', 'assets', 'has_active_backfill',
-                  'total_backfill_quantity')
+                  'total_backfill_quantity', 'max_return_quantity')
         extra_kwargs = {'quantity': {'required': True}}
 
     def create(self, validated_data):
@@ -90,8 +92,12 @@ class LoanSerializer(serializers.ModelSerializer):
         return obj.backfill_loan.filter(status='backfill_active').exists()
 
     def get_total_backfill_quantity(self, obj):
-        backfills = obj.backfill_loan.filter(status='backfill_request')
+        filter_logic = Q(status='backfill_request') | Q(status='backfill_transit')
+        backfills = obj.backfill_loan.filter(filter_logic)
         counter = 0
         for backfill in backfills:
             counter = counter + backfill.quantity
         return counter
+
+    def get_max_return_quantity(self, obj):
+        return obj.quantity - get_backfill_quantity(obj.backfill_loan, backfill_transit=True) - obj.returned_quantity
