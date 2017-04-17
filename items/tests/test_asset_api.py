@@ -228,6 +228,24 @@ class UpdateAssetAPI(APITestCase):
                                                .filter(disbursement=disbursement)
                                                .values_list('asset_tag', flat=True)[::1])))
 
+    def test_clear_asset_loan(self):
+        item = Item.objects.create(name='unique1', quantity=1, is_asset=True)
+        cart = RequestCart.objects.create(owner=self.admin, reason="test shopping cart", status="outstanding")
+        loan = cart.cart_loans.create(item=item, quantity=1)
+        asset = item.assets.first()
+        asset.loan = loan
+        asset.save()
+        data = {"current_type": "loan", "id": loan.id}
+        self.client.force_authenticate(user=self.admin, token=self.tok)
+        url = reverse(viewname='clear-asset')
+        response = self.client.post(path=url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_asset = Asset.objects.get(pk=asset.id)
+        self.assertIsNone(updated_asset.loan)
+        self.assertIsNone(updated_asset.disbursement)
+        item.delete()
+        cart.delete()
+
 
 class DeleteAssetAPI(APITestCase):
     fixtures = ['item_action.json']

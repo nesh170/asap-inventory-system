@@ -72,7 +72,10 @@ def can_convert_request_type(cart, is_staff, request_type):
 
 def get_backfill_quantity(backfill_loan):
     if backfill_loan.filter(status='backfill_request').exists():
-        return reduce((lambda x, y: x.quantity + y.quantity), backfill_loan.filter(status='backfill_request')[::1])
+        counter = 0
+        for backfill in backfill_loan.filter(status='backfill_request'):
+            counter = counter + backfill.quantity
+        return counter
     return 0
 
 
