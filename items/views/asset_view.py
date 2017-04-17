@@ -1,7 +1,11 @@
 from django.db.models import Q
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
+from rest_framework.exceptions import ParseError
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
+from inventoryProject.utility.queryset_functions import get_or_not_found
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.models.asset_models import Asset
@@ -66,8 +70,16 @@ class AssetDetail(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()
 
 
+class ClearAssetLoanDisbursement(APIView):
+    permission_classes = [IsStaffUser]
 
-
-
-
+    def post(self, request):
+        if not request.data.get('id'):
+            raise ParseError(detail='Must contain Asset ID')
+        asset = get_or_not_found(Asset, pk=request.data.get('id'))
+        asset.loan = None
+        asset.disbursement = None
+        asset.save()
+        return Response(status=status.HTTP_200_OK,
+                        data=AssetSerializer(Asset.objects.get(pk=request.data.get('id'))).data)
 

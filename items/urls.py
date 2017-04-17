@@ -3,7 +3,7 @@ from django.conf.urls import url
 from items.views.asset_csv_view import export_asset_view, export_example_asset_view, AssetCsvImport
 from items.views.asset_field_view import AssetFieldList, AssetFieldDetailed, IntAssetFieldUpdate, FloatAssetFieldUpdate, \
     ShortTextAssetFieldUpdate, LongTextAssetFieldUpdate
-from items.views.asset_view import AssetList, AssetDetail
+from items.views.asset_view import AssetList, AssetDetail, ClearAssetLoanDisbursement
 from items.views.csv_view import export_item_view, ItemCsvImport, export_example_item_view
 from items.views.field_view import FieldList, IntFieldUpdate, FloatFieldUpdate, ShortTextFieldUpdate, \
     LongTextFieldUpdate, FieldDetailed
@@ -40,4 +40,5 @@ urlpatterns = [
     url(r'^asset/csv/export$', export_asset_view, name='export-asset'),
     url(r'^asset/csv/export/example$', export_example_asset_view, name='export-example-asset-csv'),
     url(r'^asset/csv/import$', AssetCsvImport.as_view(), name='import-asset'),
+    url(r'^asset/clear$', ClearAssetLoanDisbursement.as_view(), name='clear-asset')
 ]
