@@ -217,6 +217,10 @@ class DenyBackfillRequest(APIView):
         backfill_request_to_deny.status='backfill_denied'
         backfill_request_to_deny.timestamp = datetime.now()
         backfill_request_to_deny.save()
+        associated_loan = backfill_request_to_deny.loan
+        if associated_loan.returned_timestamp:
+            associated_loan.returned_timestamp = None
+            associated_loan.save()
         comment_str = "Backfill for quantity {quantity} was denied for loaned {item_name}, " \
                       "which is part of request with status {status}".format
         comment = comment_str(quantity=backfill_request_to_deny.quantity,
@@ -246,6 +250,10 @@ class FailBackfillRequest(APIView):
         backfill_request_to_fail.status = 'backfill_failed'
         backfill_request_to_fail.timestamp = datetime.now()
         backfill_request_to_fail.save()
+        associated_loan = backfill_request_to_fail.loan
+        if associated_loan.returned_timestamp:
+            associated_loan.returned_timestamp = None
+            associated_loan.save()
         comment_str = "Backfill for quantity {quantity} was marked failed for loaned {item_name}, " \
                       "which is part of request with status {status}".format
         comment = comment_str(quantity=backfill_request_to_fail.quantity,
