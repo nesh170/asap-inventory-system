@@ -17,6 +17,12 @@ def get_values(table, is_staff, asset, serializer_constructor):
     return serializer.data
 
 
+def validate_cart_status(request_type):
+    if not request_type.cart.status == 'outstanding':
+        raise MethodNotAllowed(method=validate_cart_status, detail='Cannot change assets for '
+                                                                   'cart_status which is not outstanding')
+
+
 class DetailedAssetSerializer(serializers.ModelSerializer):
     loan = LoanSerializer(many=False, allow_null=True, required=False, read_only=True)
     disbursement = DisbursementSerializer(many=False, allow_null=True, required=False, read_only=True)
@@ -54,6 +60,7 @@ class DetailedAssetSerializer(serializers.ModelSerializer):
                 raise MethodNotAllowed(method=self.update, detail='Cannot put in both disbursement and loan')
             if loan_id:
                 loan = get_or_not_found(Loan, pk=loan_id)
+                validate_cart_status(loan)
                 instance.loan = loan
                 if loan.item.id != instance.item.id:
                     raise MethodNotAllowed(method=self.update, detail='Asset item need to match loan item')
@@ -66,6 +73,7 @@ class DetailedAssetSerializer(serializers.ModelSerializer):
                                                    .filter(loan=loan).values_list('asset_tag', flat=True)[::1])))
             if disbursement_id:
                 disbursement = get_or_not_found(Disbursement, pk=disbursement_id)
+                validate_cart_status(disbursement)
                 instance.disbursement = disbursement
                 if disbursement.item.id != instance.item.id:
                     raise MethodNotAllowed(method=self.update, detail='Asset item need to match disbursement item')

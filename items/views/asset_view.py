@@ -13,7 +13,7 @@ class AssetList(generics.ListCreateAPIView):
     permission_classes = [IsStaffUser]
     serializer_class = AssetSerializer
     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
-    filter_fields = ('item__id', )
+    filter_fields = ('item__id', 'loan__id', 'disbursement__id')
     search_fields = ('asset_tag', )
 
     def get_queryset(self):
