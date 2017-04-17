@@ -46,7 +46,7 @@ class ItemSerializer(serializers.ModelSerializer):
 class ItemQuantitySerializer(serializers.Serializer):
     item_id = serializers.IntegerField(required=True)
     quantity = serializers.IntegerField(required=True)
-    comment = serializers.CharField(required=False)
+    comment = serializers.CharField(required=False, allow_blank=True)
 
     def create(self, validated_data):
         user = self.context['request'].user
