@@ -13,7 +13,7 @@ class Asset(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.SET_NULL, related_name='assets', null=True)
     disbursement = models.ForeignKey(Disbursement, on_delete=models.SET_NULL, related_name='assets', null=True)
 
-    def is_valid(self):
+    def check_validity(self):
         return not(self.loan and self.disbursement)
 
 
