@@ -19,13 +19,13 @@ class EmailUtility:
         return subject_to_return
 
     @staticmethod
-    def email(recipient, template, context, subject=None):
+    def email(recipient, template, context, subject=None, have_bcc=True):
         subject_to_use = EmailUtility.get_subject(subject)
         context['subject'] = subject_to_use
         bcc_addresses = SubscribedManagers.objects.filter(member__email__isnull=False)\
             .values_list('member__email', flat=True)[::1]\
             if SubscribedManagers.objects.exists() else []
-        bcc_addresses = [address for address in bcc_addresses if address]
+        bcc_addresses = [address for address in bcc_addresses if address] if have_bcc else []
         if recipient:
             recipient = recipient if type(recipient) == 'list' else [recipient]
             mail.send(recipients=recipient, sender='asap.inventory.system@gmail.com',
