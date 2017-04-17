@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 
 from inventoryProject.permissions import IsStaffUser
 from inventoryProject.utility.queryset_functions import get_or_not_found
+from inventory_requests.models import Loan, Disbursement
+from inventory_requests.serializers.DisbursementSerializer import LoanSerializer, DisbursementSerializer
 from inventory_transaction_logger.action_enum import ActionEnum
 from inventory_transaction_logger.utility.logger import LoggerUtility
 from items.models.asset_models import Asset
@@ -74,12 +76,16 @@ class ClearAssetLoanDisbursement(APIView):
     permission_classes = [IsStaffUser]
 
     def post(self, request):
-        if not request.data.get('id'):
-            raise ParseError(detail='Must contain Asset ID')
-        asset = get_or_not_found(Asset, pk=request.data.get('id'))
-        asset.loan = None
-        asset.disbursement = None
-        asset.save()
-        return Response(status=status.HTTP_200_OK,
-                        data=AssetSerializer(Asset.objects.get(pk=request.data.get('id'))).data)
+        if not request.data.get('id') or not request.data.get('current_type'):
+            raise ParseError(detail='Must contain pk and current_type which is loan/disbursement')
+        request_type = get_or_not_found(Loan, pk=request.data.get('id')) \
+            if request.data.get('current_type').lower() == 'loan' \
+            else get_or_not_found(Disbursement, pk=request.data.get('id'))
+        for asset in request_type.assets.all():
+            asset.loan = None
+            asset.disbursement = None
+            asset.save()
+        serializer_type = LoanSerializer if request.data.get('current_type').lower() == 'loan'\
+            else DisbursementSerializer
+        return Response(status=status.HTTP_200_OK, data=serializer_type(request_type).data)
 
