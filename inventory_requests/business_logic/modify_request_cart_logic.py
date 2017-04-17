@@ -1,6 +1,7 @@
 from datetime import datetime
 from functools import reduce
 
+from django.db.models import Q
 from rest_framework.exceptions import ParseError, MethodNotAllowed
 
 from inventoryProject.utility.queryset_functions import get_or_not_found
@@ -70,10 +71,12 @@ def can_convert_request_type(cart, is_staff, request_type):
                                                   and request_type == 'loan')))
 
 
-def get_backfill_quantity(backfill_loan):
-    if backfill_loan.filter(status='backfill_request').exists():
+def get_backfill_quantity(backfill_loan, backfill_transit=False):
+    filter_logic = Q(status='backfill_request') | Q(status='backfill_transit') if backfill_transit \
+        else Q(status='backfill_request')
+    if backfill_loan.filter(filter_logic).exists():
         counter = 0
-        for backfill in backfill_loan.filter(status='backfill_request'):
+        for backfill in backfill_loan.filter(filter_logic):
             counter = counter + backfill.quantity
         return counter
     return 0
