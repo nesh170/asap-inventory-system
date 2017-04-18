@@ -307,9 +307,9 @@ class FailBackfillRequest(APIView):
 def validate_assets(data, backfill_request_to_satisfy, item):
     if item.is_asset:
         if data.get('asset_ids'):
-            json_asset_ids = data.get('asset_id')
+            json_asset_ids = data.get('asset_ids')
             if not isinstance(json_asset_ids, list):
-                raise ParseError(detail='Asset ids must be in list')
+                raise ParseError(detail='Asset ids must be in list, it is in {type}'.format(type=type(json_asset_ids)))
             assets = item.assets.filter(pk__in=[id.get('asset_id') for id in json_asset_ids],
                                         loan=backfill_request_to_satisfy.loan)
             if not (backfill_request_to_satisfy.quantity == assets.count()):
