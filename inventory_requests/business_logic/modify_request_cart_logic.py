@@ -89,7 +89,7 @@ def validate_quantity(request, quantity, request_type):
     if quantity > max_quantity:
         raise ParseError(detail="Quantity requested, {quantity} does not validate with maximum quantity, {max_quantity}"
                          .format(quantity=quantity, max_quantity=max_quantity))
-    if request_type == 'loan' and get_backfill_quantity(request.backfill_loan) > (request.quantity - quantity):
+    if request_type == 'loan' and get_backfill_quantity(request.backfill_loan, True) > (request.quantity - quantity):
         raise ParseError(detail="Cannot convert because swap quantity, {quantity}, is too large given the quantity for "
                                 "backfill ({backfill_quantity})"
                          .format(backfill_quantity=get_backfill_quantity(request.backfill_loan), quantity=quantity))
