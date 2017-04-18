@@ -93,13 +93,47 @@ class CreateBackfillRequest(APIView):
                               status=cart_status)
             LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_CREATED,
                           items_affected=[associated_loan.item], comment=comment, carts_affected=[associated_loan.cart])
-            EmailUtility.email(recipient=associated_cart.owner.email, template='backfill_create_approve_deny',
+            EmailUtility.email(recipient=associated_cart.owner.email, template='backfill_create_approve_deny_cancel',
                            context={'name': associated_cart.owner.username,
                                     'backfill_state': 'created',
                                     'item_name': associated_loan.item.name, 'quantity': backfill_obj.quantity},
                            subject="Backfill Request Created")
         return Response(BackfillSerializer(backfill_obj).data, status=status.HTTP_200_OK)
 
+
+class CancelBackfillRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk, format=None):
+        backfill_request_to_cancel = get_or_not_found(Backfill, pk=pk)
+        if backfill_request_to_cancel.status != 'backfill_request':
+            raise MethodNotAllowed(self.patch, detail="Cannot cancel backfill because it is not in the backfill "
+                                                      "request state")
+        cart = backfill_request_to_cancel.loan.cart
+        #to prevent them from calling this api for a request that is outstanding
+        if cart.status == 'outstanding':
+            raise MethodNotAllowed(self.patch, detail="Please cancel the entire request if you would like to cancel"
+                                                      " this backfill request")
+        backfill_request_to_cancel.status = 'backfill_cancelled'
+        backfill_request_to_cancel.timestamp = datetime.now()
+        backfill_request_to_cancel.save()
+        comment_str = "Backfill for quantity {quantity} was cancelled for loaned {item_name}, " \
+                      "which is part of request with status {status}".format
+        comment = comment_str(quantity=backfill_request_to_cancel.quantity,
+                              item_name=backfill_request_to_cancel.loan.item.name, status=cart.status)
+        LoggerUtility.log(initiating_user=request.user, nature_enum=ActionEnum.BACKFILL_CANCELLED,
+                          affected_user=backfill_request_to_cancel.loan.cart.owner,
+                          items_affected=[backfill_request_to_cancel.loan.item], comment=comment,
+                          carts_affected=[backfill_request_to_cancel.loan.cart])
+        EmailUtility.email(recipient=cart.owner.email, template='backfill_create_approve_deny_cancel',
+                           context={'name': cart.owner.username,
+                                    'backfill_state': 'cancelled',
+                                    'item_name': backfill_request_to_cancel.loan.item.name,
+                                    'quantity': backfill_request_to_cancel.quantity},
+                           subject="Backfill Request Cancelled")
+
+
+        return Response(BackfillSerializer(backfill_request_to_cancel).data, status=status.HTTP_200_OK)
 
 class DeleteBackfillRequest(APIView):
     permission_classes = [IsAuthenticated]
@@ -120,8 +154,6 @@ class UpdateBackfillRequest(APIView):
         serializer = UpdateBackfillSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         backfill_to_update = get_or_not_found(Backfill, pk=serializer.validated_data.get('backfill_id'))
-        associated_loan = backfill_to_update.loan
-        associated_cart = associated_loan.cart
         if backfill_to_update.status != 'backfill_active':
             raise MethodNotAllowed(self.post, detail="Cannot update a backfill request that is not part of an active"
                                                       " cart")
@@ -193,7 +225,7 @@ class ApproveBackfillRequest(APIView):
                           affected_user=backfill_request_to_approve.loan.cart.owner,
                           items_affected=[backfill_request_to_approve.loan.item], comment=comment,
                           carts_affected=[backfill_request_to_approve.loan.cart])
-        EmailUtility.email(recipient=cart.owner.email, template='backfill_create_approve_deny',
+        EmailUtility.email(recipient=cart.owner.email, template='backfill_create_approve_deny_cancel',
                            context={'name': cart.owner.username,
                                     'backfill_state': 'approved',
                                     'item_name': backfill_request_to_approve.loan.item.name,
@@ -229,7 +261,7 @@ class DenyBackfillRequest(APIView):
                           affected_user=backfill_request_to_deny.loan.cart.owner,
                           items_affected=[backfill_request_to_deny.loan.item], comment=comment,
                           carts_affected=[backfill_request_to_deny.loan.cart])
-        EmailUtility.email(recipient=cart.owner.email, template='backfill_create_approve_deny',
+        EmailUtility.email(recipient=cart.owner.email, template='backfill_create_approve_deny_cancel',
                            context={'name': cart.owner.username,
                                     'backfill_state': 'denied',
                                     'item_name': backfill_request_to_deny.loan.item.name,

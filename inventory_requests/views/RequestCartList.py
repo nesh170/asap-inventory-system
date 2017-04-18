@@ -11,7 +11,8 @@ class RequestCartList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = RequestCartSerializer
     filter_backends = (filters.SearchFilter, filters.DjangoFilterBackend)
-    filter_fields = ('status', 'cart_disbursements__item__name', 'cart_loans__item__name')
+    filter_fields = ('status', 'cart_disbursements__item__name', 'cart_loans__item__name',
+                     'cart_loans__backfill_loan__status')
     search_fields = ('owner__username', 'reason', 'cart_disbursements__item__name', 'cart_loans__item__name')
 
     def get_queryset(self):

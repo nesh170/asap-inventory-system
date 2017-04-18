@@ -10,7 +10,7 @@ from inventory_requests.views.ModifyRequestCart import ApproveRequestCart, DenyR
     FulfillRequestCart, DispenseRequestCart, ModifyQuantityRequested, ConvertRequestType
 from inventory_requests.views.BackfillView import CreateBackfillRequest, BackfillList, ApproveBackfillRequest, \
     DenyBackfillRequest, SatisfyBackfillRequest, FailBackfillRequest, ActiveBackfillRequest, DeleteBackfillRequest, \
-    UpdateBackfillRequest
+    UpdateBackfillRequest, CancelBackfillRequest
 
 urlpatterns = [
     url(r'^$', RequestCartList.as_view(), name='request-cart-list'),
@@ -41,5 +41,6 @@ urlpatterns = [
     url(r'^backfill/active/(?P<pk>[0-9]+)/$', ActiveBackfillRequest.as_view(), name='active-backfill-request'),
     url(r'^backfill/delete/(?P<pk>[0-9]+)/$', DeleteBackfillRequest.as_view(), name='delete-backfill-request'),
     url(r'^backfill/update/$', UpdateBackfillRequest.as_view(), name='update-backfill-request'),
+    url(r'^backfill/cancel/(?P<pk>[0-9]+)/$', CancelBackfillRequest.as_view(), name='cancel-backfill-request'),
     url(r'^instantRequest/$', InstantRequest.as_view(), name='instant-request')
 ]

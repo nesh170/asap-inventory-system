@@ -19,6 +19,7 @@ class BackfillSerializer(serializers.ModelSerializer):
     def get_cart_owner(self, obj):
         return obj.loan.cart.owner.username
 
+
     def get_is_asset(self, obj):
         return obj.loan.item.is_asset
 

@@ -20,4 +20,5 @@
   {"model": "inventory_transaction_logger.action", "pk": 19, "fields": {"color": "#31343E", "tag": "BACKFILL APPROVED"}},
   {"model": "inventory_transaction_logger.action", "pk": 20, "fields": {"color": "#E4B6F7", "tag": "BACKFILL DENIED"}},
   {"model": "inventory_transaction_logger.action", "pk": 21, "fields": {"color": "#A7FF8B", "tag": "BACKFILL FAILED"}},
-  {"model": "inventory_transaction_logger.action", "pk": 22, "fields": {"color": "#941021", "tag": "BACKFILL SATISFIED"}}]
+  {"model": "inventory_transaction_logger.action", "pk": 22, "fields": {"color": "#941021", "tag": "BACKFILL SATISFIED"}},
+  {"model": "inventory_transaction_logger.action", "pk": 23, "fields": {"color": "#8254A1", "tag": "BACKFILL CANCELLED"}}]
