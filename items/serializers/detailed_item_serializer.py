@@ -5,10 +5,8 @@ from rest_framework.exceptions import MethodNotAllowed
 from inventory_requests.models import Disbursement, Loan, Backfill
 from inventory_requests.serializers.BackfillSerializer import BackfillSerializer
 from inventory_requests.serializers.DisbursementSerializer import DisbursementSerializer, LoanSerializer
-from items.models.asset_models import Asset
-from items.models.item_models import Item
 from items.models.custom_field_models import IntField, FloatField, ShortTextField, LongTextField
-from items.serializers.asset_serializer import AssetSerializer
+from items.models.item_models import Item
 from items.serializers.field_serializer import IntFieldSerializer, FloatFieldSerializer, ShortTextFieldSerializer, \
     LongTextFieldSerializer
 from items.serializers.tag_serializer import NestedTagSerializer
