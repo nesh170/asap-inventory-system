@@ -134,6 +134,12 @@ class FulfillRequestCart(APIView):
             request_cart.save()
             LoggerUtility.log(initiating_user=request_cart.staff, nature_enum=ActionEnum.REQUEST_FULFILLED,
                               affected_user=request_cart.owner, carts_affected=[request_cart])
+            EmailUtility.email(recipient=request_cart.owner.email, template='request_action',
+                               context={'name': request_cart.owner.username,
+                                        'loan_list': request_cart.cart_loans.all(),
+                                        'disbursement_list': request_cart.cart_disbursements.all(),
+                                        'request_state': 'fulfilled'},
+                               subject="Request Fulfilled")
             return Response(data=RequestCartSerializer(request_cart).data, status=status.HTTP_200_OK)
         raise MethodNotAllowed(method=self.patch, detail="Request must be approved but is currently {current_status}"
                                .format(current_status=request_cart.status))
