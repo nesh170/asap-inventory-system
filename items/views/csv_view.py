@@ -64,14 +64,14 @@ class ItemCsvImport(APIView):
                 temp_file.write(chunk)
         with open(filename) as csvfile:
             try:
-                dialect = csv.Sniffer().sniff(csvfile.read(1024))
+                dialect = csv.Sniffer().sniff(csvfile.readline())
                 csvfile.seek(0)
                 reader = csv.DictReader(f=csvfile, dialect=dialect)
                 validate_headers(reader.fieldnames)
             except UnicodeDecodeError:
                 raise ParseError(detail='This is not a valid CSV file, sorry')
-            except csv.Error:
-                raise ParseError(detail="This csv file is not valid")
+            # except csv.Error:
+            #     raise ParseError(detail="This csv file is not valid")
             current_row_index = 1
             for row in reader:
                 error_list = create_and_validate_data(row, reader.fieldnames, request.user)
